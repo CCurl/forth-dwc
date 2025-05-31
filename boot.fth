@@ -1,14 +1,11 @@
 ( comments are free )
-( add-word ] 1 state ! 1 state ! exit [ )
-( add-word : ] add-word ] ; )
-( add-word ; immediate ] 0 , 0 state ! exit [ )
 
 : immediate $80 (l) @ 5 + c! ;
 
 : cell  4 ;
+: wc-sz 4 ;
 : cell+ cell + ;
 : cells cell * ;
-: wc-sz 4 ;
 
 : (exit)    0 ; 
 : (lit)     1 ;
@@ -51,7 +48,6 @@
 : 0= 0 = ;
 : 0< 0 < ;
 : 1+ 1 + ;
-: cell+ cell + ;
 : 1- 1 - ;
 : 2* 2 * ;
 : +! dup >r @ + r> ! ;
@@ -80,7 +76,6 @@ var (t) cell allot
 : t  (t) @ ;
 : t+ (t) @ dup 1+ t! ;
 
-
 : bl 32 ;
 : space bl emit ;
 : tab 9 emit ;
@@ -95,7 +90,7 @@ var (t) cell allot
 var (neg) 1 allot
 var buf 65 allot
 var (buf) cell allot
-: ?neg 0 (neg) c!  dup 0< if negate 1 (neg) c! then ;
+: ?neg (( n--n' )) dup 0< dup (neg) c! if negate then ;
 : #c (buf) -- (buf) @ c! ;
 : #digit '0' + dup '9' > if 7 + then #c ;
 : # base @ /mod swap #digit ;

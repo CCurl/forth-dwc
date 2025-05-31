@@ -8,7 +8,7 @@
 #define STK_SZ           63
 #define NAME_LEN         25
 #define IMMED          0x80
-#define LAST_OP          31
+#define LAST_OP        OP31
 #define LIT_MASK      0x70000000
 #define LIT_BITS      0x0FFFFFFF
 #define btwi(n,l,h)   ((l<=n) && (n<=h))
@@ -76,11 +76,11 @@ cell rpop() { return (0 < rsp) ? rstk[rsp--] : 0; }
 cell cellAt(cell loc) { return *(cell*)loc; }
 void cellTo(cell loc, cell val) { *(cell*)loc = val; }
 void comma(wc_t val) { code[here++] = val; }
-int changeState(int st) { state = st; return st; }
+int  changeState(int st) { state = st; return st; }
 void emit(cell ch) { fputc((char)ch, stdout); }
 void zType(const char *str) { fputs(str, stdout); }
 void addLit(const char* name, cell val) { addToDict(name); compileNum(val); comma(EXIT); }
-int lower(int c) { return btwi(c, 'A', 'Z') ? c+32 : c; }
+int  lower(int c) { return btwi(c, 'A', 'Z') ? c+32 : c; }
 
 int strLen(const char *str) {
 	int ln = 0;
@@ -122,13 +122,12 @@ int isNum(const char *w, cell b) {
 	if (w[0] == '$') { b = 16; ++w; }
 	if ((b == 10) && (w[0] == '-')) { isNeg = 1; ++w; }
 	if (w[0] == 0) { return 0; }
-	char c = lower(*(w++));
-	while (c) {
+	while (*w) {
+		char c = lower(*(w++));
 		n = (n * b);
-		if (btwi(c, '0', '9') && btwi(c, '0', '0' + b - 1)) { n += (c - '0'); }
-		else if (btwi(c, 'a', 'a' + b - 11)) { n += (c - 'a' + 10); }
+		if (btwi(c, '0', '9') && btwi(c, '0', '0' + b - 1)) { n += (c-'0'); }
+		else if (btwi(c, 'a', 'a' + b - 11)) { n += (c-'a'+10); }
 		else return 0;
-		c = lower(*(w++));
 	}
 	push(isNeg ? -n : n);
 	return 1;

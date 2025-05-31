@@ -14,10 +14,10 @@ $(app): $(srcfiles) $(incfiles)
 	ls -l $(app)
 
 clean:
-	rm -f $(app) $(app32)
+	rm -f $(app)
 
 test: $(app)
-	./$(app) test.wc
+	./$(app) test.fth
 
 run: $(app)
 	./$(app)
