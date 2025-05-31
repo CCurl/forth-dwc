@@ -1,4 +1,6 @@
-# This is an extremely minimal Forth system that can be built up to do anything.
+# forth-dwc
+
+A extremely minimal single-file Forth system that can run stand-alone or be embedded into another program.
 
 One single file, 275 lines, 32 primitives.
 
