@@ -1,5 +1,5 @@
-( comments are free )
-(( use this when compiling ))
+(  this comment leaves the state in COMPILE )
+(( this comment leaves the state in INTERPRET ))
 
 : last (l) @ ;
 : here (h) @ ;
@@ -11,6 +11,7 @@
 : cell+ cell + ;
 : cells cell * ;
 
+: bye 999 state ! ;
 : (exit)    0 ; 
 : (lit)     1 ;
 : (jmp)     2 ;
@@ -19,11 +20,14 @@
 : (=)      22 ;
 : (ztype)  25 ;
 
-: bye 999 state ! ;
 : ->code wc-sz * code + ;
 : dict-end vars vars-sz + ;
 
-: comp? (( --n )) state @ 1 = ;
+: 1+ 1 + ;
+: 1- 1 - ;
+: 2* 2 * ;
+
+: comp? ( --n ) state @ 1 = ;
 : if  (jmpz)  , here 0 ,  ; immediate
 : if0 (jmpnz) , here 0 ,  ; immediate
 : then here swap ->code ! ; immediate
@@ -35,11 +39,15 @@
 : hex     $10 base ! ;
 : decimal #10 base ! ;
 
+: align vhere begin dup #3 and if0 (vh) ! exit then 1+ again ;
+: allot ( n-- ) vhere + (vh) ! ;
+: vc, ( c-- ) vhere c! 1 allot ;
+: v,  ( n-- ) vhere ! cell allot ;
+
 : const add-word (lit) , , (exit) , ;
 : var vhere const  ;
-: allot vhere + (vh) ! ;
-: vc, vhere c! 1 allot ;
-: v,  vhere ! cell allot ;
+: val add-word (lit) , 0 , (exit) , ;
+: (val) add-word (lit) , here 3 - ->code , (exit) , ;
 
 : rot >r swap r> swap ;
 : -rot rot rot ;
@@ -49,18 +57,14 @@
 : ?dup dup if dup then ;
 : 0= 0 = ;
 : 0< 0 < ;
-: 1+ 1 + ;
-: 1- 1 - ;
-: 2* 2 * ;
 : +! dup >r @ + r> ! ;
 : ++  1 swap +! ;
 : -- -1 swap +! ;
 
-var (a) cell allot
+val a (val) (a)
 : a!  (a) ! ;
-: a   (a) @ ;
-: a+  (a) @ dup 1+ a! ;
-: a+c (a) @ dup cell+ a! ;
+: a+  a dup 1+ a! ;
+: a+c a dup cell+ a! ;
 : @a   a c@ ;
 : @a+  a+ c@ ;
 : @ac  a @ ;
@@ -68,14 +72,12 @@ var (a) cell allot
 : !a+  a+ c! ;
 : !a   a  c! ;
 
-var (b) cell allot
+val b (val) (b)
 : b! (b) ! ;
-: b  (b) @ ;
-: b+ (b) @ dup 1+ b! ;
+: b+ b dup 1+ b! ;
 
-var (t) cell allot
+val t (val) (t)
 : t! (t) ! ;
-: t  (t) @ ;
 : t+ (t) @ dup 1+ t! ;
 
 : bl 32 ;
@@ -89,10 +91,10 @@ var (t) cell allot
 : /   /mod nip  ;
 : mod /mod drop ;
 
-var (neg) 1 allot
-var buf 65 allot
+var (neg)    1 allot
+var buf     65 allot align
 var (buf) cell allot
-: ?neg (( n--n' )) dup 0< dup (neg) c! if negate then ;
+: ?neg ( n--n' ) dup 0< dup (neg) c! if negate then ;
 : #c (buf) -- (buf) @ c! ;
 : #digit '0' + dup '9' > if 7 + then #c ;
 : # base @ /mod swap #digit ;
@@ -110,7 +112,7 @@ var (buf) cell allot
         (stk) cell+ a! depth for a+c @ . next 
     then ')' emit ;
 
-: (") vhere dup a! >in ++
+: (") ( -- a ) vhere dup a! >in ++
     begin >in @ c@ >r >in ++
         r@ 0= r@ '"' = or
         if  r> drop 0 !a+
@@ -124,16 +126,20 @@ var (buf) cell allot
 
 : words last a! 0 b! 0 t! begin
         a dict-end < if0 '(' emit t . ." words)" exit then
-        a 7 + ztype 9 emit
+        a wc-sz + 3 + ztype tab
         (t) ++ b+ 9 > if cr 0 b! then
         a wc-sz + c@ a + a!
     again ;
 
-( temp for testing )
-: elapsed timer swap - . ." usec" cr ;
-: bm1 timer swap begin 1- dup while drop elapsed ;
-: bm2 timer swap for next elapsed ;
+(( some simple benchmarks ))
+: t. ztype '(' emit dup (.) ')' emit timer swap ;
+: fib ( n--fib ) 1- dup 2 < if drop 1 exit then dup fib swap 1- fib + ;
+: elapsed timer swap - ." , time: " . cr ;
+: bm-while z" while " t. begin 1- dup while drop elapsed ;
+: bm-loop  z" loop "  t. for next elapsed ;
+: bm-fib   z" fib"    t. fib space (.) elapsed ;
+: bm-fibs 1 b! for b+ bm-fib next ;
 : mil #1000 dup * * ;
-: bm 250 mil bm1 1000 mil bm2 ;
-: bb 1000 mil bm2 ;
- ." dwc v0.0.1" cr ." Hello."
+: bm-all 250 mil bm-while 1000 mil bm-loop 30 bm-fib ;
+: bb 1000 mil bm-loop ;
+ ." dwc v0.0.2 - Chris Curl" cr ." Hello."
