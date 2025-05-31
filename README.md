@@ -29,7 +29,7 @@ This system hard-codes the following state-change words:
 | Word | Action |
 |:--   |:-- |
 | :    | Change to DEFINE. |
-| ;    | Add EXIT and change to COMPILE. |
+| ;    | Add EXIT and change to INTERPRET. |
 | [    | Change to INTERPRET. |
 | ]    | Change to COMPILE. |
 | (    | Change to COMMENT. |
