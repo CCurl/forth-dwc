@@ -1,5 +1,9 @@
 ( comments are free )
+(( use this when compiling ))
 
+: last (l) @ ;
+: here (h) @ ;
+: vhere (vh) @ ;
 : immediate $80 (l) @ 5 + c! ;
 
 : cell  4 ;
@@ -9,26 +13,24 @@
 
 : (exit)    0 ; 
 : (lit)     1 ;
-: (jmpz)    2 ;
-: (jmp)     3 ;
-: (=)      21 ;
-: (ztype)  24 ;
+: (jmp)     2 ;
+: (jmpz)    3 ;
+: (jmpnz)   4 ;
+: (=)      22 ;
+: (ztype)  25 ;
 
 : bye 999 state ! ;
-: last (l) @ ;
-: here (h) @ ;
 : ->code wc-sz * code + ;
-: vhere (vh) @ ;
 : dict-end vars vars-sz + ;
 
 : comp? (( --n )) state @ 1 = ;
-: if (jmpz) , here 0 , ; immediate
-: if0 $70000000 , (=) , (jmpz) , here 0 , ; immediate
-: then here swap ->code !  ; immediate
+: if  (jmpz)  , here 0 ,  ; immediate
+: if0 (jmpnz) , here 0 ,  ; immediate
+: then here swap ->code ! ; immediate
 : begin here ; immediate
-: again (jmp) , , ; immediate
-: while $70000000 , (=) , (jmpz) , , ; immediate
-: until (jmpz) , , ; immediate
+: again (jmp)   , , ; immediate
+: while (jmpnz) , , ; immediate
+: until (jmpz)  , , ; immediate
 
 : hex     $10 base ! ;
 : decimal #10 base ! ;

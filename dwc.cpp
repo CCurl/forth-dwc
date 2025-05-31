@@ -20,7 +20,7 @@
 #define WC_SZ             4
 #define CELL_SZ           4
 
-enum { COMPILE=1, INTERPRET, COMMENT };
+enum { COMPILE=1, DEFINE, INTERPRET, COMMENT };
 typedef struct { wc_t xt; byte sz; byte fl; byte ln; char nm[NAME_LEN+1]; } DE_T;
 
 wc_t code[CODE_SZ], dsp, rsp, lsp;
@@ -32,8 +32,9 @@ char *toIn, wd[32];
 #define PRIMS \
 	X(EXIT,  "exit",     0, pc=(wc_t)rpop(); if (pc <= LAST_OP) { return 0; } ) \
 	X(LIT,   "",         0, push(cellAt((cell)&code[pc])); pc += (CELL_SZ/WC_SZ); ) \
-	X(JMP0,  "",         0, if (pop()==0) { pc = code[pc]; } else { pc++; } ) \
 	X(JMP,   "",         0, pc = code[pc]; ) \
+	X(JMPZ,  "",         0, if (pop()==0) { pc = code[pc]; } else { pc++; } ) \
+	X(JMPNZ, "",         0, if (pop()) { pc = code[pc]; } else { pc++; } ) \
 	X(COMMA, ",",        0, comma((wc_t)pop()); ) \
 	X(DUP,   "dup",      0, push(TOS); ) \
 	X(DROP,  "drop",     0, pop(); ) \
@@ -56,7 +57,6 @@ char *toIn, wd[32];
 	X(EMIT,  "emit",     0, emit(pop()); ) \
 	X(ZTYPE, "ztype",    0, zType((const char*)pop()); ) \
 	X(ADDW,  "add-word", 0, addToDict(0); ) \
-	X(OP26,  "[",    IMMED, state = 0; ) \
 	X(OP27,  "for",      0, lsp += 2; lstk[lsp] = pop(); lstk[lsp-1] = pc; ) \
 	X(OP28,  "next",     0, if (0 < --lstk[lsp]) { pc=(wc_t)lstk[lsp-1]; } else { lsp=(1<lsp) ? lsp-2: 0; } ) \
 	X(OP29,  "and",      0, t = pop(); TOS &= t; ) \
@@ -108,7 +108,7 @@ void compileNum(cell n) {
 
 int nextWord() {
 	int ln = 0;
-	while (*toIn && (*toIn < 33)) { if (btwi(*toIn,COMPILE, COMMA)) { changeState(*toIn); } ++toIn; }
+	while (*toIn && (*toIn < 33)) { if (btwi(*toIn, COMPILE, COMMENT)) { changeState(*toIn); } ++toIn; }
 	while (*toIn > 32) { wd[ln++] = *(toIn++); }
 	wd[ln] = 0;
 	return ln;
@@ -190,12 +190,12 @@ next:
 
 int isStateChange(const char *w) {
 	if (state == COMMENT) {
-		if (strEqI(w, "))")) { return changeState(COMPILE); }
 		if (strEqI(w, ")"))  { return changeState(INTERPRET); }
+		if (strEqI(w, "))")) { return changeState(COMPILE); }
 		return state;
 	}
 	if (strEqI(w, "]"))  { return changeState(COMPILE); }
-	if (strEqI(w, ":"))  { addToDict(0); return changeState(COMPILE); }
+	if (strEqI(w, ":"))  { return changeState(DEFINE); }
 	if (strEqI(w, ";"))  { comma(EXIT);  return changeState(INTERPRET); }
 	if (strEqI(w, "["))  { return changeState(INTERPRET); }
 	if (strEqI(w, "("))  { return changeState(COMMENT); }
@@ -208,6 +208,7 @@ void outer(const char *src) {
 	toIn = (char *)src;
 	while (nextWord()) {
 		if (isStateChange(wd)) { continue; }
+		if (state == DEFINE) { addToDict(wd); changeState(COMPILE); continue; }
 		if (isNum(wd, base)) {
 			if (state == COMPILE) { compileNum(pop()); }
 			continue;
