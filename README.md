@@ -21,7 +21,7 @@ This gives the operator more flexibility.
 | 3     | INTERPRET |
 | 4     | COMMENT   |
 
-DWC also hard-codes the following state-change words:
+### DWC also hard-codes the following state-change words:
 
 | Word | Action |
 |:--   |:-- |
