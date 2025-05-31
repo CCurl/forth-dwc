@@ -190,8 +190,8 @@ next:
 
 int isStateChange(const char *w) {
 	if (state == COMMENT) {
-		if (strEqI(w, ")"))  { return changeState(INTERPRET); }
-		if (strEqI(w, "))")) { return changeState(COMPILE); }
+		if (strEqI(w, ")"))  { return changeState(COMPILE); }
+		if (strEqI(w, "))")) { return changeState(INTERPRET); }
 		return state;
 	}
 	if (strEqI(w, "]"))  { return changeState(COMPILE); }
