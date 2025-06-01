@@ -4,9 +4,14 @@ DWC is an extremely minimal single-file Forth system that can run stand-alone or
 
 One single file, 275 lines, 32 primitives.
 
-On Windows, a 32-bit Release build compiles to a 16k executable.
+On Windows, a 32-bit Release build compiles to a 16k executable. <br/>
+On a Linux box, it is about 24k.
 
-It is larger on a Linux box, about 24k.
+**DWC** stands for "dword-code". This is inspired by Tachyon. <br/>
+In a DWC program, each instruction is a DWORD. <br/>
+- If <= the last primitive (31) then it is a primitive.
+- Else, if <= NUM_BITS ($3FFFFFFF) then it is a literal.
+- Else, it is the XT (code address) of a word in the dictionary.
 
 ## ColorForth influences
 
@@ -79,3 +84,6 @@ This gives the operator more flexibility.
 | 29        | and      | TOS = NOS and TOS. Discard NOS. |
 | 30        | or       | TOS = NOS or TOS. Discard NOS. |
 | 31        | xor      | TOS = NOS xor TOS. Discard NOS. |
+
+## Embedding
+

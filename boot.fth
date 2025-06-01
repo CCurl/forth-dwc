@@ -36,17 +36,21 @@
 : while (jmpnz) , , ; immediate
 : until (jmpz)  , , ; immediate
 
-: hex     $10 base ! ;
 : decimal #10 base ! ;
+: hex     $10 base ! ;
+: binary  %10 base ! ;
 
-: align vhere begin dup #3 and if0 (vh) ! exit then 1+ again ;
+: align ( -- ) vhere begin dup #3 and if0 (vh) ! exit then 1+ again ;
 : allot ( n-- ) vhere + (vh) ! ;
 : vc, ( c-- ) vhere c! 1 allot ;
 : v,  ( n-- ) vhere ! cell allot ;
 
 : const add-word (lit) , , (exit) , ;
 : var vhere const  ;
-: val add-word (lit) , 0 , (exit) , ;
+
+((  val and (val) define a very efficient variable mechanism  ))
+((  Usage:  val xx   (val) (xx)   : xx! (xx) ! ;  ))
+: val   add-word (lit) , 0 , (exit) , ;
 : (val) add-word (lit) , here 3 - ->code , (exit) , ;
 
 : rot >r swap r> swap ;
@@ -55,11 +59,11 @@
 : tuck swap over ;
 : nip  swap drop ;
 : ?dup dup if dup then ;
-: 0= 0 = ;
-: 0< 0 < ;
-: +! dup >r @ + r> ! ;
-: ++  1 swap +! ;
-: -- -1 swap +! ;
+: 0= ( n -- f ) 0 = ;
+: 0< ( n -- f ) 0 < ;
+: +! ( n a-- ) dup >r @ + r> ! ;
+: ++ ( a-- )  1 swap +! ;
+: -- ( a-- ) -1 swap +! ;
 
 val a (val) (a)
 : a!  (a) ! ;
@@ -95,14 +99,15 @@ var (neg)    1 allot
 var buf     65 allot align
 var (buf) cell allot
 : ?neg ( n--n' ) dup 0< dup (neg) c! if negate then ;
-: #c (buf) -- (buf) @ c! ;
-: #digit '0' + dup '9' > if 7 + then #c ;
-: # base @ /mod swap #digit ;
-: #S # dup if #S exit then drop ;
-: <# ?neg buf 65 + (buf) ! 0 #c ;
-: #> (neg) @ if '-' #c then (buf) @ ;
+: #c   ( c-- )   (buf) -- (buf) @ c! ;
+: #.   ( -- )    '.' #c ;
+: #n   ( n-- )   '0' + dup '9' > if 7 + then #c ;
+: #    ( n--m )  base @ /mod swap #n ;
+: #s   ( n--0 )  # dup if #s exit then ;
+: <#   ( n--m )  ?neg buf 65 + (buf) ! 0 #c ;
+: #>   ( n--a )  drop (neg) @ if '-' #c then (buf) @ ;
 
-: (.) <# #S #> ztype ;
+: (.) <# #s #> ztype ;
 : . (.) space ;
 : ? @ . ;
 
@@ -112,7 +117,7 @@ var (buf) cell allot
         (stk) cell+ a! depth for a+c @ . next 
     then ')' emit ;
 
-: (") ( -- a ) vhere dup a! >in ++
+: (") ( --a ) vhere dup a! >in ++
     begin >in @ c@ >r >in ++
         r@ 0= r@ '"' = or
         if  r> drop 0 !a+
@@ -131,7 +136,16 @@ var (buf) cell allot
         a wc-sz + c@ a + a!
     again ;
 
-(( some simple benchmarks ))
+(( Formatting number output ))
+: .nwb ( n wid base-- )
+    base @ >r  base !  >r <# r> 1- for # next #s #> ztype  r> base ! ;
+: .hex   ( n-- )  #2 $10 .nwb ;
+: .hex4  ( n-- )  #4 $10 .nwb ;
+: .hex8  ( n-- )  #8 $10 .nwb ;
+: .bin   ( n-- )  #8 %10 .nwb ;
+: .bin16 ( n-- ) #16 %10 .nwb ;
+
+(( Some simple benchmarks ))
 : t. ztype '(' emit dup (.) ')' emit timer swap ;
 : fib ( n--fib ) 1- dup 2 < if drop 1 exit then dup fib swap 1- fib + ;
 : elapsed timer swap - ." , time: " . cr ;
@@ -142,4 +156,12 @@ var (buf) cell allot
 : mil #1000 dup * * ;
 : bm-all 250 mil bm-while 1000 mil bm-loop 30 bm-fib ;
 : bb 1000 mil bm-loop ;
- ." dwc v0.0.2 - Chris Curl" cr ." Hello."
+
+: .version version <# # # #. # # #. #s #> ztype ;
+: .banner
+    ." dwc - version " .version ."  - Chris Curl" cr
+    ."   Heap: " vars-sz . ." bytes, used: " vhere vars - . cr
+    ."   Code: " code-sz (.) ." , used: " here . cr
+    ."   Dict: " dict-end last - .  ." bytes used "cr
+    ;
+.banner
