@@ -149,7 +149,7 @@
     <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dwc.cpp" />
+    <ClCompile Include="dwc.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
