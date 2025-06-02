@@ -1,15 +1,13 @@
-(  this comment leaves the state in COMPILE )
+(  comments are built in!  )
+(  this comment leaves the state in COMPILE  )
 (( this comment leaves the state in INTERPRET ))
-
-: last (l) @ ;
-: here (h) @ ;
-: vhere (vh) @ ;
-: immediate $80 (l) @ 5 + c! ;
 
 : cell  4 ;
 : wc-sz 4 ;
-: cell+ cell + ;
-: cells cell * ;
+: last (l) @ ;
+: here (h) @ ;
+: vhere (vh) @ ;
+: immediate $80 last wc-sz + 1+ c! ;
 
 : bye 999 state ! ;
 : (exit)    0 ; 
@@ -21,9 +19,11 @@
 : (ztype)  25 ;
 
 : ->code wc-sz * code + ;
+: , here dup 1 + (h) ! ->code ! ;
 : dict-end vars vars-sz + ;
 
-: 1+ 1 + ;
+: cell+ cell + ;
+: cells cell * ;
 : 1- 1 - ;
 : 2* 2 * ;
 
@@ -40,35 +40,34 @@
 : hex     $10 base ! ;
 : binary  %10 base ! ;
 
-: align ( -- ) vhere begin dup #3 and if0 (vh) ! exit then 1+ again ;
+: aligned ( a1--a2 ) dup #3 and if0 exit then 1+ aligned ;
+: align ( -- ) vhere aligned (vh) ! ;
 : allot ( n-- ) vhere + (vh) ! ;
 : vc, ( c-- ) vhere c! 1 allot ;
 : v,  ( n-- ) vhere ! cell allot ;
 
 : const add-word (lit) , , (exit) , ;
-: var vhere const  ;
+: var vhere const ;
 
 ((  val and (val) define a very efficient variable mechanism  ))
 ((  Usage:  val xx   (val) (xx)   : xx! (xx) ! ;  ))
 : val   add-word (lit) , 0 , (exit) , ;
 : (val) add-word (lit) , here 3 - ->code , (exit) , ;
 
-: rot >r swap r> swap ;
-: -rot rot rot ;
 : over >r dup r> swap ;
 : tuck swap over ;
 : nip  swap drop ;
 : ?dup dup if dup then ;
 : 0= ( n -- f ) 0 = ;
 : 0< ( n -- f ) 0 < ;
-: +! ( n a-- ) dup >r @ + r> ! ;
-: ++ ( a-- )  1 swap +! ;
-: -- ( a-- ) -1 swap +! ;
+: +! ( n a-- )  dup >r @ + r> ! ;
+: ++ ( a-- )     1 swap +! ;
+: -- ( a-- )    -1 swap +! ;
 
 val a (val) (a)
-: a!  (a) ! ;
-: a+  a dup 1+ a! ;
-: a+c a dup cell+ a! ;
+: a!   (a) ! ;
+: a+   a dup 1+ a! ;
+: a+c  a dup cell+ a! ;
 : @a   a c@ ;
 : @a+  a+ c@ ;
 : @ac  a @ ;
@@ -107,14 +106,16 @@ var (buf) cell allot
 : <#   ( n--m )  ?neg buf 65 + (buf) ! 0 #c ;
 : #>   ( n--a )  drop (neg) @ if '-' #c then (buf) @ ;
 
-: (.) <# #s #> ztype ;
+: ?dup ( n--n n | 0 ) dup if dup then ;
+: execute ( xt-- ) ?dup if >R then ;
+: (.)   <# #s #> ztype ;
 : . (.) space ;
 : ? @ . ;
 
 : 0sp 0 (sp) ! ;
 : depth (sp) @ 1- ;
 : .s '(' emit space depth if
-        (stk) cell+ a! depth for a+c @ . next 
+        (stk) cell+ a! depth for @a+c . next 
     then ')' emit ;
 
 : (") ( --a ) vhere dup a! >in ++
@@ -145,6 +146,12 @@ var (buf) cell allot
 : .bin   ( n-- )  #8 %10 .nwb ;
 : .bin16 ( n-- ) #16 %10 .nwb ;
 
+align var mkr 3 cells allot
+: marker here mkr !   last mkr cell+ !   vhere mkr 2 cells + ! ;
+: forget mkr @ (h) !  mkr cell+ @ (l) !  mkr 2 cells + @ (vh) ! ;
+
+marker
+
 (( Some simple benchmarks ))
 : t. ztype '(' emit dup (.) ')' emit timer swap ;
 : fib ( n--fib ) 1- dup 2 < if drop 1 exit then dup fib swap 1- fib + ;
@@ -164,4 +171,4 @@ var (buf) cell allot
     ."   Code: " code-sz (.) ." , used: " here . cr
     ."   Dict: " dict-end last - .  ." bytes used "cr
     ;
-.banner
+.banner (( forget ))

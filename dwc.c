@@ -35,7 +35,7 @@ char *toIn, wd[32];
 	X(JMP,   "",         0, pc = code[pc]; ) \
 	X(JMPZ,  "",         0, if (pop()==0) { pc = code[pc]; } else { pc++; } ) \
 	X(JMPNZ, "",         0, if (pop()) { pc = code[pc]; } else { pc++; } ) \
-	X(COMMA, ",",        0, comma((wc_t)pop()); ) \
+	X(INC,   "1+",       0, ++TOS; ) \
 	X(DUP,   "dup",      0, push(TOS); ) \
 	X(DROP,  "drop",     0, pop(); ) \
 	X(SWAP,  "swap",     0, t = TOS; TOS = NOS; NOS = t; ) \
