@@ -30,40 +30,40 @@ cell here, last, vhere, base, state;
 char *toIn, wd[32];
 
 #define PRIMS \
-	X(EXIT,  "exit",     0, pc = (wc_t)rpop(); if (pc==0) { return 0; } ) \
-	X(LIT,   "",         0, push(cellAt((cell)&code[pc])); pc += (CELL_SZ/WC_SZ); ) \
-	X(JMP,   "",         0, pc = code[pc]; ) \
-	X(JMPZ,  "",         0, if (pop()==0) { pc = code[pc]; } else { pc++; } ) \
-	X(JMPNZ, "",         0, if (pop()) { pc = code[pc]; } else { pc++; } ) \
-	X(INC,   "1+",       0, ++TOS; ) \
-	X(DUP,   "dup",      0, push(TOS); ) \
-	X(DROP,  "drop",     0, pop(); ) \
-	X(SWAP,  "swap",     0, t = TOS; TOS = NOS; NOS = t; ) \
-	X(STO,   "!",        0, t = pop(); n = pop(); cellTo(t,n); ) \
-	X(FET,   "@",        0, TOS = cellAt(TOS); ) \
-	X(CSTO,  "c!",       0, t = pop(); n = pop(); *(byte*)t = (byte)n; ) \
-	X(CFET,  "c@",       0, TOS = *(byte*)TOS; ) \
-	X(RTO,   ">r",       0, rpush(pop()); ) \
-	X(RAT,   "r@",       0, push(rstk[rsp]); ) \
-	X(RFROM, "r>",       0, push(rpop()); ) \
-	X(TIMER, "timer",    0, push(clock()); ) \
-	X(MULT,  "*",        0, t = pop(); TOS *= t; ) \
-	X(ADD,   "+",        0, t = pop(); TOS += t; ) \
-	X(SUB,   "-",        0, t = pop(); TOS -= t; ) \
-	X(SMOD,  "/mod",     0, t = TOS; n = NOS; TOS = n/t; NOS = n%t; ) \
-	X(LT,    "<",        0, t = pop(); TOS = (TOS  < t) ? 1 : 0; ) \
-	X(EQ,    "=",        0, t = pop(); TOS = (TOS == t) ? 1 : 0; ) \
-	X(GT,    ">",        0, t = pop(); TOS = (TOS  > t) ? 1 : 0; ) \
-	X(EMIT,  "emit",     0, emit(pop()); ) \
-	X(ZTYPE, "ztype",    0, zType((const char*)pop()); ) \
-	X(ADDW,  "add-word", 0, addToDict(0); ) \
-	X(OP27,  "for",      0, lsp += 2; lstk[lsp] = pop(); lstk[lsp-1] = pc; ) \
-	X(OP28,  "next",     0, if (0 < --lstk[lsp]) { pc=(wc_t)lstk[lsp-1]; } else { lsp=(1<lsp) ? lsp-2: 0; } ) \
-	X(OP29,  "and",      0, t = pop(); TOS &= t; ) \
-	X(OP30,  "or",       0, t = pop(); TOS |= t; ) \
-	X(LASTOP,"xor",      0, t = pop(); TOS ^= t; )
+	X(EXIT,   "exit",     pc = (wc_t)rpop(); if (pc==0) { return 0; } ) \
+	X(LIT,    "",         push(cellAt((cell)&code[pc])); pc += (CELL_SZ/WC_SZ); ) \
+	X(JMP,    "",         pc = code[pc]; ) \
+	X(JMPZ,   "",         if (pop()==0) { pc = code[pc]; } else { pc++; } ) \
+	X(JMPNZ,  "",         if (pop()) { pc = code[pc]; } else { pc++; } ) \
+	X(INC,    "1+",       ++TOS; ) \
+	X(DUP,    "dup",      push(TOS); ) \
+	X(DROP,   "drop",     pop(); ) \
+	X(SWAP,   "swap",     t = TOS; TOS = NOS; NOS = t; ) \
+	X(STO,    "!",        t = pop(); n = pop(); cellTo(t,n); ) \
+	X(FET,    "@",        TOS = cellAt(TOS); ) \
+	X(CSTO,   "c!",       t = pop(); n = pop(); *(byte*)t = (byte)n; ) \
+	X(CFET,   "c@",       TOS = *(byte*)TOS; ) \
+	X(RTO,    ">r",       rpush(pop()); ) \
+	X(RAT,    "r@",       push(rstk[rsp]); ) \
+	X(RFROM,  "r>",       push(rpop()); ) \
+	X(TIMER,  "timer",    push(clock()); ) \
+	X(MULT,   "*",        t = pop(); TOS *= t; ) \
+	X(ADD,    "+",        t = pop(); TOS += t; ) \
+	X(SUB,    "-",        t = pop(); TOS -= t; ) \
+	X(SMOD,   "/mod",     t = TOS; n = NOS; TOS = n/t; NOS = n%t; ) \
+	X(LT,     "<",        t = pop(); TOS = (TOS  < t) ? 1 : 0; ) \
+	X(EQ,     "=",        t = pop(); TOS = (TOS == t) ? 1 : 0; ) \
+	X(GT,     ">",        t = pop(); TOS = (TOS  > t) ? 1 : 0; ) \
+	X(EMIT,   "emit",     emit(pop()); ) \
+	X(ZTYPE,  "ztype",    zType((const char*)pop()); ) \
+	X(ADDW,   "add-word", addToDict(0); ) \
+	X(OP27,   "for",      lsp += 2; lstk[lsp] = pop(); lstk[lsp-1] = pc; ) \
+	X(OP28,   "next",     if (0 < --lstk[lsp]) { pc=(wc_t)lstk[lsp-1]; } else { lsp=(1<lsp) ? lsp-2: 0; } ) \
+	X(OP29,   "and",      t = pop(); TOS &= t; ) \
+	X(OP30,   "or",       t = pop(); TOS |= t; ) \
+	X(LASTOP, "xor",      t = pop(); TOS ^= t; )
 
-#define X(op, nm, fl, cd) op,
+#define X(op, name, code) op,
 enum { PRIMS };
 
 DE_T *addToDict(const char *w);
@@ -171,7 +171,7 @@ DE_T *findInDict(char *w) {
 }
 
 #undef X
-#define X(op, nm, fl, cd) case op: cd goto next;
+#define X(op, name, code) case op: code goto next;
 
 int inner(wc_t pc) {
 	wc_t ir;
@@ -229,13 +229,13 @@ void outer(const char *src) {
 	toIn = svIn;
 }
 
-void addPrim(const char *nm, wc_t op, byte fl) {
+void addPrim(const char *nm, wc_t op) {
 	DE_T *dp = addToDict(nm);
-	if (dp) { dp->xt = op; dp->fl = fl; }
+	if (dp) { dp->xt = op; }
 }
 
 #undef X
-#define X(op, nm, fl, cd) addPrim(nm, op, fl);
+#define X(op, name, code) addPrim(name, op);
 
 int main(int argc, char *argv[]) {
 	const char *boot_fn = (1 < argc) ? argv[1]  : "boot.fth";
