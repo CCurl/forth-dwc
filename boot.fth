@@ -2,12 +2,13 @@
 (  this comment leaves the state in COMPILE  )
 (( this comment leaves the state in INTERPRET ))
 
-: cell  4 ;
-: wc-sz 4 ;
+: cell 4 ;
 : last (l) @ ;
 : here (h) @ ;
 : vhere (vh) @ ;
-: immediate $80 last wc-sz + 1 + c! ;
+: immediate $80 last cell + 1 + c! ;
+: cells cell * ;
+: cell+ cell + ;
 
 : bye 999 state ! ;
 : (exit)    0 ; 
@@ -18,12 +19,10 @@
 : (=)      21 ;
 : (ztype)  30 ;
 
-: ->code wc-sz * code + ;
+: ->code cells code + ;
 : , here dup 1 + (h) ! ->code ! ;
 : dict-end vars vars-sz + ;
 
-: cell+ cell + ;
-: cells cell * ;
 : 1+ 1 + ;
 : 1- 1 - ;
 : 2* 2 * ;
@@ -133,9 +132,9 @@ var (buf) cell allot
 
 : words last a! 0 b! 0 t! begin
         a dict-end < if0 '(' emit t . ." words)" exit then
-        a wc-sz + 3 + ztype tab
+        a cell + 3 + ztype tab
         (t) ++ b+ 9 > if cr 0 b! then
-        a wc-sz + c@ a + a!
+        a cell + c@ a + a!
     again ;
 
 (( Formatting number output ))

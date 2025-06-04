@@ -3,35 +3,35 @@
 #include <stdint.h>
 #include <time.h>
 
-#define VERSION      20250602
-#define CODE_SZ        0x8000
-#define VARS_SZ      0x400000
-#define STK_SZ           63
-#define NAME_LEN         25
-#define IMMED          0x80
+#define VERSION         20250603
+#define CODE_SZ           0x8000
+#define VARS_SZ         0x400000
+#define STK_SZ                63
+#define NAME_LEN              25
+#define IMMED               0x80
 #define LIT_MASK      0x40000000
 #define LIT_BITS      0x3FFFFFFF
+#define CELL_SZ                4
+#define byte             uint8_t
+#define cell             int32_t
+#define ucell           uint32_t
 #define btwi(n,l,h)   ((l<=n) && (n<=h))
 #define TOS           dstk[dsp]
 #define NOS           dstk[dsp-1]
-#define byte          uint8_t
-#define wc_t          uint32_t
-#define cell          int32_t
-#define WC_SZ             4
-#define CELL_SZ           4
 
 enum { COMPILE=1, DEFINE, INTERPRET, COMMENT };
-typedef struct { wc_t xt; byte sz; byte fl; byte ln; char nm[NAME_LEN+1]; } DE_T;
+typedef struct { ucell xt; byte sz; byte fl; byte ln; char nm[NAME_LEN+1]; } DE_T;
+typedef struct { char *name; ucell value; } NVP_T;
 
-wc_t code[CODE_SZ], dsp, rsp, lsp;
+ucell code[CODE_SZ], dsp, rsp, lsp;
 byte vars[VARS_SZ];
 cell dstk[STK_SZ+1], rstk[STK_SZ+1], lstk[STK_SZ+1];
 cell here, last, vhere, base, state, outputFp;
 char *toIn, wd[32];
 
 #define PRIMS \
-	X(EXIT,   "exit",     pc = (wc_t)rpop(); if (pc==0) { return 0; } ) \
-	X(LIT,    "",         push(cellAt((cell)&code[pc])); pc += (CELL_SZ/WC_SZ); ) \
+	X(EXIT,   "exit",     pc = (ucell)rpop(); if (pc==0) { return 0; } ) \
+	X(LIT,    "",         push(code[pc++]); ) \
 	X(JMP,    "",         pc = code[pc]; ) \
 	X(JMPZ,   "",         if (pop()==0) { pc = code[pc]; } else { pc++; } ) \
 	X(JMPNZ,  "",         if (pop()) { pc = code[pc]; } else { pc++; } ) \
@@ -39,8 +39,8 @@ char *toIn, wd[32];
 	X(DROP,   "drop",     pop(); ) \
 	X(SWAP,   "swap",     t = TOS; TOS = NOS; NOS = t; ) \
 	X(OVER,   "over",     push(NOS); ) \
-	X(STO,    "!",        t = pop(); n = pop(); cellTo(t,n); ) \
-	X(FET,    "@",        TOS = cellAt(TOS); ) \
+	X(STO,    "!",        t = pop(); n = pop(); *(cell*)t = n; ) \
+	X(FET,    "@",        TOS = *(cell*)TOS; ) \
 	X(CSTO,   "c!",       t = pop(); n = pop(); *(byte*)t = (byte)n; ) \
 	X(CFET,   "c@",       TOS = *(byte*)TOS; ) \
 	X(RTO,    ">r",       rpush(pop()); ) \
@@ -55,7 +55,7 @@ char *toIn, wd[32];
 	X(GT,     ">",        t = pop(); TOS = (TOS  > t) ? 1 : 0; ) \
 	X(ADDW,   "add-word", addToDict(0); ) \
 	X(FOR,    "for",      lsp += 2; lstk[lsp] = pop(); lstk[lsp-1] = pc; ) \
-	X(NEXT,   "next",     if (0 < --lstk[lsp]) { pc=(wc_t)lstk[lsp-1]; } else { lsp=(1<lsp) ? lsp-2: 0; } ) \
+	X(NEXT,   "next",     if (0 < --lstk[lsp]) { pc=(ucell)lstk[lsp-1]; } else { lsp=(1<lsp) ? lsp-2: 0; } ) \
 	X(AND ,   "and",      t = pop(); TOS &= t; ) \
 	X(OR,     "or",       t = pop(); TOS |= t; ) \
 	X(XOR,    "xor",      t = pop(); TOS ^= t; ) \
@@ -73,12 +73,11 @@ void push(cell v) { if (dsp < STK_SZ) { dstk[++dsp] = v; } }
 cell pop() { return (0 < dsp) ? dstk[dsp--] : 0; }
 void rpush(cell v) { if (rsp < STK_SZ) { rstk[++rsp] = v; } }
 cell rpop() { return (0 < rsp) ? rstk[rsp--] : 0; }
-cell cellAt(cell loc) { return *(cell*)loc; }
-void cellTo(cell loc, cell val) { *(cell*)loc = val; }
-void comma(wc_t val) { code[here++] = val; }
+void comma(ucell val) { code[here++] = val; }
 int  changeState(int st) { state = st; return st; }
 void emit(cell ch) { fputc((char)ch, outputFp ? (FILE*)outputFp : stdout); }
 void zType(const char *str) { fputs(str, outputFp ? (FILE*)outputFp : stdout); }
+void addPrim(const char *nm, ucell op) { DE_T *dp = addToDict(nm); if (dp) { dp->xt = op; } }
 void addLit(const char *name, cell val) { addToDict(name); compileNum(val); comma(EXIT); }
 int  lower(int c) { return btwi(c, 'A', 'Z') ? c+32 : c; }
 
@@ -102,8 +101,8 @@ int strEqI(const char *src, const char *dst) {
 }
 
 void compileNum(cell n) {
-	if (btwi(n,0,LIT_BITS)) { comma((wc_t)(n | LIT_MASK)); }
-	else { comma(LIT); cellTo((cell)&code[here], n); here += (CELL_SZ/WC_SZ); }
+	if (btwi(n,0,LIT_BITS)) { comma((ucell)(n | LIT_MASK)); }
+	else { comma(LIT); code[here++] = n; }
 }
 
 int nextWord() {
@@ -133,13 +132,6 @@ int isNum(const char *w, cell b) {
 	return 1;
 }
 
-void iToA(cell n, cell b) {
-	if (n < 0) { emit('-'); n = -n; }
-	if (b <= n) { iToA(n / b, b); }
-	n %= b; if (9 < n) { n += 7; }
-	emit('0' + (char)n);
-}
-
 DE_T *addToDict(const char *w) {
 	if (!w) {
 		if (!nextWord()) return (DE_T*)0;
@@ -147,12 +139,12 @@ DE_T *addToDict(const char *w) {
 	}
 	int ln = strLen(w);
 	if (ln == 0) { return (DE_T*)0; }
-	byte sz = WC_SZ + 3 + ln + 1;
+	byte sz = CELL_SZ + 3 + ln + 1;
 	while (sz & 0x03) { ++sz; }
 	last -= sz;
 	if (last < vhere) { last += sz; return (DE_T*)0; }
 	DE_T *dp = (DE_T*)last;
-	dp->xt = (wc_t)here;
+	dp->xt = (ucell)here;
 	dp->sz = sz;
 	dp->fl = 0;
 	dp->ln = ln;
@@ -173,8 +165,8 @@ DE_T *findInDict(char *w) {
 #undef X
 #define X(op, name, code) case op: code goto next;
 
-int inner(wc_t pc) {
-	wc_t ir;
+int inner(ucell pc) {
+	ucell ir;
 	cell n, t;
 next:
 	ir = code[pc++];
@@ -229,13 +221,8 @@ void outer(const char *src) {
 	toIn = svIn;
 }
 
-void addPrim(const char *nm, wc_t op) {
-	DE_T *dp = addToDict(nm);
-	if (dp) { dp->xt = op; }
-}
-
 #undef X
-#define X(op, name, code) addPrim(name, op);
+#define X(op, name, code) { name, op },
 
 int main(int argc, char *argv[]) {
 	last = (cell)&vars[VARS_SZ];
@@ -243,20 +230,18 @@ int main(int argc, char *argv[]) {
 	here = LASTOP+1;
 	base = 10;
 	state = INTERPRET;
-	PRIMS
-	addLit("version", (cell)VERSION);
-	addLit("(vh)", (cell)&vhere);
-	addLit("(h)", (cell)&here);
-	addLit("(l)", (cell)&last);
-	addLit("(sp)", (cell)&dsp);
-	addLit("(stk)", (cell)&dstk[0]);
-	addLit("state", (cell)&state);
-	addLit("base", (cell)&base);
-	addLit("vars", (cell)&vars[0]);
-	addLit("code", (cell)&code[0]);
-	addLit("code-sz", CODE_SZ);
-	addLit("vars-sz", VARS_SZ);
-	addLit(">in", (cell)&toIn);
+	NVP_T prims[] = { PRIMS { 0, 0 } };
+	for (int i = 0; prims[i].name; i++) { addPrim(prims[i].name, prims[i].value); }
+	NVP_T nv[] = {
+		{ "version", VERSION },        { "(vh)",   (ucell)&vhere },
+		{ "(h)",     (cell)&here },    { "(l)",    (cell)&last },
+		{ "(sp)",    (cell)&dsp },     { "(stk)",  (cell)&dstk[0] },
+		{ "state",   (cell)&state },   { "base",   (cell)&base },
+		{ "code",    (cell)&code[0] }, { "vars",   (cell)&vars[0] },
+		{ "code-sz", CODE_SZ },        { "vars-sz", VARS_SZ },
+		{ ">in",     (cell) & toIn},   { 0, 0 }
+	};
+	for (int i = 0; nv[i].name; i++) { addLit(nv[i].name, nv[i].value); }
 	const char *boot_fn = (1 < argc) ? argv[1]  : "boot.fth";
 	FILE *fp = fopen(boot_fn, "rb");
 	if (fp) {
