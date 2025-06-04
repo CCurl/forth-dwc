@@ -7,7 +7,7 @@
 : last (l) @ ;
 : here (h) @ ;
 : vhere (vh) @ ;
-: immediate $80 last wc-sz + 1+ c! ;
+: immediate $80 last wc-sz + 1 + c! ;
 
 : bye 999 state ! ;
 : (exit)    0 ; 
@@ -15,8 +15,8 @@
 : (jmp)     2 ;
 : (jmpz)    3 ;
 : (jmpnz)   4 ;
-: (=)      22 ;
-: (ztype)  25 ;
+: (=)      21 ;
+: (ztype)  30 ;
 
 : ->code wc-sz * code + ;
 : , here dup 1 + (h) ! ->code ! ;
@@ -24,6 +24,7 @@
 
 : cell+ cell + ;
 : cells cell * ;
+: 1+ 1 + ;
 : 1- 1 - ;
 : 2* 2 * ;
 
@@ -40,7 +41,7 @@
 : hex     $10 base ! ;
 : binary  %10 base ! ;
 
-: aligned ( a1--a2 ) dup #3 and if0 exit then 1+ aligned ;
+: aligned ( a1--a2 ) #4 over #3 and - #3 and + ;
 : align ( -- ) vhere aligned (vh) ! ;
 : allot ( n-- ) vhere + (vh) ! ;
 : vc, ( c-- ) vhere c! 1 allot ;
@@ -54,7 +55,6 @@
 : val   add-word (lit) , 0 , (exit) , ;
 : (val) add-word (lit) , here 3 - ->code , (exit) , ;
 
-: over >r dup r> swap ;
 : tuck swap over ;
 : nip  swap drop ;
 : ?dup dup if dup then ;
@@ -82,6 +82,7 @@ val b (val) (b)
 val t (val) (t)
 : t! (t) ! ;
 : t+ (t) @ dup 1+ t! ;
+: @t+ t+ @ ;
 
 : bl 32 ;
 : space bl emit ;
@@ -150,6 +151,13 @@ align var mkr 3 cells allot
 : marker here mkr !   last mkr cell+ !   vhere mkr 2 cells + ! ;
 : forget mkr @ (h) !  mkr cell+ @ (l) !  mkr 2 cells + @ (vh) ! ;
 
+: aemit ( ch-- )     dup #32 < over #126 > or if drop '.' then emit ;
+: t0    ( addr-- )   a >r a! $10 for @a+ aemit next r> a! ;
+: dump  ( addr n-- ) swap a! 0 t! for
+     t+ if0 a cr .hex ." : " then @a+ .hex space
+     t $10 = if 0 t! space space a $10 - t0 then 
+   next ;
+
 marker
 
 (( Some simple benchmarks ))
@@ -169,6 +177,6 @@ marker
     ." dwc - version " .version ."  - Chris Curl" cr
     ."   Heap: " vars-sz . ." bytes, used: " vhere vars - . cr
     ."   Code: " code-sz (.) ." , used: " here . cr
-    ."   Dict: " dict-end last - .  ." bytes used "cr
+    ."   Dict: " dict-end last - .  ." bytes used" cr
     ;
 .banner (( forget ))

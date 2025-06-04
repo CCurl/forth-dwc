@@ -59,10 +59,10 @@ This gives the operator more flexibility.
 |  2        | (jmp)    | PC = code[PC]. |
 |  3        | (jmpz)   | If (TOS=0) then PC = code[PC] else PC = PC+1. Discard TOS. |
 |  4        | (jmpnz)  | If (TOS!=0) then PC = code[PC] else PC = PC+1. Discard TOS. |
-|  5        | 1+       | Increment TOS. |
-|  6        | dup      | Push TOS. |
-|  7        | drop     | Discard TOS. |
-|  8        | swap     | Swap TOS and NOS. |
+|  5        | dup      | Push TOS. |
+|  6        | drop     | Discard TOS. |
+|  7        | swap     | Swap TOS and NOS. |
+|  8        | over     | Push NOS. |
 |  9        | !        | CELL store NOS through TOS. Discard TOS and NOS. |
 | 10        | @        | CELL fetch TOS through TOS. |
 | 11        | c!       | BYTE store NOS through TOS. Discard TOS and NOS. |
@@ -70,22 +70,22 @@ This gives the operator more flexibility.
 | 13        | >r       | Push TOS onto the return stack. Discard TOS. |
 | 14        | r@       | Push RTOS. |
 | 15        | r>       | Push RTOS. Discard RTOS. |
-| 16        | timer    | Push clock(). |
-| 17        | *        | TOS = NOS*TOS. Discard NOS. |
-| 18        | +        | TOS = NOS+TOS. Discard NOS. |
-| 19        | -        | TOS = NOS-TOS. Discard NOS. |
-| 20        | /mod     | TOS = NOS/TOS. NOS = NOS%TOS. |
-| 21        | <        | If (NOS<TOS) then TOS = 1 else TOS = 0. Discard NOS. |
-| 22        | =        | If (NOS=TOS) then TOS = 1 else TOS = 0. Discard NOS. |
-| 23        | >        | If (NOS<TOS) then TOS = 1 else TOS = 0. Discard NOS. |
-| 24        | emit     | Output char TOS to STDOUT. Discard TOS. |
-| 25        | ztype    | Output null-terminated string TOS to STDOUT. Discard TOS. |
-| 26        | add-word | Add the next word to the dictionary. |
-| 27        | for      | Start a FOR loop. |
-| 28        | next     | End the current FOR loop. |
-| 29        | and      | TOS = NOS and TOS. Discard NOS. |
-| 30        | or       | TOS = NOS or TOS. Discard NOS. |
-| 31        | xor      | TOS = NOS xor TOS. Discard NOS. |
+| 16        | *        | TOS = NOS*TOS. Discard NOS. |
+| 17        | +        | TOS = NOS+TOS. Discard NOS. |
+| 18        | -        | TOS = NOS-TOS. Discard NOS. |
+| 19        | /mod     | TOS = NOS/TOS. NOS = NOS%TOS. |
+| 20        | <        | If (NOS<TOS) then TOS = 1 else TOS = 0. Discard NOS. |
+| 21        | =        | If (NOS=TOS) then TOS = 1 else TOS = 0. Discard NOS. |
+| 22        | >        | If (NOS<TOS) then TOS = 1 else TOS = 0. Discard NOS. |
+| 23        | add-word | Add the next word to the dictionary. |
+| 24        | for      | Start a FOR loop. |
+| 25        | next     | End the current FOR loop. |
+| 26        | and      | TOS = NOS and TOS. Discard NOS. |
+| 27        | or       | TOS = NOS or TOS. Discard NOS. |
+| 28        | xor      | TOS = NOS xor TOS. Discard NOS. |
+| 29        | emit     | Output char TOS to STDOUT. Discard TOS. |
+| 30        | ztype    | Output null-terminated string TOS to STDOUT. Discard TOS. |
+| 31        | timer    | Push clock(). |
 
 ## Embedding DWC in your C project
 
