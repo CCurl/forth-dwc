@@ -1,10 +1,10 @@
 # forth-dwc: a minimal DWORD-Code based Forth 
 
-DWC is an extremely minimal single-file Forth system that can run stand-alone or be embedded into another program.
+DWC is an extremely minimal Forth system that can run stand-alone or be embedded into another program.
 
-DWC is implemented in a single file, 275 lines, 32 primitives.
+DWC is implemented in 3 files, 30 base primitives, 11 system primitives.
 
-On Windows, a 32-bit Release build compiles to a 16k executable. <br/>
+On Windows, a 32-bit Release build compiles to a 15k executable. <br/>
 On a Linux box, it is about 24k.
 
 **DWC** stands for "dword-code". This is inspired by Tachyon. <br/>
@@ -54,6 +54,7 @@ This gives the operator more flexibility.
 
 | Primitive | Word     | Action |
 |:--        |:--       |:-- |
+|           |          | --- **DWC primitives** --- |
 |  0        | exit     | PC = RTOS. Discard RTOS. If (PC=0) then stop. |
 |  1        | (lit)    | Push code[PC]. Increment PC. |
 |  2        | (jmp)    | PC = code[PC]. |
@@ -78,23 +79,25 @@ This gives the operator more flexibility.
 | 21        | =        | If (NOS=TOS) then TOS = 1 else TOS = 0. Discard NOS. |
 | 22        | >        | If (NOS<TOS) then TOS = 1 else TOS = 0. Discard NOS. |
 | 23        | add-word | Add the next word to the dictionary. |
-| 24        | for      | Start a FOR loop. |
-| 25        | next     | End the current FOR loop. |
-| 26        | and      | TOS = NOS and TOS. Discard NOS. |
-| 27        | or       | TOS = NOS or TOS. Discard NOS. |
-| 28        | xor      | TOS = NOS xor TOS. Discard NOS. |
-| 29        | emit     | Output char TOS to STDOUT. Discard TOS. |
-| 30        | ztype    | Output null-terminated string TOS to STDOUT. Discard TOS. |
-| 31        | timer    | Push clock(). |
+| 24        | '        | Push the address of the next word from the dictionary. |
+| 25        | for      | Start a FOR loop. |
+| 26        | next     | End the current FOR loop. |
+| 27        | and      | TOS = NOS and TOS. Discard NOS. |
+| 28        | or       | TOS = NOS or TOS. Discard NOS. |
+| 29        | xor      | TOS = NOS xor TOS. Discard NOS. |
+|           |          | --- **System primitives** --- |
+| 30        | key      | Push the next keypress. Wait until one is available. |
+| 31        | ?key     | Push 1 if a keypress is available, else 0. |
+| 32        | emit     | Output char TOS to STDOUT. Discard TOS. |
+| 33        | ztype    | Output null-terminated string TOS to STDOUT. Discard TOS. |
+| 34        | fopen    | Open file NOS using mode TOS (0 if error). |
+| 35        | fclose   | Close file TOS. Discard TOS. |
+| 36        | fread    | Read NOS chars from file TOS. |
+| 37        | fwrite   | Write NOS chars from file TOS. |
+| 38        | ms       | Wait/sleep for MS milliseconds |
+| 39        | timer    | Push the current system time. |
+| 40        | system   | Execute system(TOS). Discard TOS. |
 
 ## Embedding DWC in your C project
 
-- Include dwc.c in your project.
-- Rename the main() to dwc_init().
-- Tweak the renamed function to suit your needs.
-- Add additional primitives to PRIMS macro to suit your needs.
-- Call dwc_init() to initialize the VM.
-- Pass Forth code to outer().
-- The stack is dstk[]. 
-- The stack pointer is dsp. Set it to 0 to clear the stack.
-- The top of the stack is dstk[dsp].
+See system.c. It embeds the DWC VM into a C program.

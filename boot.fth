@@ -17,7 +17,7 @@
 : (jmpz)    3 ;
 : (jmpnz)   4 ;
 : (=)      21 ;
-: (ztype)  30 ;
+: (ztype)  33 ;
 
 : ->code cells code + ;
 : , here dup 1 + (h) ! ->code ! ;
@@ -136,6 +136,10 @@ var (buf) cell allot
         (t) ++ b+ 9 > if cr 0 b! then
         a cell + c@ a + a!
     again ;
+
+(( Files ))
+: fopen-r ( nm--fh ) z" rb" fopen ;
+: fopen-w ( nm--fh ) z" wb" fopen ;
 
 (( Formatting number output ))
 : .nwb ( n wid base-- )

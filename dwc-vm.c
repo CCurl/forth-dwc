@@ -1,27 +1,4 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <time.h>
-
-#define VERSION         20250603
-#define CODE_SZ           0x8000
-#define VARS_SZ         0x400000
-#define STK_SZ                63
-#define NAME_LEN              25
-#define IMMED               0x80
-#define LIT_MASK      0x40000000
-#define LIT_BITS      0x3FFFFFFF
-#define CELL_SZ                4
-#define byte             uint8_t
-#define cell             int32_t
-#define ucell           uint32_t
-#define btwi(n,l,h)   ((l<=n) && (n<=h))
-#define TOS           dstk[dsp]
-#define NOS           dstk[dsp-1]
-
-enum { COMPILE=1, DEFINE, INTERPRET, COMMENT };
-typedef struct { ucell xt; byte sz; byte fl; byte ln; char nm[NAME_LEN+1]; } DE_T;
-typedef struct { char *name; ucell value; } NVP_T;
+#include "dwc-vm.h"
 
 ucell code[CODE_SZ], dsp, rsp, lsp;
 byte vars[VARS_SZ];
@@ -30,7 +7,8 @@ cell here, last, vhere, base, state, outputFp;
 char *toIn, wd[32];
 
 #define PRIMS \
-	X(EXIT,   "exit",     pc = (ucell)rpop(); if (pc==0) { return 0; } ) \
+	/* DWC primitives */ \
+	X(EXIT,   "exit",     pc = (ucell)rpop(); if (pc==0) { return; } ) \
 	X(LIT,    "",         push(code[pc++]); ) \
 	X(JMP,    "",         pc = code[pc]; ) \
 	X(JMPZ,   "",         if (pop()==0) { pc = code[pc]; } else { pc++; } ) \
@@ -54,14 +32,24 @@ char *toIn, wd[32];
 	X(EQ,     "=",        t = pop(); TOS = (TOS == t) ? 1 : 0; ) \
 	X(GT,     ">",        t = pop(); TOS = (TOS  > t) ? 1 : 0; ) \
 	X(ADDW,   "add-word", addToDict(0); ) \
+	X(FIND,   "'",        push((cell)findInDict((char *)0)); ) \
 	X(FOR,    "for",      lsp += 2; lstk[lsp] = pop(); lstk[lsp-1] = pc; ) \
 	X(NEXT,   "next",     if (0 < --lstk[lsp]) { pc=(ucell)lstk[lsp-1]; } else { lsp=(1<lsp) ? lsp-2: 0; } ) \
 	X(AND ,   "and",      t = pop(); TOS &= t; ) \
 	X(OR,     "or",       t = pop(); TOS |= t; ) \
 	X(XOR,    "xor",      t = pop(); TOS ^= t; ) \
+	/* System primitives */ \
+	X(KEY,    "key",      push(key()); ) \
+	X(QKEY,   "?key",     push(qKey()); ) \
 	X(EMIT,   "emit",     emit(pop()); ) \
 	X(ZTYPE,  "ztype",    zType((const char*)pop()); ) \
-	X(LASTOP, "timer",    push(clock()); )
+	X(fOPEN,  "fopen",    t = pop(); TOS = fOpen(TOS, t); ) \
+	X(fCLOSE, "fclose",   fClose(pop()); ) \
+	X(fREAD,  "fread",    t = pop(); n = pop(); TOS = fRead(TOS, n, t); ) \
+	X(fWRITE, "fwrite",   t = pop(); n = pop(); TOS = fWrite(TOS, n, t); ) \
+	X(MS,     "ms",       ms(pop()); ) \
+	X(TIMER,  "timer",    push(timer()); ) \
+	X(LASTOP, "system",   system((char*)pop()); )
 
 #define X(op, name, code) op,
 enum { PRIMS };
@@ -75,8 +63,6 @@ void rpush(cell v) { if (rsp < STK_SZ) { rstk[++rsp] = v; } }
 cell rpop() { return (0 < rsp) ? rstk[rsp--] : 0; }
 void comma(ucell val) { code[here++] = val; }
 int  changeState(int st) { state = st; return st; }
-void emit(cell ch) { fputc((char)ch, outputFp ? (FILE*)outputFp : stdout); }
-void zType(const char *str) { fputs(str, outputFp ? (FILE*)outputFp : stdout); }
 void addPrim(const char *nm, ucell op) { DE_T *dp = addToDict(nm); if (dp) { dp->xt = op; } }
 void addLit(const char *name, cell val) { addToDict(name); compileNum(val); comma(EXIT); }
 int  lower(int c) { return btwi(c, 'A', 'Z') ? c+32 : c; }
@@ -153,6 +139,10 @@ DE_T *addToDict(const char *w) {
 }
 
 DE_T *findInDict(char *w) {
+	if (!w) {
+		if (!nextWord()) return (DE_T*)0;
+		w = &wd[0];
+	}
 	cell cw = last, ln = strLen(w);
 	while (cw < (cell)&vars[VARS_SZ]) {
 		DE_T *dp = (DE_T *)cw;
@@ -165,7 +155,7 @@ DE_T *findInDict(char *w) {
 #undef X
 #define X(op, name, code) case op: code goto next;
 
-int inner(ucell pc) {
+void inner(ucell pc) {
 	ucell ir;
 	cell n, t;
 next:
@@ -224,7 +214,7 @@ void outer(const char *src) {
 #undef X
 #define X(op, name, code) { name, op },
 
-int main(int argc, char *argv[]) {
+void dwcInit() {
 	last = (cell)&vars[VARS_SZ];
 	vhere = (cell)&vars[0];
 	here = LASTOP+1;
@@ -242,18 +232,4 @@ int main(int argc, char *argv[]) {
 		{ ">in",     (cell) & toIn},   { 0, 0 }
 	};
 	for (int i = 0; nv[i].name; i++) { addLit(nv[i].name, nv[i].value); }
-	const char *boot_fn = (1 < argc) ? argv[1]  : "boot.fth";
-	FILE *fp = fopen(boot_fn, "rb");
-	if (fp) {
-		fread(&vars[1000], 1, 10000, fp);
-		fclose(fp);
-		outer((char *)&vars[1000]);
-	}
-	while (state != 999) {
-		zType(" ok\n");
-		char *tib = (char*)(vhere + 1024);
-		fgets(tib, 256, stdin);
-		outer(tib);
-	}
-	return 0;
 }
