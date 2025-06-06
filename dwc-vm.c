@@ -228,7 +228,7 @@ void dwcInit() {
 		{ "(sp)",    (cell)&dsp },     { "(stk)",     (cell)&dstk[0] },
 		{ "state",   (cell)&state },   { "base",      (cell)&base },
 		{ "code",    (cell)&code[0] }, { "vars",      (cell)&vars[0] },
-		{ "code-sz", CODE_SZ },        { "vars-sz",    VARS_SZ },
+		{ "code-sz", CODE_SZ },        { "vars-sz",   VARS_SZ },
 		{ ">in",     (cell) & toIn},   { "output-fp", (cell)&outputFp },
 		{ 0, 0 }
 	};
