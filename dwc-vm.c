@@ -33,8 +33,8 @@ char *toIn, wd[32];
 	X(GT,     ">",        t = pop(); TOS = (TOS  > t) ? 1 : 0; ) \
 	X(ADDW,   "add-word", addToDict(0); ) \
 	X(FIND,   "'",        push((cell)findInDict((char *)0)); ) \
-	X(FOR,    "for",      lsp += 2; lstk[lsp] = pop(); lstk[lsp-1] = pc; ) \
-	X(NEXT,   "next",     if (0 < --lstk[lsp]) { pc=(ucell)lstk[lsp-1]; } else { lsp=(1<lsp) ? lsp-2: 0; } ) \
+	X(FOR,    "for",      lsp += 2; L0 = pop(); L1 = pc; ) \
+	X(NEXT,   "next",     if (0 < --L0) { pc = (ucell)L1; } else { lsp = (1<lsp) ? lsp-2: 0; } ) \
 	X(AND ,   "and",      t = pop(); TOS &= t; ) \
 	X(OR,     "or",       t = pop(); TOS |= t; ) \
 	X(XOR,    "xor",      t = pop(); TOS ^= t; ) \
@@ -223,13 +223,14 @@ void dwcInit() {
 	NVP_T prims[] = { PRIMS { 0, 0 } };
 	for (int i = 0; prims[i].name; i++) { addPrim(prims[i].name, prims[i].value); }
 	NVP_T nv[] = {
-		{ "version", VERSION },        { "(vh)",   (ucell)&vhere },
-		{ "(h)",     (cell)&here },    { "(l)",    (cell)&last },
-		{ "(sp)",    (cell)&dsp },     { "(stk)",  (cell)&dstk[0] },
-		{ "state",   (cell)&state },   { "base",   (cell)&base },
-		{ "code",    (cell)&code[0] }, { "vars",   (cell)&vars[0] },
-		{ "code-sz", CODE_SZ },        { "vars-sz", VARS_SZ },
-		{ ">in",     (cell) & toIn},   { 0, 0 }
+		{ "version", VERSION },        { "(vh)",      (ucell)&vhere },
+		{ "(h)",     (cell)&here },    { "(l)",       (cell)&last },
+		{ "(sp)",    (cell)&dsp },     { "(stk)",     (cell)&dstk[0] },
+		{ "state",   (cell)&state },   { "base",      (cell)&base },
+		{ "code",    (cell)&code[0] }, { "vars",      (cell)&vars[0] },
+		{ "code-sz", CODE_SZ },        { "vars-sz",    VARS_SZ },
+		{ ">in",     (cell) & toIn},   { "output-fp", (cell)&outputFp },
+		{ 0, 0 }
 	};
 	for (int i = 0; nv[i].name; i++) { addLit(nv[i].name, nv[i].value); }
 }

@@ -12,7 +12,7 @@
 #include <stdint.h>
 #include <time.h>
 
-#define VERSION         20250603
+#define VERSION         20250606
 #define CODE_SZ           0x8000
 #define VARS_SZ         0x400000
 #define STK_SZ                63
@@ -27,19 +27,21 @@
 #define btwi(n,l,h)   ((l<=n) && (n<=h))
 #define TOS           dstk[dsp]
 #define NOS           dstk[dsp-1]
+#define L0            lstk[lsp]
+#define L1            lstk[lsp-1]
 
 enum { COMPILE=1, DEFINE, INTERPRET, COMMENT };
 typedef struct { ucell xt; byte sz; byte fl; byte ln; char nm[NAME_LEN+1]; } DE_T;
 typedef struct { char *name; ucell value; } NVP_T;
 
-// These are defined by dwc.c
+// These are defined by dwc-vm.c
 extern void inner(ucell start);
 extern void outer(const char *src);
 extern void dwcInit();
-
-// dwc.c needs these to be defined
 extern cell state, outputFp;
 extern byte vars[];
+
+// dwc-vm.c needs these to be defined
 extern void zType(const char *str);
 extern void emit(const char ch);
 extern void ttyMode(int isRaw);
