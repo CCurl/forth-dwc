@@ -63,24 +63,24 @@
 : ++ ( a-- )     1 swap +! ;
 : -- ( a-- )    -1 swap +! ;
 
-val a (val) (a)
+val a@ (val) (a)
 : a!   (a) ! ;
-: a+   a dup 1+ a! ;
-: a+c  a dup cell+ a! ;
-: @a   a c@ ;
+: a+   a@ dup 1+ a! ;
+: a+c  a@ dup cell+ a! ;
+: @a   a@ c@ ;
 : @a+  a+ c@ ;
-: @ac  a @ ;
+: @ac  a@  @ ;
 : @a+c a+c @ ;
 : !a+  a+ c! ;
-: !a   a  c! ;
+: !a   a@ c! ;
 
-val b (val) (b)
+val b@ (val) (b)
 : b! (b) ! ;
-: b+ b dup 1+ b! ;
+: b+ b@ dup 1+ b! ;
 
-val t (val) (t)
+val t@ (val) (t)
 : t! (t) ! ;
-: t+ (t) @ dup 1+ t! ;
+: t+ t@ dup 1+ t! ;
 : @t+ t+ @ ;
 
 : bl 32 ;
@@ -122,7 +122,7 @@ var (buf) cell allot
     begin >in @ c@ >r >in ++
         r@ 0= r@ '"' = or
         if  r> drop 0 !a+
-            comp? if (lit) , , a (vh) ! then exit
+            comp? if (lit) , , a@ (vh) ! then exit
         then
         r> !a+
     again ;
@@ -131,15 +131,36 @@ var (buf) cell allot
 : ." (") comp? if (ztype) , exit then ztype ;  immediate
 
 : words last a! 0 b! 0 t! begin
-        a dict-end < if0 '(' emit t . ." words)" exit then
-        a cell + 3 + ztype tab
+        a@ dict-end < if0 '(' emit t@ . ." words)" exit then
+        a@ cell + 3 + ztype tab
         (t) ++ b+ 9 > if cr 0 b! then
-        a cell + c@ a + a!
+        a@ cell + c@ a@ + a!
     again ;
 
 (( Files ))
 : fopen-r ( nm--fh ) z" rb" fopen ;
 : fopen-w ( nm--fh ) z" wb" fopen ;
+
+(( Colors ))
+: csi          27 emit '[' emit ;
+: ->cr ( c r-- ) csi (.) ';' emit (.) 'H' emit ;
+: ->rc ( r c-- ) swap ->cr ;
+: cls          csi ." 2J" 1 dup ->cr ;
+: clr-eol      csi ." 0K" ;
+: cur-on       csi ." ?25h" ;
+: cur-off      csi ." ?25l" ;
+: cur-block    csi ." 2 q" ;
+: cur-bar      csi ." 5 q" ;
+
+: bg    ( color-- ) csi ." 48;5;" (.) 'm' emit ;
+: fg    ( color-- ) csi ." 38;5;" (.) 'm' emit ;
+: color ( bg fg-- ) fg bg ;
+: c-red 203 ;
+: black   0 fg ;      : red    c-red fg ;
+: green  40 fg ;      : yellow 226 fg ;
+: blue   63 fg ;      : purple 201 fg ;
+: cyan  117 fg ;      : grey   246 fg ;
+: white 255 fg ;
 
 (( Formatting number output ))
 : .nwb ( n wid base-- )
@@ -150,16 +171,16 @@ var (buf) cell allot
 : .bin   ( n-- )  #8 %10 .nwb ;
 : .bin16 ( n-- ) #16 %10 .nwb ;
 
+: aemit ( ch-- )     dup #32 < over #126 > or if drop '.' then emit ;
+: t0    ( addr-- )   a@ >r a! $10 for @a+ aemit next r> a! ;
+: dump  ( addr n-- ) swap a! 0 t! for
+     t+ if0 a@ cr .hex ." : " then @a+ .hex space
+     t@ $10 = if 0 t! space space a@ $10 - t0 then 
+   next ;
+
 align var mkr 3 cells allot
 : marker here mkr !   last mkr cell+ !   vhere mkr 2 cells + ! ;
 : forget mkr @ (h) !  mkr cell+ @ (l) !  mkr 2 cells + @ (vh) ! ;
-
-: aemit ( ch-- )     dup #32 < over #126 > or if drop '.' then emit ;
-: t0    ( addr-- )   a >r a! $10 for @a+ aemit next r> a! ;
-: dump  ( addr n-- ) swap a! 0 t! for
-     t+ if0 a cr .hex ." : " then @a+ .hex space
-     t $10 = if 0 t! space space a $10 - t0 then 
-   next ;
 
 marker
 
