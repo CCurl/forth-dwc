@@ -107,7 +107,7 @@ var (buf) cell allot
 : #>   ( n--a )  drop (neg) @ if '-' #c then (buf) @ ;
 
 : ?dup ( n--n n | 0 ) dup if dup then ;
-: execute ( xt-- ) ?dup if >R then ;
+: execute ( xt-- ) ?dup if >r then ;
 : (.)   <# #s #> ztype ;
 : . (.) space ;
 : ? @ . ;
@@ -155,8 +155,7 @@ var (buf) cell allot
 : bg    ( color-- ) csi ." 48;5;" (.) 'm' emit ;
 : fg    ( color-- ) csi ." 38;5;" (.) 'm' emit ;
 : color ( bg fg-- ) fg bg ;
-: c-red 203 ;
-: black   0 fg ;      : red    c-red fg ;
+: black   0 fg ;      : red    203 fg ;
 : green  40 fg ;      : yellow 226 fg ;
 : blue   63 fg ;      : purple 201 fg ;
 : cyan  117 fg ;      : grey   246 fg ;
@@ -178,29 +177,29 @@ var (buf) cell allot
      t@ $10 = if 0 t! space space a@ $10 - t0 then 
    next ;
 
-align var mkr 3 cells allot
-: marker here mkr !   last mkr cell+ !   vhere mkr 2 cells + ! ;
-: forget mkr @ (h) !  mkr cell+ @ (l) !  mkr 2 cells + @ (vh) ! ;
+align var t0 3 cells allot
+: marker here t0 !   last t0 cell+ !   vhere t0 2 cells + ! ;
+: forget t0 @ (h) !  t0 cell+ @ (l) !  t0 2 cells + @ (vh) ! ;
 
 marker
 
 (( Some simple benchmarks ))
-: t. ztype '(' emit dup (.) ')' emit timer swap ;
+: t0 ztype '(' emit dup (.) ')' emit timer swap ;
 : fib ( n--fib ) 1- dup 2 < if drop 1 exit then dup fib swap 1- fib + ;
 : elapsed timer swap - ." , time: " . cr ;
-: bm-while z" while " t. begin 1- dup while drop elapsed ;
-: bm-loop  z" loop "  t. for next elapsed ;
-: bm-fib   z" fib"    t. fib space (.) elapsed ;
+: bm-while z" while " t0 begin 1- dup while drop elapsed ;
+: bm-loop  z" loop "  t0 for next elapsed ;
+: bm-fib   z" fib"    t0 fib space (.) elapsed ;
 : bm-fibs 1 b! for b+ bm-fib next ;
 : mil #1000 dup * * ;
 : bm-all 250 mil bm-while 1000 mil bm-loop 30 bm-fib ;
 : bb 1000 mil bm-loop ;
 
-: .version version <# # # #. # # #. #s #> ztype ;
+: .version version <# # # #. # # #. #s 'v' #c #> ztype ;
 : .banner
-    ." dwc - version " .version ."  - Chris Curl" cr
-    ."   Heap: " vars-sz . ." bytes, used: " vhere vars - . cr
-    ."   Code: " code-sz (.) ." , used: " here . cr
-    ."   Dict: " dict-end last - .  ." bytes used" cr
+    ." dwc " green .version white ."  - Chris Curl" cr
+    yellow ."   Heap: " white vars-sz . ." bytes, used: " vhere vars - . cr
+    yellow ."   Code: " white code-sz (.) ." , used: " here . cr
+    yellow ."   Dict: " white dict-end last - .  ." bytes used" cr
     ;
 .banner (( forget ))

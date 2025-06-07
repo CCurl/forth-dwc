@@ -2,7 +2,8 @@
 
 DWC is an extremely minimal Forth system that can run stand-alone or be embedded into another program.
 
-DWC is implemented in 3 files, 30 base primitives, 11 system primitives.
+DWC is implemented in 3 files, 30 base primitives, 11 system primitives.<br/>
+The VM itself is under 250 lines of code.
 
 On Windows, a 32-bit Release build compiles to a 17k executable. <br/>
 On a Linux box, it is about 24k.
@@ -49,6 +50,12 @@ This gives the operator more flexibility.
 | COMMENT   | Ignore the current word if it is not ')' or '))'. |
 
 **NOTE: When in the COMMENT state, only ')' or '))' changes the state.**
+
+## Temporary words
+
+Words 't0' through 't9' are temporary and are not added to the dictionary.<br/>
+They are case sensitive: 't0' is a temporary word, 'T0' is not.<br/>
+This helps with factoring code and helps keep the dictionary uncluttered.
 
 ## The VM Primitives
 

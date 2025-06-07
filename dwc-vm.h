@@ -12,8 +12,8 @@
 #include <stdint.h>
 #include <time.h>
 
-#define VERSION         20250606
-#define CODE_SZ           0x8000
+#define VERSION         20250607
+#define CODE_SZ          0x20000
 #define VARS_SZ         0x400000
 #define STK_SZ                63
 #define NAME_LEN              25

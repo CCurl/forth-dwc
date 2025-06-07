@@ -5,6 +5,7 @@ byte vars[VARS_SZ];
 cell dstk[STK_SZ+1], rstk[STK_SZ+1], lstk[STK_SZ+1];
 cell here, last, vhere, base, state, outputFp;
 char *toIn, wd[32];
+DE_T tmpWords[10];
 
 #define PRIMS \
 	/* DWC primitives */ \
@@ -66,6 +67,7 @@ int  changeState(int st) { state = st; return st; }
 void addPrim(const char *nm, ucell op) { DE_T *dp = addToDict(nm); if (dp) { dp->xt = op; } }
 void addLit(const char *name, cell val) { addToDict(name); compileNum(val); comma(EXIT); }
 int  lower(int c) { return btwi(c, 'A', 'Z') ? c+32 : c; }
+int  isTmpW(const char *w) { return (w[0]=='t') && btwi(w[1],'0','9') && (w[2]==0) ? 1 : 0; }
 
 int strLen(const char *str) {
 	int ln = 0;
@@ -123,6 +125,7 @@ DE_T *addToDict(const char *w) {
 		if (!nextWord()) return (DE_T*)0;
 		w = &wd[0];
 	}
+	if (isTmpW(w)) { DE_T *x = &tmpWords[w[1]-'0']; x->xt = here; return x; }
 	int ln = strLen(w);
 	if (ln == 0) { return (DE_T*)0; }
 	byte sz = CELL_SZ + 3 + ln + 1;
@@ -143,6 +146,7 @@ DE_T *findInDict(char *w) {
 		if (!nextWord()) return (DE_T*)0;
 		w = &wd[0];
 	}
+	if (isTmpW(w)) { return &tmpWords[w[1]-'0']; }
 	cell cw = last, ln = strLen(w);
 	while (cw < (cell)&vars[VARS_SZ]) {
 		DE_T *dp = (DE_T *)cw;
