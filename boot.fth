@@ -61,6 +61,8 @@ vars vars-sz + const dict-end
 : 0< ( n--f ) 0 < ;
 : <= ( a b--f ) > 0= ;
 : >= ( a b--f ) < 0= ;
+: min ( a b-a|b ) over over > if swap then drop ;
+: max ( a b-a|b ) over over < if swap then drop ;
 : btwi ( n l h--f ) >r over <= swap r> <= and ;
 : +! ( n a-- )  dup >r @ + r> ! ;
 : ++ ( a-- )     1 swap +! ;
