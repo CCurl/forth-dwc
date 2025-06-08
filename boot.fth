@@ -21,7 +21,6 @@
 
 : ->code cells code + ;
 : , here dup 1 + (h) ! ->code ! ;
-: dict-end vars vars-sz + ;
 
 : 1+ 1 + ;
 : 1- 1 - ;
@@ -47,7 +46,8 @@
 : v,  ( n-- ) vhere ! cell allot ;
 
 : const add-word (lit) , , (exit) , ;
-: var vhere const ;
+: var align vhere const ;
+vars vars-sz + const dict-end
 
 ((  val and (val) define a very efficient variable mechanism  ))
 ((  Usage:  val xx   (val) (xx)   : xx! (xx) ! ;  ))
@@ -57,34 +57,39 @@
 : tuck swap over ;
 : nip  swap drop ;
 : ?dup dup if dup then ;
-: 0= ( n -- f ) 0 = ;
-: 0< ( n -- f ) 0 < ;
+: 0= ( n--f ) 0 = ;
+: 0< ( n--f ) 0 < ;
+: <= ( a b--f ) > 0= ;
+: >= ( a b--f ) < 0= ;
+: btwi ( n l h--f ) >r over <= swap r> <= and ;
 : +! ( n a-- )  dup >r @ + r> ! ;
 : ++ ( a-- )     1 swap +! ;
 : -- ( a-- )    -1 swap +! ;
-
 val a@ (val) (a)
 : a!   (a) ! ;
-: a+   a@ dup 1+ a! ;
-: a+c  a@ dup cell+ a! ;
+: a++  a@ 1+ a! ;
+: a@+  a@ a++ ;
+: a@+c a@ dup cell+ a! ;
 : @a   a@ c@ ;
-: @a+  a+ c@ ;
+: @a+  a@+ c@ ;
 : @ac  a@  @ ;
-: @a+c a+c @ ;
-: !a+  a+ c! ;
+: @a+c a@+c @ ;
+: !a+  a@+ c! ;
 : !a   a@ c! ;
 
 val b@ (val) (b)
 : b! (b) ! ;
-: b+ b@ dup 1+ b! ;
+: b@+ b@ dup 1+ b! ;
 
 val t@ (val) (t)
 : t! (t) ! ;
-: t+ t@ dup 1+ t! ;
-: @t+ t+ @ ;
+: t++ t@ 1+ t! ;
+: t@+ t@ t++ ;
+: @tc t@ @ ;
 
 : bl 32 ;
 : space bl emit ;
+: spaces for space next ;
 : tab 9 emit ;
 : cr 13 emit 10 emit ;
 
@@ -95,7 +100,7 @@ val t@ (val) (t)
 : mod /mod drop ;
 
 var (neg)    1 allot
-var buf     65 allot align
+var buf     65 allot
 var (buf) cell allot
 : ?neg ( n--n' ) dup 0< dup (neg) c! if negate then ;
 : #c   ( c-- )   (buf) -- (buf) @ c! ;
@@ -133,8 +138,8 @@ var (buf) cell allot
 : words last a! 0 b! 0 t! begin
         a@ dict-end < if0 '(' emit t@ . ." words)" exit then
         a@ cell + 3 + ztype tab
-        (t) ++ b+ 9 > if cr 0 b! then
-        a@ cell + c@ a@ + a!
+        t++ b@+ 9 > if cr 0 b! then
+        a@ dup cell+ c@ + a!
     again ;
 
 (( Files ))
@@ -169,19 +174,53 @@ var (buf) cell allot
 : .hex8  ( n-- )  #8 $10 .nwb ;
 : .bin   ( n-- )  #8 %10 .nwb ;
 : .bin16 ( n-- ) #16 %10 .nwb ;
+: .dec   ( n-- )  #1 #10 .nwb ;
+: .hex/dec ( n-- ) dup ." ($" .hex ." /#" .dec ')' emit ;
 
 : aemit ( ch-- )     dup #32 < over #126 > or if drop '.' then emit ;
 : t0    ( addr-- )   a@ >r a! $10 for @a+ aemit next r> a! ;
 : dump  ( addr n-- ) swap a! 0 t! for
-     t+ if0 a@ cr .hex ." : " then @a+ .hex space
+     t@+ if0 a@ cr .hex ." : " then @a+ .hex space
      t@ $10 = if 0 t! space space a@ $10 - t0 then 
    next ;
 
-align var t0 3 cells allot
+var t0 3 cells allot
 : marker here t0 !   last t0 cell+ !   vhere t0 2 cells + ! ;
 : forget t0 @ (h) !  t0 cell+ @ (l) !  t0 2 cells + @ (vh) ! ;
 
 marker
+
+(( see <x> ))
+: code@ ( h--dwc ) ->code @ ;
+: .word ( de-- ) cell+ 3 + ztype ;
+: .prim? ( xt--f ) dup 41 < if
+        ."  is a primitive " .hex/dec 1 exit
+    then drop 0 ;
+: find-xt ( xt--de 1 | 0 ) a@ >r last a!
+    begin
+        a@ dict-end < if0 r> a! drop 0 exit then
+        @ac over = if drop a@ 1 r> a! exit then
+        a@ dup cell+ c@ + a!
+    again
+: next-xt ( de--xt ) >r last t!
+    begin
+        t@ dict-end < if0 r> drop here exit then
+        t@ cell+ c@ t@ + b!
+        b@ r@ = if r> drop @tc exit then
+        b@ t!
+    again ;
+: .lit? ( b@--f ) b@ $3fffffff > if
+        b@ $3fffffff and ." lit " .hex/dec 1 exit
+    then 0 ;
+: .lit-jmp ( b@-- ) 0 b@ < b@ 5 < and if space a@+ code@ .hex/dec then ;
+: t2 ( a@-- ) cr a@ .hex4 ." : " a@+ code@ dup .hex4 b!
+    space .lit? if exit then
+    b@ find-xt if 4 spaces .word then .lit-jmp ;
+: see ' ?dup if0 ." -not found-" exit then
+    a! a@ .hex ':' emit space a@ .word 
+    @ac .prim? if exit then
+    a@ next-xt t! @ac a!
+    : t1 a@ t@ < if t2 t1 exit then ;
 
 (( Some simple benchmarks ))
 : t0 ztype '(' emit dup (.) ')' emit timer swap ;
@@ -190,7 +229,7 @@ marker
 : bm-while z" while " t0 begin 1- dup while drop elapsed ;
 : bm-loop  z" loop "  t0 for next elapsed ;
 : bm-fib   z" fib"    t0 fib space (.) elapsed ;
-: bm-fibs 1 b! for b+ bm-fib next ;
+: bm-fibs 1 b! for b@+ bm-fib next ;
 : mil #1000 dup * * ;
 : bm-all 250 mil bm-while 1000 mil bm-loop 30 bm-fib ;
 : bb 1000 mil bm-loop ;

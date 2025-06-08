@@ -10,10 +10,10 @@ DE_T tmpWords[10];
 #define PRIMS \
 	/* DWC primitives */ \
 	X(EXIT,   "exit",     pc = (ucell)rpop(); if (pc==0) { return; } ) \
-	X(LIT,    "",         push(code[pc++]); ) \
-	X(JMP,    "",         pc = code[pc]; ) \
-	X(JMPZ,   "",         if (pop()==0) { pc = code[pc]; } else { pc++; } ) \
-	X(JMPNZ,  "",         if (pop()) { pc = code[pc]; } else { pc++; } ) \
+	X(LIT,    "lit",      push(code[pc++]); ) \
+	X(JMP,    "jmp",      pc = code[pc]; ) \
+	X(JMPZ,   "jmpz",     if (pop()==0) { pc = code[pc]; } else { pc++; } ) \
+	X(JMPNZ,  "jmpnz",    if (pop()) { pc = code[pc]; } else { pc++; } ) \
 	X(DUP,    "dup",      push(TOS); ) \
 	X(DROP,   "drop",     pop(); ) \
 	X(SWAP,   "swap",     t = TOS; TOS = NOS; NOS = t; ) \

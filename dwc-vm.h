@@ -12,7 +12,7 @@
 #include <stdint.h>
 #include <time.h>
 
-#define VERSION         20250607
+#define VERSION         20250608
 #define CODE_SZ          0x20000
 #define VARS_SZ         0x400000
 #define STK_SZ                63
