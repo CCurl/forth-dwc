@@ -145,6 +145,8 @@ var (buf) cell allot
 (( Files ))
 : fopen-r ( nm--fh ) z" rb" fopen ;
 : fopen-w ( nm--fh ) z" wb" fopen ;
+: ->file ( fh-- ) output-fp ! ;
+: ->stdout ( fh-- ) 0 ->file ;
 
 (( Colors ))
 : csi          27 emit '[' emit ;
