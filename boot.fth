@@ -6,9 +6,9 @@
 : last (l) @ ;
 : here (h) @ ;
 : vhere (vh) @ ;
-: immediate $80 last cell + 1 + c! ;
 : cells cell * ;
 : cell+ cell + ;
+: immediate $80 last cell+ 1 + c! ;
 
 : bye 999 state ! ;
 : (exit)    0 ; 
@@ -20,7 +20,9 @@
 : (ztype)  33 ;
 
 : ->code cells code + ;
-: , here dup 1 + (h) ! ->code ! ;
+: code@ ( h--dwc )  ->code @ ;
+: code! ( dwc h-- ) ->code ! ;
+: , here dup 1 + (h) ! code! ;
 
 : 1+ 1 + ;
 : 1- 1 - ;
@@ -29,7 +31,7 @@
 : comp? ( --n ) state @ 1 = ;
 : if  (jmpz)  , here 0 ,  ; immediate
 : if0 (jmpnz) , here 0 ,  ; immediate
-: then here swap ->code ! ; immediate
+: then here swap code! ; immediate
 : begin here ; immediate
 : again (jmp)   , , ; immediate
 : while (jmpnz) , , ; immediate
@@ -67,26 +69,37 @@ vars vars-sz + const dict-end
 : +! ( n a-- )  dup >r @ + r> ! ;
 : ++ ( a-- )     1 swap +! ;
 : -- ( a-- )    -1 swap +! ;
-val a@ (val) (a)
-: a!   (a) ! ;
-: a++  a@ 1+ a! ;
-: a@+  a@ a++ ;
-: a@+c a@ dup cell+ a! ;
-: @a   a@ c@ ;
+
+(( a simple third stack ))
+var tstk $10 cells allot
+val tsp   (val) t0   : tsp! t0 ! ;
+: tsp++ ( -- ) tsp 1+ $0f and tsp! ;
+: tsp-- ( -- ) tsp 1- $0f and tsp! ;
+: t-tos ( --a ) tsp cells tstk + ;
+: t! ( n-- ) t-tos ! ;
+: t@ ( --n ) t-tos @ ;
+: >t ( n-- ) tsp++ t! ;
+: t> ( --n ) t@ tsp-- ;
+: tdrop ( -- ) tsp-- ;
+
+val a@   (val) t0
+: a!   t0  ! ;
+: a++  a@  1+ a! ;
+: a@+  a@  a++ ;
+: a@+c a@  dup cell+ a! ;
+: @a   a@  c@ ;
 : @a+  a@+ c@ ;
-: @ac  a@  @ ;
+: @ac  a@   @ ;
 : @a+c a@+c @ ;
 : !a+  a@+ c! ;
-: !a   a@ c! ;
+: !a   a@  c! ;
 
-val b@ (val) (b)
-: b! (b) ! ;
+val b@   (val) t0
+: b!  t0 ! ;
 : b@+ b@ dup 1+ b! ;
 
-val t@ (val) (t)
-: t! (t) ! ;
 : t++ t@ 1+ t! ;
-: t@+ t@ t++ ;
+: t@+ t@ dup 1+ t! ;
 : @tc t@ @ ;
 
 : bl 32 ;
@@ -117,6 +130,8 @@ var (buf) cell allot
 : execute ( xt-- ) ?dup if >r then ;
 : (.)   <# #s #> ztype ;
 : . (.) space ;
+: .nwb ( n width base-- )
+    base @ >r  base !  >r <# r> 1- for # next #s #> ztype  r> base ! ;
 : ? @ . ;
 
 : 0sp 0 (sp) ! ;
@@ -125,11 +140,11 @@ var (buf) cell allot
         (stk) cell+ a! depth for @a+c . next 
     then ')' emit ;
 
-: (") ( --a ) vhere dup a! >in ++
+: (") ( --a ) vhere dup a@ >t a! >in ++
     begin >in @ c@ >r >in ++
         r@ 0= r@ '"' = or
         if  r> drop 0 !a+
-            comp? if (lit) , , a@ (vh) ! then exit
+            comp? if (lit) , , a@ (vh) ! then t> a! exit
         then
         r> !a+
     again ;
@@ -137,8 +152,8 @@ var (buf) cell allot
 : z" (") ; immediate
 : ." (") comp? if (ztype) , exit then ztype ;  immediate
 
-: words last a! 0 b! 0 t! begin
-        a@ dict-end < if0 '(' emit t@ . ." words)" exit then
+: words last a! 0 b! 0 >t begin
+        a@ dict-end < if0 '(' emit t> . ." words)" exit then
         a@ cell + 3 + ztype tab
         t++ b@+ 9 > if cr 0 b! then
         a@ dup cell+ c@ + a!
@@ -171,8 +186,6 @@ var (buf) cell allot
 : white 255 fg ;
 
 (( Formatting number output ))
-: .nwb ( n wid base-- )
-    base @ >r  base !  >r <# r> 1- for # next #s #> ztype  r> base ! ;
 : .hex   ( n-- )  #2 $10 .nwb ;
 : .hex4  ( n-- )  #4 $10 .nwb ;
 : .hex8  ( n-- )  #8 $10 .nwb ;
@@ -192,14 +205,12 @@ var t0 3 cells allot
 : marker here t0 !   last t0 cell+ !   vhere t0 2 cells + ! ;
 : forget t0 @ (h) !  t0 cell+ @ (l) !  t0 2 cells + @ (vh) ! ;
 
-marker
-
 (( see <x> ))
-: code@ ( h--dwc ) ->code @ ;
 : .word ( de-- ) cell+ 3 + ztype ;
-: .prim? ( xt--f ) dup 41 < if
-        ."  is a primitive " .hex/dec 1 exit
-    then drop 0 ;
+: t0 ( n-- ) ." primitive " .hex/dec ;
+: .prim? ( xt--f ) dup 41 < if t0 1 exit then drop 0 ;
+: t0 ( n-- ) ." lit " $3fffffff and .hex/dec ;
+: .lit? ( b@--f ) b@ $3fffffff > if b@ t0 1 exit then 0 ;
 : find-xt ( xt--de 1 | 0 ) a@ >r last a!
     begin
         a@ dict-end < if0 r> a! drop 0 exit then
@@ -213,18 +224,17 @@ marker
         b@ r@ = if r> drop @tc exit then
         b@ t!
     again ;
-: .lit? ( b@--f ) b@ $3fffffff > if
-        b@ $3fffffff and ." lit " .hex/dec 1 exit
-    then 0 ;
-: .lit-jmp ( b@-- ) 0 b@ < b@ 5 < and if space a@+ code@ .hex/dec then ;
+: .lit-jmp? ( b@-- ) 0 b@ < b@ 5 < and if space a@+ code@ .hex/dec then ;
 : t2 ( a@-- ) cr a@ .hex4 ." : " a@+ code@ dup .hex4 b!
     space .lit? if exit then
-    b@ find-xt if 4 spaces .word then .lit-jmp ;
+    b@ find-xt if 4 spaces .word then .lit-jmp? ;
+: see-range ( f t-- ) t! a! begin a@ t@ >= if exit then t2 again ;
 : see ' ?dup if0 ." -not found-" exit then
-    a! a@ .hex ':' emit space a@ .word 
-    @ac .prim? if exit then
-    a@ next-xt t! @ac a!
-    : t1 a@ t@ < if t2 t1 exit then ;
+    a! @ac .prim? if exit then
+    a@ .hex ':' emit space a@ .word 
+    a@ next-xt t! @ac a! a@ t@ see-range ;
+
+marker
 
 (( Some simple benchmarks ))
 : t0 ztype '(' emit dup (.) ')' emit timer swap ;
