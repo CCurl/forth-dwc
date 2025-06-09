@@ -104,5 +104,6 @@ int main(int argc, char *argv[]) {
 	dwcInit();
 	boot((1<argc) ? argv[1] : 0);
 	while (state != 999) { repl(); }
+	ttyMode(0);
 	return 0;
 }

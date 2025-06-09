@@ -12,7 +12,7 @@
 #include <stdint.h>
 #include <time.h>
 
-#define VERSION         20250608
+#define VERSION         20250609
 #define CODE_SZ          0x20000
 #define VARS_SZ         0x400000
 #define STK_SZ                63
@@ -44,7 +44,6 @@ extern byte vars[];
 // dwc-vm.c needs these to be defined
 extern void zType(const char *str);
 extern void emit(const char ch);
-extern void ttyMode(int isRaw);
 extern int  key();
 extern int  qKey();
 extern cell timer();

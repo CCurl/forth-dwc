@@ -234,6 +234,9 @@ var t0 3 cells allot
     a@ .hex ':' emit space a@ .word 
     a@ next-xt t! @ac a! a@ t@ see-range ;
 
+(( shell words ))
+: lg z" lazygit" system ;
+
 marker
 
 (( Some simple benchmarks ))
