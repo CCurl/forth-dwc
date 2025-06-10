@@ -206,7 +206,7 @@ var t0 3 cells allot
 (( see <x> ))
 : .word ( de-- ) cell+ 3 + ztype ;
 : t0 ( n-- ) ." primitive " .hex/dec ;
-: .prim? ( xt--f ) dup 41 < if t0 1 exit then drop 0 ;
+: .prim? ( xt--f ) dup 43 < if t0 1 exit then drop 0 ;
 : t0 ( n-- ) ." lit " $3fffffff and .hex/dec ;
 : .lit? ( b@--f ) b@ $3fffffff > if b@ t0 1 exit then 0 ;
 : find-xt ( xt--de 1 | 0 ) a@ >r last a!
