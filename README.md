@@ -1,16 +1,17 @@
 # forth-dwc: a minimal DWORD-Code based Forth 
 
-DWC is an extremely minimal single-file Forth system that can run stand-alone or be embedded into another program.
+DWC is an extremely minimal Forth system that can run stand-alone or be embedded into another program.
 
-DWC is implemented in a single file, 275 lines, 32 primitives.
+DWC is implemented in 3 files, 32 base primitives, 11 system primitives.<br/>
+The VM itself is under 250 lines of code.
 
-On Windows, a 32-bit Release build compiles to a 16k executable. <br/>
+On Windows, a 32-bit Release build compiles to a 17k executable. <br/>
 On a Linux box, it is about 24k.
 
 **DWC** stands for "dword-code". This is inspired by Tachyon. <br/>
 In a DWC program, each instruction is a DWORD. <br/>
 - If <= the last primitive (31), then it is a primitive.
-- Else, if <= NUM_BITS ($3FFFFFFF), then it is a literal.
+- Else, if <= LIT_BITS ($3FFFFFFF), then it is a literal.
 - Else, it is the XT (code address) of a word in the dictionary.
 
 ## ColorForth influences
@@ -50,19 +51,26 @@ This gives the operator more flexibility.
 
 **NOTE: When in the COMMENT state, only ')' or '))' changes the state.**
 
+## Temporary words
+
+Words 't0' through 't9' are temporary and are not added to the dictionary.<br/>
+They are case sensitive: 't0' is a temporary word, 'T0' is not.<br/>
+This helps with factoring code and helps keep the dictionary uncluttered.
+
 ## The VM Primitives
 
 | Primitive | Word     | Action |
 |:--        |:--       |:-- |
+|           |          | --- **DWC primitives** --- |
 |  0        | exit     | PC = RTOS. Discard RTOS. If (PC=0) then stop. |
 |  1        | (lit)    | Push code[PC]. Increment PC. |
 |  2        | (jmp)    | PC = code[PC]. |
 |  3        | (jmpz)   | If (TOS=0) then PC = code[PC] else PC = PC+1. Discard TOS. |
 |  4        | (jmpnz)  | If (TOS!=0) then PC = code[PC] else PC = PC+1. Discard TOS. |
-|  5        | 1+       | Increment TOS. |
-|  6        | dup      | Push TOS. |
-|  7        | drop     | Discard TOS. |
-|  8        | swap     | Swap TOS and NOS. |
+|  5        | dup      | Push TOS. |
+|  6        | drop     | Discard TOS. |
+|  7        | swap     | Swap TOS and NOS. |
+|  8        | over     | Push NOS. |
 |  9        | !        | CELL store NOS through TOS. Discard TOS and NOS. |
 | 10        | @        | CELL fetch TOS through TOS. |
 | 11        | c!       | BYTE store NOS through TOS. Discard TOS and NOS. |
@@ -70,31 +78,35 @@ This gives the operator more flexibility.
 | 13        | >r       | Push TOS onto the return stack. Discard TOS. |
 | 14        | r@       | Push RTOS. |
 | 15        | r>       | Push RTOS. Discard RTOS. |
-| 16        | timer    | Push clock(). |
-| 17        | *        | TOS = NOS*TOS. Discard NOS. |
-| 18        | +        | TOS = NOS+TOS. Discard NOS. |
-| 19        | -        | TOS = NOS-TOS. Discard NOS. |
-| 20        | /mod     | TOS = NOS/TOS. NOS = NOS%TOS. |
-| 21        | <        | If (NOS<TOS) then TOS = 1 else TOS = 0. Discard NOS. |
-| 22        | =        | If (NOS=TOS) then TOS = 1 else TOS = 0. Discard NOS. |
-| 23        | >        | If (NOS<TOS) then TOS = 1 else TOS = 0. Discard NOS. |
-| 24        | emit     | Output char TOS to STDOUT. Discard TOS. |
-| 25        | ztype    | Output null-terminated string TOS to STDOUT. Discard TOS. |
-| 26        | add-word | Add the next word to the dictionary. |
-| 27        | for      | Start a FOR loop. |
-| 28        | next     | End the current FOR loop. |
-| 29        | and      | TOS = NOS and TOS. Discard NOS. |
-| 30        | or       | TOS = NOS or TOS. Discard NOS. |
-| 31        | xor      | TOS = NOS xor TOS. Discard NOS. |
+| 16        | *        | TOS = NOS*TOS. Discard NOS. |
+| 17        | +        | TOS = NOS+TOS. Discard NOS. |
+| 18        | -        | TOS = NOS-TOS. Discard NOS. |
+| 19        | /mod     | TOS = NOS/TOS. NOS = NOS%TOS. |
+| 20        | <        | If (NOS<TOS) then TOS = 1 else TOS = 0. Discard NOS. |
+| 21        | =        | If (NOS=TOS) then TOS = 1 else TOS = 0. Discard NOS. |
+| 22        | >        | If (NOS<TOS) then TOS = 1 else TOS = 0. Discard NOS. |
+| 23        | add-word | Add the next word to the dictionary. |
+| 24        | '        | Push the address of the next word from the dictionary. |
+| 25        | for      | Start a FOR loop. |
+| 26        | next     | End the current FOR loop. |
+| 27        | and      | TOS = NOS and TOS. Discard NOS. |
+| 28        | or       | TOS = NOS or TOS. Discard NOS. |
+| 29        | xor      | TOS = NOS xor TOS. Discard NOS. |
+| 30        | 1+       | TOS = TOS + 1. |
+| 31        | 1-       | TOS = TOS - 1. |
+|           |          | --- **System primitives** --- |
+| 32        | key      | Push the next keypress. Wait until one is available. |
+| 33        | ?key     | Push 1 if a keypress is available, else 0. |
+| 34        | emit     | Output char TOS. Discard TOS. |
+| 35        | ztype    | Output null-terminated string TOS. Discard TOS. |
+| 36        | fopen    | Open file NOS using mode TOS (0 if error). |
+| 37        | fclose   | Close file TOS. Discard TOS. |
+| 38        | fread    | Read NOS chars from file TOS. |
+| 39        | fwrite   | Write NOS chars from file TOS. |
+| 40        | ms       | Wait/sleep for MS milliseconds |
+| 41        | timer    | Push the current system time. |
+| 42        | system   | Execute system(TOS). Discard TOS. |
 
 ## Embedding DWC in your C project
 
-- Include dwc.c in your project.
-- Rename the main() to dwc_init().
-- Tweak the renamed function to suit your needs.
-- Add additional primitives to PRIMS macro to suit your needs.
-- Call dwc_init() to initialize the VM.
-- Pass Forth code to outer().
-- The stack is dstk[]. 
-- The stack pointer is dsp. Set it to 0 to clear the stack.
-- The top of the stack is dstk[dsp].
+See system.c. It embeds the DWC VM into a C program.
