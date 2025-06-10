@@ -10,7 +10,7 @@ On a Linux box, it is about 24k.
 
 **DWC** stands for "dword-code". This is inspired by Tachyon. <br/>
 In a DWC program, each instruction is a DWORD. <br/>
-- If <= the last primitive (31), then it is a primitive.
+- If <= the last primitive (42), then it is a primitive.
 - Else, if <= LIT_BITS ($3FFFFFFF), then it is a literal.
 - Else, it is the XT (code address) of a word in the dictionary.
 
