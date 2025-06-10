@@ -2,7 +2,7 @@
 
 DWC is an extremely minimal Forth system that can run stand-alone or be embedded into another program.
 
-DWC is implemented in 3 files, 30 base primitives, 11 system primitives.<br/>
+DWC is implemented in 3 files, 32 base primitives, 11 system primitives.<br/>
 The VM itself is under 250 lines of code.
 
 On Windows, a 32-bit Release build compiles to a 17k executable. <br/>
@@ -92,18 +92,20 @@ This helps with factoring code and helps keep the dictionary uncluttered.
 | 27        | and      | TOS = NOS and TOS. Discard NOS. |
 | 28        | or       | TOS = NOS or TOS. Discard NOS. |
 | 29        | xor      | TOS = NOS xor TOS. Discard NOS. |
+| 30        | 1+       | TOS = TOS + 1. |
+| 31        | 1-       | TOS = TOS - 1. |
 |           |          | --- **System primitives** --- |
-| 30        | key      | Push the next keypress. Wait until one is available. |
-| 31        | ?key     | Push 1 if a keypress is available, else 0. |
-| 32        | emit     | Output char TOS. Discard TOS. |
-| 33        | ztype    | Output null-terminated string TOS. Discard TOS. |
-| 34        | fopen    | Open file NOS using mode TOS (0 if error). |
-| 35        | fclose   | Close file TOS. Discard TOS. |
-| 36        | fread    | Read NOS chars from file TOS. |
-| 37        | fwrite   | Write NOS chars from file TOS. |
-| 38        | ms       | Wait/sleep for MS milliseconds |
-| 39        | timer    | Push the current system time. |
-| 40        | system   | Execute system(TOS). Discard TOS. |
+| 32        | key      | Push the next keypress. Wait until one is available. |
+| 33        | ?key     | Push 1 if a keypress is available, else 0. |
+| 34        | emit     | Output char TOS. Discard TOS. |
+| 35        | ztype    | Output null-terminated string TOS. Discard TOS. |
+| 36        | fopen    | Open file NOS using mode TOS (0 if error). |
+| 37        | fclose   | Close file TOS. Discard TOS. |
+| 38        | fread    | Read NOS chars from file TOS. |
+| 39        | fwrite   | Write NOS chars from file TOS. |
+| 40        | ms       | Wait/sleep for MS milliseconds |
+| 41        | timer    | Push the current system time. |
+| 42        | system   | Execute system(TOS). Discard TOS. |
 
 ## Embedding DWC in your C project
 

@@ -39,6 +39,8 @@ DE_T tmpWords[10];
 	X(AND ,   "and",      t = pop(); TOS &= t; ) \
 	X(OR,     "or",       t = pop(); TOS |= t; ) \
 	X(XOR,    "xor",      t = pop(); TOS ^= t; ) \
+	X(INC,    "1+",       TOS++; ) \
+	X(DEC,    "1-",       TOS--; ) \
 	/* System primitives */ \
 	X(KEY,    "key",      push(key()); ) \
 	X(QKEY,   "?key",     push(qKey()); ) \

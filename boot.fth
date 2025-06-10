@@ -17,16 +17,12 @@
 : (jmpz)    3 ;
 : (jmpnz)   4 ;
 : (=)      21 ;
-: (ztype)  33 ;
+: (ztype)  35 ;
 
 : ->code cells code + ;
 : code@ ( h--dwc )  ->code @ ;
 : code! ( dwc h-- ) ->code ! ;
 : , here dup 1 + (h) ! code! ;
-
-: 1+ 1 + ;
-: 1- 1 - ;
-: 2* 2 * ;
 
 : comp? ( --n ) state @ 1 = ;
 : if  (jmpz)  , here 0 ,  ; immediate
@@ -100,8 +96,8 @@ val a@   (val) t0
 : !a   a@  c! ;
 
 val b@   (val) t0
-: b!  t0 ! ;
-: b@+ b@ dup 1+ b! ;
+: b!   t0 ! ;
+: b@+  b@ dup 1+ b! ;
 
 : bl 32 ;
 : space bl emit ;
@@ -157,6 +153,9 @@ var (buf) cell allot
         t++ b@+ 9 > if cr 0 b! then
         a@ dup cell+ c@ + a!
     again ;
+
+: [[ vhere >t here >t 1 state ! ;
+: ]] (exit) , 0 state ! t> dup >r (h) ! t> (vh) ! ; immediate
 
 (( Files ))
 : fopen-r ( nm--fh ) z" rb" fopen ;
