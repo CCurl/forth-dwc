@@ -58,29 +58,34 @@ vars vars-sz + const dict-end
 
 : tuck swap over ;
 : nip  swap drop ;
+: 2dup over over ;
 : ?dup dup if dup then ;
 : 0= ( n--f ) 0 = ;
 : 0< ( n--f ) 0 < ;
 : <= ( a b--f ) > 0= ;
 : >= ( a b--f ) < 0= ;
-: min ( a b-a|b ) over over > if swap then drop ;
-: max ( a b-a|b ) over over < if swap then drop ;
+: min ( a b-a|b ) 2dup > if swap then drop ;
+: max ( a b-a|b ) 2dup < if swap then drop ;
 : btwi ( n l h--f ) >r over <= swap r> <= and ;
-: +! ( n a-- )  dup >r @ + r> ! ;
-: ++ ( a-- )     1 swap +! ;
-: -- ( a-- )    -1 swap +! ;
+: +! ( n a-- ) dup >r @ + r> ! ;
+: ++ ( a-- )   1 swap +! ;
+: -- ( a-- )  -1 swap +! ;
+: negate ( n--n' ) 0 swap - ;
+: abs    ( n--n' ) dup 0< if negate then ;
 
-(( a simple third stack ))
-var tstk $10 cells allot
+(( a temporary circular stack ))
+var tstk $20 cells allot
 val tsp   (val) t0   : tsp! t0 ! ;
-: tsp++ ( -- ) tsp 1+ $0f and tsp! ;
-: tsp-- ( -- ) tsp 1- $0f and tsp! ;
-: t-tos ( --a ) tsp cells tstk + ;
-: t! ( n-- ) t-tos ! ;
-: t@ ( --n ) t-tos @ ;
-: >t ( n-- ) tsp++ t! ;
-: t> ( --n ) t@ tsp-- ;
-: tdrop ( -- ) tsp-- ;
+: tsp++ ( -- )   tsp 1+ $1f and tsp! ;
+: tdrop ( -- )   tsp 1- $1f and tsp! ;
+: t-tos ( --a )  tsp cells tstk + ;
+: t!    ( n-- )  t-tos ! ;
+: t@    ( --n )  t-tos @ ;
+: >t    ( n-- )  tsp++ t! ;
+: t>    ( --n )  t@ tdrop ;
+: t++   ( -- )   t@ 1+ t! ;
+: t@+   ( --n )  t@ dup 1+ t! ;
+: @tc   ( --n )  t@ @ ;
 
 val a@   (val) t0
 : a!   t0  ! ;
@@ -98,21 +103,15 @@ val b@   (val) t0
 : b!  t0 ! ;
 : b@+ b@ dup 1+ b! ;
 
-: t++ t@ 1+ t! ;
-: t@+ t@ dup 1+ t! ;
-: @tc t@ @ ;
-
 : bl 32 ;
 : space bl emit ;
 : spaces for space next ;
 : tab 9 emit ;
 : cr 13 emit 10 emit ;
 
-: negate 0 swap - ;
-: abs dup 0< if negate then ;
-
 : /   /mod nip  ;
 : mod /mod drop ;
+: */ ( n m q--n' ) >r * r> / ;
 
 var (neg)    1 allot
 var buf     65 allot
