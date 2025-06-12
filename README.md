@@ -59,53 +59,53 @@ This helps with factoring code and helps keep the dictionary uncluttered.
 
 ## The VM Primitives
 
-| Primitive | Word     | Action |
-|:--        |:--       |:-- |
-|           |          | --- **DWC primitives** --- |
-|  0        | exit     | PC = RTOS. Discard RTOS. If (PC=0) then stop. |
-|  1        | (lit)    | Push code[PC]. Increment PC. |
-|  2        | (jmp)    | PC = code[PC]. |
-|  3        | (jmpz)   | If (TOS=0) then PC = code[PC] else PC = PC+1. Discard TOS. |
-|  4        | (jmpnz)  | If (TOS!=0) then PC = code[PC] else PC = PC+1. Discard TOS. |
-|  5        | dup      | Push TOS. |
-|  6        | drop     | Discard TOS. |
-|  7        | swap     | Swap TOS and NOS. |
-|  8        | over     | Push NOS. |
-|  9        | !        | CELL store NOS through TOS. Discard TOS and NOS. |
-| 10        | @        | CELL fetch TOS through TOS. |
-| 11        | c!       | BYTE store NOS through TOS. Discard TOS and NOS. |
-| 12        | c@       | BYTE fetch TOS through TOS. |
-| 13        | >r       | Push TOS onto the return stack. Discard TOS. |
-| 14        | r@       | Push RTOS. |
-| 15        | r>       | Push RTOS. Discard RTOS. |
-| 16        | *        | TOS = NOS*TOS. Discard NOS. |
-| 17        | +        | TOS = NOS+TOS. Discard NOS. |
-| 18        | -        | TOS = NOS-TOS. Discard NOS. |
-| 19        | /mod     | TOS = NOS/TOS. NOS = NOS%TOS. |
-| 20        | <        | If (NOS<TOS) then TOS = 1 else TOS = 0. Discard NOS. |
-| 21        | =        | If (NOS=TOS) then TOS = 1 else TOS = 0. Discard NOS. |
-| 22        | >        | If (NOS<TOS) then TOS = 1 else TOS = 0. Discard NOS. |
-| 23        | add-word | Add the next word to the dictionary. |
-| 24        | '        | Push the address of the next word from the dictionary. |
-| 25        | for      | Start a FOR loop. |
-| 26        | next     | End the current FOR loop. |
-| 27        | and      | TOS = NOS and TOS. Discard NOS. |
-| 28        | or       | TOS = NOS or TOS. Discard NOS. |
-| 29        | xor      | TOS = NOS xor TOS. Discard NOS. |
-| 30        | 1+       | TOS = TOS + 1. |
-| 31        | 1-       | TOS = TOS - 1. |
-|           |          | --- **System primitives** --- |
-| 32        | key      | Push the next keypress. Wait until one is available. |
-| 33        | ?key     | Push 1 if a keypress is available, else 0. |
-| 34        | emit     | Output char TOS. Discard TOS. |
-| 35        | ztype    | Output null-terminated string TOS. Discard TOS. |
-| 36        | fopen    | Open file NOS using mode TOS (0 if error). |
-| 37        | fclose   | Close file TOS. Discard TOS. |
-| 38        | fread    | Read NOS chars from file TOS. |
-| 39        | fwrite   | Write NOS chars from file TOS. |
-| 40        | ms       | Wait/sleep for MS milliseconds |
-| 41        | timer    | Push the current system time. |
-| 42        | system   | Execute system(TOS). Discard TOS. |
+| Primitive | Word     | Stack        | Action |
+|:--        |:--       |:--           |:-- |
+|           |          |              | --- **DWC primitives** --- |
+|  0        | exit     | (--)         | PC = RTOS. Discard RTOS. If (PC=0) then stop. |
+|  1        | lit      | (--)         | Push code[PC]. Increment PC. |
+|  2        | jmp      | (--)         | PC = code[PC]. |
+|  3        | jmpz     | (n--)        | If (TOS=0) then PC = code[PC] else PC = PC+1. Discard TOS. |
+|  4        | jmpnz    | (n--)        | If (TOS!=0) then PC = code[PC] else PC = PC+1. Discard TOS. |
+|  5        | dup      | (n--n n)     | Push TOS. |
+|  6        | drop     | (n--)        | Discard TOS. |
+|  7        | swap     | (a b--b a)   | Swap TOS and NOS. |
+|  8        | over     | (a b--a b a) | Push NOS. |
+|  9        | !        | (n a--)      | CELL store NOS through TOS. Discard TOS and NOS. |
+| 10        | @        | (a--n)       | CELL fetch TOS through TOS. |
+| 11        | c!       | (b a--)      | BYTE store NOS through TOS. Discard TOS and NOS. |
+| 12        | c@       | (a--b)       | BYTE fetch TOS through TOS. |
+| 13        | >r       | (n--)        | Push TOS onto the return stack. Discard TOS. |
+| 14        | r@       | (--n)        | Push RTOS. |
+| 15        | r>       | (--n)        | Push RTOS. Discard RTOS. |
+| 16        | *        | (a b--c)     | TOS = NOS*TOS. Discard NOS. |
+| 17        | +        | (a b--c)     | TOS = NOS+TOS. Discard NOS. |
+| 18        | -        | (a b--c)     | TOS = NOS-TOS. Discard NOS. |
+| 19        | /mod     | (a b--r q)   | TOS = NOS/TOS. NOS = NOS%TOS. |
+| 20        | <        | (a b--f)     | If (NOS<TOS) then TOS = 1 else TOS = 0. Discard NOS. |
+| 21        | =        | (a b--f)     | If (NOS=TOS) then TOS = 1 else TOS = 0. Discard NOS. |
+| 22        | >        | (a b--f)     | If (NOS<TOS) then TOS = 1 else TOS = 0. Discard NOS. |
+| 23        | add-word | (--)         | Add the next word to the dictionary. |
+| 24        | '        | (--a)        | Push the address of the next word from the dictionary. |
+| 25        | for      | (n--)        | Start a FOR loop. |
+| 26        | next     | (--)         | End the current FOR loop. |
+| 27        | and      | (a b--c)     | TOS = NOS and TOS. Discard NOS. |
+| 28        | or       | (a b--c)     | TOS = NOS or TOS. Discard NOS. |
+| 29        | xor      | (a b--c)     | TOS = NOS xor TOS. Discard NOS. |
+| 30        | 1+       | (a--b)       | TOS = TOS + 1. |
+| 31        | 1-       | (a--b)       | TOS = TOS - 1. |
+|           |          |              | --- **System primitives** --- |
+| 32        | key      | (--n)        | Push the next keypress. Wait until one is available. |
+| 33        | ?key     | (--n)        | Push 1 if a keypress is available, else 0. |
+| 34        | emit     | (n--)        | Output char TOS. Discard TOS. |
+| 35        | ztype    | (a--)        | Output null-terminated string TOS. Discard TOS. |
+| 36        | fopen    | (--h)        | Open file NOS using mode TOS (0 if error). |
+| 37        | fclose   | (h--)        | Close file TOS. Discard TOS. |
+| 38        | fread    | (a sz h--n)  | Read NOS chars from file TOS. |
+| 39        | fwrite   | (a sz h--n)  | Write NOS chars from file TOS. |
+| 40        | ms       | (n--)        | Wait/sleep for MS milliseconds |
+| 41        | timer    | (--n)        | Push the current system time. |
+| 42        | system   | (a--)        | Execute system(TOS). Discard TOS. |
 
 ## Embedding DWC in your C project
 
