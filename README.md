@@ -99,11 +99,11 @@ This helps with factoring code and helps keep the dictionary uncluttered.
 | 33        | ?key     | (--n)        | Push 1 if a keypress is available, else 0. |
 | 34        | emit     | (n--)        | Output char TOS. Discard TOS. |
 | 35        | ztype    | (a--)        | Output null-terminated string TOS. Discard TOS. |
-| 36        | fopen    | (--h)        | Open file NOS using mode TOS (0 if error). |
+| 36        | fopen    | (nm md--h)   | Open file NOS using mode TOS (h=0 if error). |
 | 37        | fclose   | (h--)        | Close file TOS. Discard TOS. |
-| 38        | fread    | (a sz h--n)  | Read NOS chars from file TOS. |
-| 39        | fwrite   | (a sz h--n)  | Write NOS chars from file TOS. |
-| 40        | ms       | (n--)        | Wait/sleep for MS milliseconds |
+| 38        | fread    | (a sz h--n)  | Read NOS chars from file TOS to a. |
+| 39        | fwrite   | (a sz h--n)  | Write NOS chars from file TOS from a. |
+| 40        | ms       | (n--)        | Wait/sleep for TOS milliseconds |
 | 41        | timer    | (--n)        | Push the current system time. |
 | 42        | system   | (a--)        | Execute system(TOS). Discard TOS. |
 
