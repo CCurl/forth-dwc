@@ -94,10 +94,18 @@ val a@   (val) t0
 : @a+c a@+c @ ;
 : !a+  a@+ c! ;
 : !a   a@  c! ;
+: a>t  a@  >t ;
+: t>a  t>  a! ;
 
 val b@   (val) t0
-: b!   t0 ! ;
-: b@+  b@ dup 1+ b! ;
+: b!   t0  ! ;
+: b@+  b@  dup 1+ b! ;
+: !b+  b@+ c! ;
+: b>t  b@  >t ;
+: t>b  t>  b! ;
+
+: ab>t a>t b>t ;
+: t>ba t>b t>a ;
 
 : bl 32 ;
 : space bl emit ;
@@ -162,6 +170,10 @@ var (buf) cell allot
 : fopen-w ( nm--fh ) z" wb" fopen ;
 : ->file ( fh-- ) output-fp ! ;
 : ->stdout ( fh-- ) 0 ->file ;
+
+(( Strings / Memory ))
+: fill  ( a n c-- ) a>t  >r >r a! r> for r@ !a+  next r> drop t>a ;
+: cmove ( f t n-- ) ab>t >r b! a! r> for @a+ !b+ next t>ba ;
 
 (( Colors ))
 : csi          27 emit '[' emit ;
@@ -234,6 +246,7 @@ var t0 3 cells allot
 
 (( shell words ))
 : lg z" lazygit" system ;
+: ll z" ls -l" system ;
 
 marker
 
