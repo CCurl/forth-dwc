@@ -1,4 +1,4 @@
-# forth-dwc: a minimal DWORD-Code based Forth 
+# forth-dwc: a minimal DWORD-Code based Forth
 
 DWC is an extremely minimal Forth system that can run stand-alone or be embedded into another program.
 

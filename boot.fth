@@ -11,7 +11,7 @@
 : immediate $80 last cell+ 1 + c! ;
 
 : bye 999 state ! ;
-: (exit)    0 ; 
+: (exit)    0 ;
 : (lit)     1 ;
 : (jmp)     2 ;
 : (jmpz)    3 ;
@@ -94,16 +94,16 @@ val a@   (val) t0
 : @a+c a@+c @ ;
 : !a+  a@+ c! ;
 : !a   a@  c! ;
-: a>t  a@  >t ;
-: t>a  t>  a! ;
 
 val b@   (val) t0
 : b!   t0  ! ;
 : b@+  b@  dup 1+ b! ;
 : !b+  b@+ c! ;
+
+: a>t  a@  >t ;
+: t>a  t>  a! ;
 : b>t  b@  >t ;
 : t>b  t>  b! ;
-
 : ab>t a>t b>t ;
 : t>ba t>b t>a ;
 
@@ -140,7 +140,7 @@ var (buf) cell allot
 : 0sp 0 (sp) ! ;
 : depth (sp) @ 1- ;
 : .s '(' emit space depth if
-        (stk) cell+ a! depth for @a+c . next 
+        (stk) cell+ a! depth for @a+c . next
     then ')' emit ;
 
 : (") ( --a ) vhere dup a@ >t a! >in ++
@@ -208,7 +208,7 @@ var (buf) cell allot
 : t0    ( addr-- )   a@ >r a! $10 for @a+ aemit next r> a! ;
 : dump  ( addr n-- ) swap a! 0 t! for
      t@+ if0 a@ cr .hex ." : " then @a+ .hex space
-     t@ $10 = if 0 t! space space a@ $10 - t0 then 
+     t@ $10 = if 0 t! space space a@ $10 - t0 then
    next ;
 
 var t0 3 cells allot
@@ -241,7 +241,7 @@ var t0 3 cells allot
 : see-range ( f t-- ) t! a! begin a@ t@ >= if exit then t2 again ;
 : see ' ?dup if0 ." -not found-" exit then
     a! @ac .prim? if exit then
-    a@ .hex ':' emit space a@ .word 
+    a@ .hex ':' emit space a@ .word
     a@ next-xt t! @ac a! a@ t@ see-range ;
 
 (( shell words ))
