@@ -94,7 +94,7 @@ int strEqI(const char *src, const char *dst) {
 
 void compileNum(cell n) {
 	if (btwi(n,0,LIT_BITS)) { comma((ucell)(n | LIT_MASK)); }
-	else { comma(LIT); code[here++] = n; }
+	else { comma(LIT); comma(n); }
 }
 
 int nextWord() {
