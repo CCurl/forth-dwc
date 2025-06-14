@@ -88,26 +88,26 @@ val tsp   (val) t0   : tsp! t0 ! ;
 : @tc   ( --n )  t@ @ ;
 
 val a@   (val) t0
-: a!   t0  ! ;
-: a++  a@  1+ a! ;
-: a@+  a@  a++ ;
-: a@+c a@  dup cell+ a! ;
-: @a   a@  c@ ;
-: @a+  a@+ c@ ;
-: @ac  a@   @ ;
-: @a+c a@+c @ ;
-: !a+  a@+ c! ;
-: !a   a@  c! ;
+: a!   ( n-- ) t0 ! ;
+: a++  ( -- )  a@  1+ a! ;
+: a@+  ( --n ) a@  a++ ;
+: a@+c ( --n ) a@  dup cell+ a! ;
+: @a   ( --n ) a@  c@ ;
+: @a+  ( --n ) a@+ c@ ;
+: @ac  ( --n ) a@   @ ;
+: @a+c ( --n ) a@+c @ ;
+: !a+  ( n-- ) a@+ c! ;
+: !a   ( n-- ) a@  c! ;
+: a>t  ( -- )  a@  >t ;
+: t>a  ( -- )  t>  a! ;
 
 val b@   (val) t0
-: b!   t0  ! ;
-: b@+  b@  dup 1+ b! ;
-: !b+  b@+ c! ;
+: b!   ( n-- ) t0  ! ;
+: b@+  ( --n ) b@  dup 1+ b! ;
+: !b+  ( n-- ) b@+ c! ;
+: b>t  ( -- )  b@  >t ;
+: t>b  ( -- )  t>  b! ;
 
-: a>t  a@  >t ;
-: t>a  t>  a! ;
-: b>t  b@  >t ;
-: t>b  t>  b! ;
 : ab>t a>t b>t ;
 : t>ba t>b t>a ;
 
