@@ -56,6 +56,7 @@ vars (vh) !
 : val   add-word (lit) , 0 , (exit) , ;
 : (val) add-word (lit) , here 3 - ->code , (exit) , ;
 
+: rdrop r> drop ; inline
 : tuck swap over ;
 : nip  swap drop ;
 : 2dup over over ;
@@ -150,7 +151,7 @@ var (buf) cell allot
 : (") ( --a ) vhere dup a@ >t a! >in ++
     begin >in @ c@ >r >in ++
         r@ 0= r@ '"' = or
-        if  r> drop 0 !a+
+        if  rdrop 0 !a+
             comp? if (lit) , , a@ (vh) ! then t> a! exit
         then
         r> !a+
@@ -159,9 +160,10 @@ var (buf) cell allot
 : z" (") ; immediate
 : ." (") comp? if (ztype) , exit then ztype ;  immediate
 
+: .word ( de-- ) cell+ 3 + ztype ;
 : words last a! 0 b! 0 >t begin
         a@ dict-end < if0 '(' emit t> . ." words)" exit then
-        a@ cell + 3 + ztype tab
+        a@ .word tab
         t++ b@+ 9 > if cr 0 b! then
         a@ dup cell+ c@ + a!
     again ;
@@ -176,7 +178,7 @@ var (buf) cell allot
 : ->stdout ( fh-- ) 0 ->file ;
 
 (( Strings / Memory ))
-: fill  ( a n c-- ) a>t  >r >r a! r> for r@ !a+  next r> drop t>a ;
+: fill  ( a n c-- ) a>t  >r >r a! r> for r@ !a+  next rdrop t>a ;
 : cmove ( f t n-- ) ab>t >r b! a! r> for @a+ !b+ next t>ba ;
 
 (( Colors ))
@@ -220,7 +222,6 @@ var t0 3 cells allot
 : forget t0 @ (h) !  t0 cell+ @ (l) !  t0 2 cells + @ (vh) ! ;
 
 (( see <x> ))
-: .word ( de-- ) cell+ 3 + ztype ;
 : t0 ( n-- ) ." primitive " .hex/dec ;
 : .prim? ( xt--f ) dup 43 < if t0 1 exit then drop 0 ;
 : t0 ( n-- ) ." lit " $3fffffff and .hex/dec ;
@@ -233,9 +234,9 @@ var t0 3 cells allot
     again
 : next-xt ( de--xt ) >r last t!
     begin
-        t@ dict-end < if0 r> drop here exit then
+        t@ dict-end < if0 rdrop here exit then
         t@ cell+ c@ t@ + b!
-        b@ r@ = if r> drop @tc exit then
+        b@ r@ = if rdrop @tc exit then
         b@ t!
     again ;
 : .lit-jmp? ( b@-- ) 0 b@ < b@ 5 < and if space a@+ code@ .hex/dec then ;
