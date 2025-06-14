@@ -90,7 +90,7 @@ void boot(const char *fn) {
 	if (!fn) { fn = "boot.fth"; }
 	cell fp = fOpen((cell)fn, (cell)"rb");
 	if (fp) {
-		char *tib = (char*)&vars[10000];
+		char *tib = (char*)&mem[10000];
 		fRead((cell)tib, 99999, fp);
 		fClose(fp);
 		outer(tib);

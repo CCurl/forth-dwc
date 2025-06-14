@@ -12,12 +12,12 @@
 #include <stdint.h>
 #include <time.h>
 
-#define VERSION         20250609
-#define CODE_SZ          0x20000
-#define VARS_SZ         0x400000
+#define VERSION         20250613
+#define MEM_SZ          0x400000
 #define STK_SZ                63
 #define NAME_LEN              25
 #define IMMED               0x80
+#define INLINE              0x40
 #define LIT_MASK      0x40000000
 #define LIT_BITS      0x3FFFFFFF
 #define CELL_SZ                4
@@ -39,7 +39,7 @@ extern void inner(ucell start);
 extern void outer(const char *src);
 extern void dwcInit();
 extern cell state, outputFp;
-extern byte vars[];
+extern char mem[];
 
 // dwc-vm.c needs these to be defined
 extern void zType(const char *str);

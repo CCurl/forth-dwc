@@ -1,10 +1,9 @@
 #include "dwc-vm.h"
 
-ucell code[CODE_SZ], dsp, rsp, lsp;
-byte vars[VARS_SZ];
+char mem[MEM_SZ], *toIn, wd[32];
+ucell *code, dsp, rsp, lsp;
 cell dstk[STK_SZ+1], rstk[STK_SZ+1], lstk[STK_SZ+1];
 cell here, last, vhere, base, state, outputFp;
-char *toIn, wd[32];
 DE_T tmpWords[10];
 
 #define PRIMS \
@@ -67,9 +66,12 @@ cell rpop() { return (0 < rsp) ? rstk[rsp--] : 0; }
 void comma(ucell val) { code[here++] = val; }
 int  changeState(int st) { state = st; return st; }
 void addPrim(const char *nm, ucell op) { DE_T *dp = addToDict(nm); if (dp) { dp->xt = op; } }
-void addLit(const char *name, cell val) { addToDict(name); compileNum(val); comma(EXIT); }
 int  lower(int c) { return btwi(c, 'A', 'Z') ? c+32 : c; }
 int  isTmpW(const char *w) { return (w[0]=='t') && btwi(w[1],'0','9') && (w[2]==0) ? 1 : 0; }
+void addLit(const char *name, cell val) {
+	DE_T *dp = addToDict(name); compileNum(val); comma(EXIT);
+	if (btwi(val,0,LIT_BITS)) { dp->fl = INLINE; }
+}
 
 int strLen(const char *str) {
 	int ln = 0;
@@ -150,7 +152,7 @@ DE_T *findInDict(char *w) {
 	}
 	if (isTmpW(w)) { return &tmpWords[w[1]-'0']; }
 	cell cw = last, ln = strLen(w);
-	while (cw < (cell)&vars[VARS_SZ]) {
+	while (cw < (cell)&mem[MEM_SZ]) {
 		DE_T *dp = (DE_T *)cw;
 		if ((dp->ln == ln) && (strEqI(dp->nm, w))) { return dp; }
 		cw += dp->sz;
@@ -212,7 +214,12 @@ void outer(const char *src) {
 			code[11] = EXIT;
 			inner(10);
 		}
-		else { comma(dp->xt); }
+		else {
+			if (dp->fl & INLINE) {
+				ucell x = dp->xt;
+				while (code[x] != EXIT) { comma(code[x++]); }
+			} else { comma(dp->xt); }
+		}
 	}
 	toIn = svIn;
 }
@@ -221,8 +228,9 @@ void outer(const char *src) {
 #define X(op, name, code) { name, op },
 
 void dwcInit() {
-	last = (cell)&vars[VARS_SZ];
-	vhere = (cell)&vars[0];
+	code = (ucell *)&mem[0];
+	last = (cell)&mem[MEM_SZ];
+	vhere = (cell)&mem[0];
 	here = LASTOP+1;
 	base = 10;
 	state = INTERPRET;
@@ -233,8 +241,7 @@ void dwcInit() {
 		{ "(h)",     (cell)&here },    { "(l)",       (cell)&last },
 		{ "(sp)",    (cell)&dsp },     { "(stk)",     (cell)&dstk[0] },
 		{ "state",   (cell)&state },   { "base",      (cell)&base },
-		{ "code",    (cell)&code[0] }, { "vars",      (cell)&vars[0] },
-		{ "code-sz", CODE_SZ },        { "vars-sz",   VARS_SZ },
+		{ "mem",     (cell)&mem[0] },  { "mem-sz",   MEM_SZ },
 		{ ">in",     (cell) & toIn},   { "output-fp", (cell)&outputFp },
 		{ 0, 0 }
 	};

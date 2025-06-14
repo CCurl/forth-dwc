@@ -51,6 +51,12 @@ This gives the operator more flexibility.
 
 **NOTE: When in the COMMENT state, only ')' or '))' changes the state.**
 
+## INLINE words
+
+An INLINE word is somewhat similar to a macro.<br/>
+When a word is INLINE, its definition is copied to the target.<br/>
+When not INLINE, a call is made to the word instead.
+
 ## Temporary words
 
 Words 't0' through 't9' are temporary and are not added to the dictionary.<br/>

@@ -2,24 +2,26 @@
 (  this comment leaves the state in COMPILE  )
 (( this comment leaves the state in INTERPRET ))
 
-: cell 4 ;
 : last (l) @ ;
 : here (h) @ ;
 : vhere (vh) @ ;
+: cell 4 ;
+$40 last cell + 1 + c!
 : cells cell * ;
 : cell+ cell + ;
 : immediate $80 last cell+ 1 + c! ;
+: inline    $40 last cell+ 1 + c! ;
 
 : bye 999 state ! ;
-: (exit)    0 ;
-: (lit)     1 ;
-: (jmp)     2 ;
-: (jmpz)    3 ;
-: (jmpnz)   4 ;
-: (=)      21 ;
-: (ztype)  35 ;
+: (exit)    0 ;  inline
+: (lit)     1 ;  inline
+: (jmp)     2 ;  inline
+: (jmpz)    3 ;  inline
+: (jmpnz)   4 ;  inline
+: (=)      21 ;  inline
+: (ztype)  35 ;  inline
 
-: ->code cells code + ;
+: ->code cells mem + ;
 : code@ ( h--dwc )  ->code @ ;
 : code! ( dwc h-- ) ->code ! ;
 : , here dup 1 + (h) ! code! ;
@@ -45,7 +47,9 @@
 
 : const add-word (lit) , , (exit) , ;
 : var align vhere const ;
-vars vars-sz + const dict-end
+mem mem-sz + const dict-end
+64 1024 * cells mem + const vars
+vars (vh) !
 
 ((  val and (val) define a very efficient variable mechanism  ))
 ((  Usage:  val xx   (val) (xx)   : xx! (xx) ! ;  ))
@@ -107,7 +111,7 @@ val b@   (val) t0
 : ab>t a>t b>t ;
 : t>ba t>b t>a ;
 
-: bl 32 ;
+: bl 32 ; inline
 : space bl emit ;
 : spaces for space next ;
 : tab 9 emit ;
@@ -265,8 +269,8 @@ marker
 : .version version <# # # #. # # #. #s 'v' #c #> ztype ;
 : .banner
     ." dwc " green .version white ."  - Chris Curl" cr
-    yellow ."   Heap: " white vars-sz . ." bytes, used: " vhere vars - . cr
-    yellow ."   Code: " white code-sz (.) ." , used: " here . cr
+    yellow ." Memory: " white mem-sz . ." bytes, used: " vhere vars - . cr
+    yellow ."   Code: " white 64 1024 * (.) ." , used: " here . cr
     yellow ."   Dict: " white dict-end last - .  ." bytes used" cr
     ;
 .banner (( forget ))
