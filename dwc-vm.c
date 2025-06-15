@@ -31,7 +31,7 @@ DE_T tmpWords[10];
 	X(LT,     "<",        t = pop(); TOS = (TOS  < t) ? 1 : 0; ) \
 	X(EQ,     "=",        t = pop(); TOS = (TOS == t) ? 1 : 0; ) \
 	X(GT,     ">",        t = pop(); TOS = (TOS  > t) ? 1 : 0; ) \
-	X(ADDW,   "add-word", addToDict(0); ) \
+	X(PLSTO,  "+!",       t = pop(); n = pop(); *(cell *)t += n; ) \
 	X(FIND,   "'",        push((cell)findInDict((char *)0)); ) \
 	X(FOR,    "for",      lsp += 2; L0 = pop(); L1 = pc; ) \
 	X(NEXT,   "next",     if (0 < --L0) { pc = (ucell)L1; } else { lsp = (1<lsp) ? lsp-2: 0; } ) \
@@ -51,6 +51,7 @@ DE_T tmpWords[10];
 	X(fWRITE, "fwrite",   t = pop(); n = pop(); TOS = fWrite(TOS, n, t); ) \
 	X(MS,     "ms",       ms(pop()); ) \
 	X(TIMER,  "timer",    push(timer()); ) \
+	X(ADDW,   "add-word", addToDict(0); ) \
 	X(LASTOP, "system",   system((char*)pop()); )
 
 #define X(op, name, code) op,

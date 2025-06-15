@@ -2,7 +2,7 @@
 
 DWC is an extremely minimal Forth system that can run stand-alone or be embedded into another program.
 
-DWC is implemented in 3 files, 32 base primitives, 11 system primitives.<br/>
+DWC is implemented in 3 files, 32 base primitives, 12 system primitives.<br/>
 The VM itself is under 250 lines of code.
 
 On Windows, a 32-bit Release build compiles to a 17k executable. <br/>

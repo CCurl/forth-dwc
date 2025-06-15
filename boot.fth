@@ -24,7 +24,7 @@ $40 last cell + 1 + c!
 : ->code cells mem + ;
 : code@ ( h--dwc )  ->code @ ;
 : code! ( dwc h-- ) ->code ! ;
-: , here dup 1 + (h) ! code! ;
+: , here dup 1+ (h) ! code! ;
 
 : comp? ( --n ) state @ 1 = ;
 : if  (jmpz)  , here 0 ,  ; immediate
@@ -41,7 +41,7 @@ $40 last cell + 1 + c!
 
 : aligned ( a1--a2 ) #4 over #3 and - #3 and + ;
 : align ( -- ) vhere aligned (vh) ! ;
-: allot ( n-- ) vhere + (vh) ! ;
+: allot ( n-- ) (vh) +! ;
 : vc, ( c-- ) vhere c! 1 allot ;
 : v,  ( n-- ) vhere ! cell allot ;
 
@@ -68,29 +68,28 @@ vars (vh) !
 : min ( a b-a|b ) 2dup > if swap then drop ;
 : max ( a b-a|b ) 2dup < if swap then drop ;
 : btwi ( n l h--f ) >r over <= swap r> <= and ;
-: +! ( n a-- ) dup >r @ + r> ! ;
 : ++ ( a-- )   1 swap +! ;
 : -- ( a-- )  -1 swap +! ;
 : negate ( n--n' ) 0 swap - ;
 : abs    ( n--n' ) dup 0< if negate then ;
 
 (( a temporary circular stack ))
-var tstk $20 cells allot
+var tstk $20 cells allot inline
 val tsp   (val) t0   : tsp! t0 ! ;
 : tsp++ ( -- )   tsp 1+ $1f and tsp! ;
 : tdrop ( -- )   tsp 1- $1f and tsp! ;
 : t-tos ( --a )  tsp cells tstk + ;
 : t!    ( n-- )  t-tos ! ;
 : t@    ( --n )  t-tos @ ;
+: t++   ( -- )   1 t-tos +! ;
 : >t    ( n-- )  tsp++ t! ;
 : t>    ( --n )  t@ tdrop ;
-: t++   ( -- )   t@ 1+ t! ;
-: t@+   ( --n )  t@ dup 1+ t! ;
+: t@+   ( --n )  t@ t++ ;
 : @tc   ( --n )  t@ @ ;
 
 val a@   (val) t0
-: a!   ( n-- ) t0 ! ;
-: a++  ( -- )  a@  1+ a! ;
+: a!   ( n-- ) t0  ! ;
+: a++  ( -- )  1   t0 +! ;
 : a@+  ( --n ) a@  a++ ;
 : a@+c ( --n ) a@  dup cell+ a! ;
 : @a   ( --n ) a@  c@ ;
@@ -104,7 +103,8 @@ val a@   (val) t0
 
 val b@   (val) t0
 : b!   ( n-- ) t0  ! ;
-: b@+  ( --n ) b@  dup 1+ b! ;
+: b++  ( -- )  1   t0 +! ;
+: b@+  ( --n ) b@  b++ ;
 : !b+  ( n-- ) b@+ c! ;
 : b>t  ( -- )  b@  >t ;
 : t>b  ( -- )  t>  b! ;
@@ -148,11 +148,11 @@ var (buf) cell allot
         (stk) cell+ a! depth for @a+c . next
     then ')' emit ;
 
-: (") ( --a ) vhere dup a@ >t a! >in ++
+: (") ( --a ) vhere dup a>t a! >in ++
     begin >in @ c@ >r >in ++
         r@ 0= r@ '"' = or
         if  rdrop 0 !a+
-            comp? if (lit) , , a@ (vh) ! then t> a! exit
+            comp? if (lit) , , a@ (vh) ! then t>a exit
         then
         r> !a+
     again ;
@@ -210,8 +210,8 @@ var (buf) cell allot
 : .dec   ( n-- )  #1 #10 .nwb ;
 : .hex/dec ( n-- ) dup ." ($" .hex ." /#" .dec ')' emit ;
 
-: aemit ( ch-- )     dup #32 < over #126 > or if drop '.' then emit ;
-: t0    ( addr-- )   a@ >r a! $10 for @a+ aemit next r> a! ;
+: aemit ( ch-- )     dup #32 #126 btwi if0 drop '.' then emit ;
+: t0    ( addr-- )   a>t a! $10 for @a+ aemit next t>a ;
 : dump  ( addr n-- ) swap a! 0 t! for
      t@+ if0 a@ cr .hex ." : " then @a+ .hex space
      t@ $10 = if 0 t! space space a@ $10 - t0 then
@@ -223,7 +223,7 @@ var t0 3 cells allot
 
 (( see <x> ))
 : t0 ( n-- ) ." primitive " .hex/dec ;
-: .prim? ( xt--f ) dup 43 < if t0 1 exit then drop 0 ;
+: .prim? ( xt--f ) dup 44 < if t0 1 exit then drop 0 ;
 : t0 ( n-- ) ." lit " $3fffffff and .hex/dec ;
 : .lit? ( b@--f ) b@ $3fffffff > if b@ t0 1 exit then 0 ;
 : find-xt ( xt--de 1 | 0 ) a@ >r last a!
