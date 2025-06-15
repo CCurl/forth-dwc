@@ -6,11 +6,11 @@
 : here (h) @ ;
 : vhere (vh) @ ;
 : cell 4 ;
-$40 last cell + 1 + c!
+$40 last cell + 1+ c!
 : cells cell * ;
 : cell+ cell + ;
-: immediate $80 last cell+ 1 + c! ;
-: inline    $40 last cell+ 1 + c! ;
+: immediate $80 last cell+ 1+ c! ;
+: inline    $40 last cell+ 1+ c! ;
 
 : bye 999 state ! ;
 : (exit)    0 ;  inline
@@ -174,19 +174,21 @@ var (buf) cell allot
 : ]] (exit) , 0 state ! t> dup >r (h) ! t> (vh) ! ; immediate
 
 (( Files ))
-: fopen-r ( nm--fh ) z" rb" fopen ;
-: fopen-w ( nm--fh ) z" wb" fopen ;
-: ->file ( fh-- ) output-fp ! ;
-: ->stdout ( fh-- ) 0 ->file ;
+: fopen-r  ( nm--fh ) z" rb" fopen ;
+: fopen-w  ( nm--fh ) z" wb" fopen ;
+: ->file   ( fh-- )   output-fp ! ;
+: ->stdout ( fh-- )   0 ->file ;
 
 (( Strings / Memory ))
 : fill  ( a n c-- ) a>t  >r >r a! r> for r@ !a+  next rdrop t>a ;
 : cmove ( f t n-- ) ab>t >r b! a! r> for @a+ !b+ next t>ba ;
-: s-len ( str--n ) a>t 0 a! begin dup c@ if0 drop a@ t>a exit then 1+ a++ again ;
+: s-len ( str--n )  a>t 0 a! begin dup c@ if0 drop a@ t>a exit then 1+ a++ again ;
 : s-end ( str--end ) dup s-len + ;
 : s-cpy ( dst src--dst ) 2dup s-len 1+ cmove ;
 : s-cat ( dst src--dst ) over s-end over s-len 1+ cmove ;
-: p1 vhere 100 + ; : p2 p1 100 + ;
+: s-catc ( dst c--dst )  over s-end dup >r c! 0 r> 1+ c! ;
+: p1 vhere 100 + ;
+: p2 p1 100 + ;
 
 (( Colors ))
 : csi          27 emit '[' emit ;
@@ -229,8 +231,7 @@ var t0 3 cells allot
 : forget t0 @ (h) !  t0 cell+ @ (l) !  t0 2 cells + @ (vh) ! ;
 
 (( see <x> ))
-: t0 ( n-- ) ." primitive " .hex/dec ;
-: .prim? ( xt--f ) dup 45 < if t0 1 exit then drop 0 ;
+: .prim? ( xt--f ) dup 45 < if ." primitive " .hex/dec 1 exit then drop 0 ;
 : t0 ( n-- ) ." lit " $3fffffff and .hex/dec ;
 : .lit? ( b@--f ) b@ $3fffffff > if b@ t0 1 exit then 0 ;
 : find-xt ( xt--de 1 | 0 ) a@ >r last a!

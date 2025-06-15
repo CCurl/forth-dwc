@@ -11,7 +11,7 @@ On a Linux box, it is about 24k.
 **DWC** stands for "dword-code". This is inspired by Tachyon. <br/>
 In a DWC program, each instruction is a DWORD. <br/>
 - If <= the last primitive (44), then it is a primitive.
-- Else, if <= LIT_BITS ($3FFFFFFF), then it is a literal.
+- Else, if >= LIT_BITS ($3FFFFFFF), then it is a literal.
 - Else, it is the XT (code address) of a word in the dictionary.
 
 ## ColorForth influences
@@ -91,7 +91,7 @@ This helps with factoring code and helps keep the dictionary uncluttered.
 |  20       | <        | (a b--f)     | If (NOS<TOS) then TOS = 1 else TOS = 0. Discard NOS. |
 |  21       | =        | (a b--f)     | If (NOS=TOS) then TOS = 1 else TOS = 0. Discard NOS. |
 |  22       | >        | (a b--f)     | If (NOS<TOS) then TOS = 1 else TOS = 0. Discard NOS. |
-|  23       | add-word | (--)         | Add the next word to the dictionary. |
+|  23       | +!       | (n a--)      | Add NOS to the cell at TOS. Discard TOS and NOS. |
 |  24       | '        | (--a)        | Push the address of the next word from the dictionary. |
 |  25       | for      | (n--)        | Start a FOR loop. |
 |  26       | next     | (--)         | End the current FOR loop. |
@@ -111,8 +111,10 @@ This helps with factoring code and helps keep the dictionary uncluttered.
 |  39       | fwrite   | (a sz h--n)  | Write NOS chars from file TOS from a. |
 |  40       | ms       | (n--)        | Wait/sleep for TOS milliseconds |
 |  41       | timer    | (--n)        | Push the current system time. |
-|  42       | system   | (a--)        | Execute system(TOS). Discard TOS. |
+|  42       | add-word | (--)         | Add the next word to the dictionary. |
+|  43       | outer    | (a--)        | Run the outer interpreter on TOS. Discard TOS. |
+|  44       | system   | (a--)        | Execute system(TOS). Discard TOS. |
 
-## Embedding DWC in your C project
+## Embedding DWC in your C or C++ project
 
 See system.c. It embeds the DWC VM into a C program.
