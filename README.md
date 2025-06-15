@@ -2,7 +2,7 @@
 
 DWC is an extremely minimal Forth system that can run stand-alone or be embedded into another program.
 
-DWC is implemented in 3 files, 32 base primitives, 12 system primitives.<br/>
+DWC is implemented in 3 files, 32 base primitives, 13 system primitives.<br/>
 The VM itself is under 250 lines of code.
 
 On Windows, a 32-bit Release build compiles to a 17k executable. <br/>
@@ -10,7 +10,7 @@ On a Linux box, it is about 24k.
 
 **DWC** stands for "dword-code". This is inspired by Tachyon. <br/>
 In a DWC program, each instruction is a DWORD. <br/>
-- If <= the last primitive (42), then it is a primitive.
+- If <= the last primitive (44), then it is a primitive.
 - Else, if <= LIT_BITS ($3FFFFFFF), then it is a literal.
 - Else, it is the XT (code address) of a word in the dictionary.
 

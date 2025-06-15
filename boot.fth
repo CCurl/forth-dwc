@@ -60,9 +60,11 @@ vars (vh) !
 : tuck swap over ;
 : nip  swap drop ;
 : 2dup over over ;
+: 2drop drop drop ;
 : ?dup dup if dup then ;
 : 0= ( n--f ) 0 = ;
 : 0< ( n--f ) 0 < ;
+: 2* dup + ;
 : <= ( a b--f ) > 0= ;
 : >= ( a b--f ) < 0= ;
 : min ( a b-a|b ) 2dup > if swap then drop ;
@@ -180,6 +182,11 @@ var (buf) cell allot
 (( Strings / Memory ))
 : fill  ( a n c-- ) a>t  >r >r a! r> for r@ !a+  next rdrop t>a ;
 : cmove ( f t n-- ) ab>t >r b! a! r> for @a+ !b+ next t>ba ;
+: s-len ( str--n ) a>t 0 a! begin dup c@ if0 drop a@ t>a exit then 1+ a++ again ;
+: s-end ( str--end ) dup s-len + ;
+: s-cpy ( dst src--dst ) 2dup s-len 1+ cmove ;
+: s-cat ( dst src--dst ) over s-end over s-len 1+ cmove ;
+: p1 vhere 100 + ; : p2 p1 100 + ;
 
 (( Colors ))
 : csi          27 emit '[' emit ;
@@ -249,12 +256,6 @@ var t0 3 cells allot
     a@ .hex ':' emit space a@ .word
     a@ next-xt t! @ac a! a@ t@ see-range ;
 
-(( shell words ))
-: lg z" lazygit" system ;
-: ll z" ls -l" system ;
-
-marker
-
 (( Some simple benchmarks ))
 : t0 ztype '(' emit dup (.) ')' emit timer swap ;
 : fib ( n--fib ) 1- dup 2 < if drop 1 exit then dup fib swap 1- fib + ;
@@ -267,11 +268,36 @@ marker
 : bm-all 250 mil bm-while 1000 mil bm-loop 30 bm-fib ;
 : bb 1000 mil bm-loop ;
 
+(( Blocks  ))
+mem 2 mil + const blocks
+: block-sz 2048 ;
+: #blocks 512 ;
+: disk-sz #blocks block-sz * ;
+: disk-read z" blocks.fth" fopen-r dup a!
+    if blocks disk-sz a@ fread drop a@ fclose then ;
+: flush z" blocks.fth" fopen-w dup a!
+    if blocks disk-sz a@ fwrite drop a@ fclose then ;
+: block-addr ( n--a ) block-sz * blocks + ;
+disk-read
+: load ( n-- ) block-addr outer ;
+
+(( Editor  ))
+val off (val) t0 : off! t0 ! ;
+val row (val) t0 : row! t0 ! ;
+val col (val) t0 : col! t0 ! ;
+var ed-buf block-sz allot
+: rows 23 ;   : cols 89 ; (( NB: 23*89 = 2047 ))
+: off->rc off rows /mod row! col! ;
+: rc->off row rows * col + off! ;
+: blk>buf ( n-- ) block-addr ed-buf block-sz cmove ;
+: buf>blk ( n-- ) ed-buf swap block-addr block-sz cmove ;
+: show 1 1 ->cr ed-buf a! rows for cols for @a+ 32 max emit next cr next ;
+
 : .version version <# # # #. # # #. #s 'v' #c #> ztype ;
 : .banner
     ." dwc " green .version white ."  - Chris Curl" cr
-    yellow ." Memory: " white mem-sz . ." bytes, used: " vhere vars - . cr
-    yellow ."   Code: " white 64 1024 * (.) ." , used: " here . cr
-    yellow ."   Dict: " white dict-end last - .  ." bytes used" cr
-    ;
-.banner (( forget ))
+    yellow ."   Memory: " white mem-sz . ." bytes, used: " vhere vars - . cr
+    yellow ."     Code: " white 64 1024 * (.) ." , used: " here . cr
+    yellow ."     Vars: " white vhere vars - .  ." bytes used" cr
+    yellow ."     Dict: " white dict-end last - .  ." bytes used" cr ;
+.banner   marker

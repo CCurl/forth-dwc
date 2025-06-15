@@ -52,6 +52,7 @@ DE_T tmpWords[10];
 	X(MS,     "ms",       ms(pop()); ) \
 	X(TIMER,  "timer",    push(timer()); ) \
 	X(ADDW,   "add-word", addToDict(0); ) \
+	X(OUTER,  "outer",    t = pop(); outer((char*)t); ) \
 	X(LASTOP, "system",   system((char*)pop()); )
 
 #define X(op, name, code) op,
