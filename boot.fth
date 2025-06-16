@@ -56,7 +56,7 @@ vars (vh) !
 : val   add-word (lit) , 0 , (exit) , ;
 : (val) add-word (lit) , here 3 - ->code , (exit) , ;
 
-: rdrop r> drop ; inline
+: rdrop ( -- )  r> drop ; inline
 : tuck swap over ;
 : nip  swap drop ;
 : 2dup over over ;
@@ -177,20 +177,21 @@ var (buf) cell allot
 : fopen-r  ( nm--fh ) z" rb" fopen ;
 : fopen-w  ( nm--fh ) z" wb" fopen ;
 : ->file   ( fh-- )   output-fp ! ;
-: ->stdout ( fh-- )   0 ->file ;
+: ->stdout ( -- )     0 ->file ;
 
 (( Strings / Memory ))
 : fill  ( a n c-- ) a>t  >r >r a! r> for r@ !a+  next rdrop t>a ;
 : cmove ( f t n-- ) ab>t >r b! a! r> for @a+ !b+ next t>ba ;
-: s-len ( str--n )  a>t 0 a! begin dup c@ if0 drop a@ t>a exit then 1+ a++ again ;
+: s-len ( str--n )  0 >r begin dup c@ if0 drop r> exit then r> 1+ >r 1+ again ;
 : s-end ( str--end ) dup s-len + ;
 : s-cpy ( dst src--dst ) 2dup s-len 1+ cmove ;
 : s-cat ( dst src--dst ) over s-end over s-len 1+ cmove ;
 : s-catc ( dst c--dst )  over s-end dup >r c! 0 r> 1+ c! ;
+: s-catn ( dst n--dst )  <# #s #> s-cat ;
 : p1 vhere 100 + ;
 : p2 p1 100 + ;
 
-(( Colors ))
+(( Screen / Colors ))
 : csi          27 emit '[' emit ;
 : ->cr ( c r-- ) csi (.) ';' emit (.) 'H' emit ;
 : ->rc ( r c-- ) swap ->cr ;
@@ -247,7 +248,7 @@ var t0 3 cells allot
         b@ r@ = if rdrop @tc exit then
         b@ t!
     again ;
-: .lit-jmp? ( b@-- ) 0 b@ < b@ 5 < and if space a@+ code@ .hex/dec then ;
+: .lit-jmp? ( b@-- ) b@ (lit) (jmpnz) btwi if space a@+ code@ .hex/dec then ;
 : t2 ( a@-- ) cr a@ .hex4 ." : " a@+ code@ dup .hex4 b!
     space .lit? if exit then
     b@ find-xt if 4 spaces .word then .lit-jmp? ;
@@ -269,7 +270,7 @@ var t0 3 cells allot
 : bm-all 250 mil bm-while 1000 mil bm-loop 30 bm-fib ;
 : bb 1000 mil bm-loop ;
 
-(( Blocks  ))
+(( Blocks ))
 mem 2 mil + const blocks
 : block-sz 2048 ;
 : #blocks 512 ;
@@ -281,6 +282,10 @@ mem 2 mil + const blocks
 : block-addr ( n--a ) block-sz * blocks + ;
 disk-read
 : load ( n-- ) block-addr outer ;
+
+(( Shell ))
+: ls z" ls -l" system ;
+: lg z" lazygit" system ;
 
 (( Editor  ))
 val off (val) t0 : off! t0 ! ;
@@ -294,6 +299,7 @@ var ed-buf block-sz allot
 : buf>blk ( n-- ) ed-buf swap block-addr block-sz cmove ;
 : show 1 1 ->cr ed-buf a! rows for cols for @a+ 32 max emit next cr next ;
 
+(( Startup message ))
 : .version version <# # # #. # # #. #s 'v' #c #> ztype ;
 : .banner
     ." dwc " green .version white ."  - Chris Curl" cr
