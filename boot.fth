@@ -78,6 +78,7 @@ vars (vh) !
 var (neg)    1 allot
 var buf     65 allot
 var (buf) cell allot
+: space 32 emit ;
 : ?neg ( n--n' ) dup 0< dup (neg) c! if negate then ;
 : #c   ( c-- )   (buf) -- (buf) @ c! ;
 : #.   ( -- )    '.' #c ;
@@ -87,9 +88,15 @@ var (buf) cell allot
 : <#   ( n--m )  ?neg buf 65 + (buf) ! 0 #c ;
 : #>   ( n--a )  drop (neg) @ if '-' #c then (buf) @ ;
 : (.)   <# #s #> ztype ;
-: . (.) 32 emit ;
+: . (.) space ;
 : .nwb ( n width base-- )
     base @ >r  base !  >r <# r> 1- for # next #s #> ztype  r> base ! ;
+
+: 0sp 0 (sp) ! ;
+: depth (sp) @ 1- ;
+: .s '(' emit space depth if
+        (stk) cell+ >r depth for r@ @ . r> cell+ >r next
+    then ')' emit rdrop ;
 
 (( a temporary circular stack ))
 var tstk $20 cells allot inline
@@ -105,36 +112,57 @@ val tsp   (val) t0   : tsp! t0 ! ;
 : t@+   ( --n )  t@ t++ ;
 : @tc   ( --n )  t@ @ ;
 
+(( a temporary circular stack ))
+var xstk 32 cells allot inline
+vhere cell - const xstk-end
+var (xsp) cell allot inline
+: xsp  ( --a ) (xsp) @ ;
+: xsp! ( a-- ) (xsp) ! ;
+: xsp++ ( -- )  cell (xsp) +! xsp xstk-end > if xstk xsp! then ;
+: xdrop ( -- )  xsp cell - dup xstk < if drop xstk-end then xsp! ;
+: x!    ( --n )  xsp ! ;
+: x@    ( --n )  xsp @ ;
+: >x    ( n-- )  xsp++ x! ;
+: x>    ( --n )  x@ xdrop ;
+xstk xsp!
+
 val x   (val) t0
 : x!   ( n-- ) t0 ! ;
-: c@x- ( --n )  x dup 1- x! c@ ;
-: c@x+ ( --n )  x dup 1+ x! c@ ;
+: @x+  ( --n )  x @ cell t0 +! ;
+: @x-  ( --n )  x dup cell - x! @ ;
+: c@x+ ( --n )  x c@  1 t0 +! ;
+: c@x- ( --n )  x c@ -1 t0 +! ;
 
 val y   (val) t0
 : y!   ( n-- )  t0 ! ;
 : y++  ( n-- )  1 t0 +! ;
-: c!y- ( n-- )  y dup 1- y! c! ;
+: !y+  ( n-- )  y ! cell t0 +! ! ;
+: !y-  ( n-- )  y dup cell - y! ! ;
 : c!y+ ( n-- )  y c! y++ ;
+: c!y- ( n-- )  y c! -1 t0 +! ;
 
-: cmove  ( f t n-- ) swap y! swap x! for c@x+ c!y+ next ;
-: cmove> ( f t n-- ) tuck + 1- y! tuck + 1- x! for c@x- c!y- next ;
+: move   ( f t n-- ) >r y! x! r> for @x+  !y+  next ;
+: cmove  ( f t n-- ) >r y! x! r> for c@x+ c!y+ next ;
+: move>  ( f t n-- ) >r r@ 1- cells + y! r@ 1- cells + x! r> for @x-  !y-  next ;
+: cmove> ( f t n-- ) >r r@ 1-       + y! r@ 1-       + x! r> for c@x- c!y- next ;
 
 (( a temporary circular stack from Peter Jakacki ))
-var &a 64 cells allot
-&a cell+ const &b
-&b cell+ const &c
-&c cell+ const &d
+var (a) 16 cells allot
+(a) cell+ const (b)
+(b) cell+ const (c)
+(c) cell+ const (d)
 
-: a  ( --n )  &a @ ;
-: b  ( --n )  &b @ ;
-: c  ( --n )  &c @ ;
-: d  ( --n )  &d @ ;
-: a!! ( n-- )  &a ! ;
-: adrop ( -- ) &b &a 60 cmove ;
-: >a   ( --n ) &a &b 60 cmove> a!! ;
+: a  ( --n )  (a) @ ;
+: b  ( --n )  (b) @ ;
+: c  ( --n )  (c) @ ;
+: d  ( --n )  (d) @ ;
+: a!! ( n-- )  (a) ! ;
+: adrop ( -- ) (b) (a) 15 move ;
+: >a ( --n )   (a) (b) 15 move> a!! ;
 : a> ( n-- )  a adrop ;
-: pusha ( <n> cnt-- ) for >a next ;
-: popa ( cnt-- ) for adrop next ;
+: >>a ( <n> cnt-- ) for >a next ;
+: a>> ( cnt-- <n> ) for a> next ;
+: .astk (a) x! 16 for @x+ . next ;
 
 (( ColorForth variables ))
 val a@   (val) t0
@@ -162,8 +190,6 @@ val b@   (val) t0
 : ab>t a>t b>t ;
 : t>ba t>b t>a ;
 
-: bl 32 ; inline
-: space bl emit ;
 : spaces for space next ;
 : tab 9 emit ;
 : cr 13 emit 10 emit ;
@@ -176,12 +202,6 @@ val b@   (val) t0
 : ?dup ( n--n n | 0 ) dup if dup then ;
 : execute ( xt-- ) ?dup if >r then ;
 : ? @ . ;
-
-: 0sp 0 (sp) ! ;
-: depth (sp) @ 1- ;
-: .s '(' emit space depth if
-        (stk) cell+ a! depth for @a+c . next
-    then ')' emit ;
 
 : (") ( --a ) vhere dup a>t a! >in ++
     begin >in @ c@ >r >in ++
