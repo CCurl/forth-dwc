@@ -116,22 +116,20 @@ val tsp   (val) t0   : tsp! t0 ! ;
 var xstk 32 cells allot inline
 vhere cell - const xstk-end
 var (xsp) cell allot inline
-: xsp  ( --a ) (xsp) @ ;
-: xsp! ( a-- ) (xsp) ! ;
+: xsp   ( --a ) (xsp) @ ;
+: xsp!  ( a-- ) (xsp) ! ;
 : xsp++ ( -- )  cell (xsp) +! xsp xstk-end > if xstk xsp! then ;
 : xdrop ( -- )  xsp cell - dup xstk < if drop xstk-end then xsp! ;
-: x!    ( --n )  xsp ! ;
-: x@    ( --n )  xsp @ ;
-: >x    ( n-- )  xsp++ x! ;
-: x>    ( --n )  x@ xdrop ;
+: x!    ( --n ) xsp ! ;
+: x     ( --n ) xsp @ ;
+: >x    ( n-- ) xsp++ x! ;
+: x>    ( --n ) x xdrop ;
+: @x+   ( --n ) x @ cell xsp +! ;
+: @x-   ( --n ) x dup cell - x! @ ;
+: c@x+  ( --n ) x c@  1 xsp +! ;
+: c@x-  ( --n ) x c@ -1 xsp +! ;
+: .xstk xstk 32 for dup @ . cell+ next drop ;
 xstk xsp!
-
-val x   (val) t0
-: x!   ( n-- ) t0 ! ;
-: @x+  ( --n )  x @ cell t0 +! ;
-: @x-  ( --n )  x dup cell - x! @ ;
-: c@x+ ( --n )  x c@  1 t0 +! ;
-: c@x- ( --n )  x c@ -1 t0 +! ;
 
 val y   (val) t0
 : y!   ( n-- )  t0 ! ;
