@@ -75,6 +75,22 @@ vars (vh) !
 : negate ( n--n' ) 0 swap - ;
 : abs    ( n--n' ) dup 0< if negate then ;
 
+var (neg)    1 allot
+var buf     65 allot
+var (buf) cell allot
+: ?neg ( n--n' ) dup 0< dup (neg) c! if negate then ;
+: #c   ( c-- )   (buf) -- (buf) @ c! ;
+: #.   ( -- )    '.' #c ;
+: #n   ( n-- )   '0' + dup '9' > if 7 + then #c ;
+: #    ( n--m )  base @ /mod swap #n ;
+: #s   ( n--0 )  # dup if #s exit then ;
+: <#   ( n--m )  ?neg buf 65 + (buf) ! 0 #c ;
+: #>   ( n--a )  drop (neg) @ if '-' #c then (buf) @ ;
+: (.)   <# #s #> ztype ;
+: . (.) 32 emit ;
+: .nwb ( n width base-- )
+    base @ >r  base !  >r <# r> 1- for # next #s #> ztype  r> base ! ;
+
 (( a temporary circular stack ))
 var tstk $20 cells allot inline
 val tsp   (val) t0   : tsp! t0 ! ;
@@ -89,6 +105,38 @@ val tsp   (val) t0   : tsp! t0 ! ;
 : t@+   ( --n )  t@ t++ ;
 : @tc   ( --n )  t@ @ ;
 
+val x   (val) t0
+: x!   ( n-- ) t0 ! ;
+: c@x- ( --n )  x dup 1- x! c@ ;
+: c@x+ ( --n )  x dup 1+ x! c@ ;
+
+val y   (val) t0
+: y!   ( n-- )  t0 ! ;
+: y++  ( n-- )  1 t0 +! ;
+: c!y- ( n-- )  y dup 1- y! c! ;
+: c!y+ ( n-- )  y c! y++ ;
+
+: cmove  ( f t n-- ) swap y! swap x! for c@x+ c!y+ next ;
+: cmove> ( f t n-- ) tuck + 1- y! tuck + 1- x! for c@x- c!y- next ;
+
+(( a temporary circular stack from Peter Jakacki ))
+var &a 64 cells allot
+&a cell+ const &b
+&b cell+ const &c
+&c cell+ const &d
+
+: a  ( --n )  &a @ ;
+: b  ( --n )  &b @ ;
+: c  ( --n )  &c @ ;
+: d  ( --n )  &d @ ;
+: a!! ( n-- )  &a ! ;
+: adrop ( -- ) &b &a 60 cmove ;
+: >a   ( --n ) &a &b 60 cmove> a!! ;
+: a> ( n-- )  a adrop ;
+: pusha ( <n> cnt-- ) for >a next ;
+: popa ( cnt-- ) for adrop next ;
+
+(( ColorForth variables ))
 val a@   (val) t0
 : a!   ( n-- ) t0  ! ;
 : a++  ( -- )  1   t0 +! ;
@@ -124,24 +172,9 @@ val b@   (val) t0
 : mod /mod drop ;
 : */ ( n m q--n' ) >r * r> / ;
 
-var (neg)    1 allot
-var buf     65 allot
-var (buf) cell allot
-: ?neg ( n--n' ) dup 0< dup (neg) c! if negate then ;
-: #c   ( c-- )   (buf) -- (buf) @ c! ;
-: #.   ( -- )    '.' #c ;
-: #n   ( n-- )   '0' + dup '9' > if 7 + then #c ;
-: #    ( n--m )  base @ /mod swap #n ;
-: #s   ( n--0 )  # dup if #s exit then ;
-: <#   ( n--m )  ?neg buf 65 + (buf) ! 0 #c ;
-: #>   ( n--a )  drop (neg) @ if '-' #c then (buf) @ ;
 
 : ?dup ( n--n n | 0 ) dup if dup then ;
 : execute ( xt-- ) ?dup if >r then ;
-: (.)   <# #s #> ztype ;
-: . (.) space ;
-: .nwb ( n width base-- )
-    base @ >r  base !  >r <# r> 1- for # next #s #> ztype  r> base ! ;
 : ? @ . ;
 
 : 0sp 0 (sp) ! ;
@@ -180,14 +213,13 @@ var (buf) cell allot
 : ->stdout ( -- )     0 ->file ;
 
 (( Strings / Memory ))
-: fill  ( a n c-- ) a>t  >r >r a! r> for r@ !a+  next rdrop t>a ;
-: cmove ( f t n-- ) ab>t >r b! a! r> for @a+ !b+ next t>ba ;
-: s-len ( str--n )  0 >r begin dup c@ if0 drop r> exit then r> 1+ >r 1+ again ;
+: fill  ( a num ch-- ) x! swap y! for x c!y+ next ;
+: s-len ( str--len ) 0 y! x! begin c@x+ if0 y exit then y++ again ;
 : s-end ( str--end ) dup s-len + ;
 : s-cpy ( dst src--dst ) 2dup s-len 1+ cmove ;
 : s-cat ( dst src--dst ) over s-end over s-len 1+ cmove ;
-: s-catc ( dst c--dst )  over s-end dup >r c! 0 r> 1+ c! ;
-: s-catn ( dst n--dst )  <# #s #> s-cat ;
+: s-catc ( dst ch--dst ) over s-end y! c!y+ 0 c!y+ ;
+: s-catn ( dst num--dst ) <# #s #> s-cat ;
 : p1 vhere 100 + ;
 : p2 p1 100 + ;
 
