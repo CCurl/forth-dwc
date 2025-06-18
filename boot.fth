@@ -99,36 +99,37 @@ var (buf) cell allot
     then ')' emit rdrop ;
 
 (( a temporary circular stack ))
-var tstk $20 cells allot inline
+var tstk $10 cells allot inline
 val tsp   (val) t0   : tsp! t0 ! ;
-: tsp++ ( -- )   tsp 1+ $1f and tsp! ;
-: tdrop ( -- )   tsp 1- $1f and tsp! ;
+: tsp++ ( -- )   tsp 1+ $0f and tsp! ;
+: tdrop ( -- )   tsp 1- $0f and tsp! ;
 : t-tos ( --a )  tsp cells tstk + ;
 : t!    ( n-- )  t-tos ! ;
-: t@    ( --n )  t-tos @ ;
+: t     ( --n )  t-tos @ ;
 : t++   ( -- )   1 t-tos +! ;
 : >t    ( n-- )  tsp++ t! ;
-: t>    ( --n )  t@ tdrop ;
-: t@+   ( --n )  t@ t++ ;
-: @tc   ( --n )  t@ @ ;
+: t>    ( --n )  t tdrop ;
+: t+    ( --n )  t t++ ;
+: @t    ( --n )  t @ ;
+: .tstk $10 for t> . next ;
 
 (( a temporary circular stack ))
-var xstk 32 cells allot inline
+var xstk $10 cells allot inline
 vhere cell - const xstk-end
 var (xsp) cell allot inline
 : xsp   ( --a ) (xsp) @ ;
 : xsp!  ( a-- ) (xsp) ! ;
-: xsp++ ( -- )  cell (xsp) +! xsp xstk-end > if xstk xsp! then ;
-: xdrop ( -- )  xsp cell - dup xstk < if drop xstk-end then xsp! ;
 : x!    ( --n ) xsp ! ;
 : x     ( --n ) xsp @ ;
+: xsp++ ( -- )  cell (xsp) +! xsp xstk-end > if xstk xsp! then ;
+: xdrop ( -- )  xsp cell - dup xstk < if drop xstk-end then xsp! ;
 : >x    ( n-- ) xsp++ x! ;
 : x>    ( --n ) x xdrop ;
 : @x+   ( --n ) x @ cell xsp +! ;
 : @x-   ( --n ) x dup cell - x! @ ;
 : c@x+  ( --n ) x c@  1 xsp +! ;
 : c@x-  ( --n ) x c@ -1 xsp +! ;
-: .xstk xstk 32 for dup @ . cell+ next drop ;
+: .xstk $10 for x> . next ;
 xstk xsp!
 
 val y   (val) t0
@@ -144,46 +145,40 @@ val y   (val) t0
 : move>  ( f t n-- ) >r r@ 1- cells + y! r@ 1- cells + x! r> for @x-  !y-  next ;
 : cmove> ( f t n-- ) >r r@ 1-       + y! r@ 1-       + x! r> for c@x- c!y- next ;
 
-(( a temporary circular stack from Peter Jakacki ))
-var (a) 16 cells allot
-(a) cell+ const (b)
-(b) cell+ const (c)
-(c) cell+ const (d)
+(( an auxiliary circular stack from Peter Jakacki ))
+var (r1) $10 cells allot
+(r1) cell+ const (r2)
+(r2) cell+ const (r3)
+(r3) cell+ const (r4)
 
-: a  ( --n )  (a) @ ;
-: b  ( --n )  (b) @ ;
-: c  ( --n )  (c) @ ;
-: d  ( --n )  (d) @ ;
-: a!! ( n-- )  (a) ! ;
-: adrop ( -- ) (b) (a) 15 move ;
-: >a ( --n )   (a) (b) 15 move> a!! ;
-: a> ( n-- )  a adrop ;
-: >>a ( <n> cnt-- ) for >a next ;
-: a>> ( cnt-- <n> ) for a> next ;
-: .astk (a) x! 16 for @x+ . next ;
+: r1 ( --n ) (r1) @ ;
+: r2 ( --n ) (r2) @ ;
+: r3 ( --n ) (r3) @ ;
+: r4 ( --n ) (r4) @ ;
+: s1 ( n-- ) (r1) ! ;
+: ldrop ( -- ) (r2) (r1) $0f move ;
+: >l ( --n )   (r1) (r2) $0f move> s1 ;
+: l> ( n-- )  r1 ldrop ;
+: n>l ( <n> cnt-- ) for >l next ;
+: l>n ( cnt--<n> )  for l> next ;
+: .lstk (r1) >x $10 for @x+ . next xdrop ;
 
 (( ColorForth variables ))
-val a@   (val) t0
-: a!   ( n-- ) t0  ! ;
-: a++  ( -- )  1   t0 +! ;
-: a@+  ( --n ) a@  a++ ;
-: a@+c ( --n ) a@  dup cell+ a! ;
-: @a   ( --n ) a@  c@ ;
-: @a+  ( --n ) a@+ c@ ;
-: @ac  ( --n ) a@   @ ;
-: @a+c ( --n ) a@+c @ ;
-: !a+  ( n-- ) a@+ c! ;
-: !a   ( n-- ) a@  c! ;
-: a>t  ( -- )  a@  >t ;
-: t>a  ( -- )  t>  a! ;
+val a  (val) t0
+: a!   ( n-- ) t0 ! ;
+: a+   ( --n ) a 1 t0 +! ;
+: @a   ( --n ) a  @ ;
+: c@a+ ( --n ) a+ c@ ;
+: c!a+ ( n-- ) a+ c! ;
+: a>t  ( -- )  a  >t ;
+: t>a  ( -- )  t> a! ;
 
-val b@   (val) t0
-: b!   ( n-- ) t0  ! ;
-: b++  ( -- )  1   t0 +! ;
-: b@+  ( --n ) b@  b++ ;
-: !b+  ( n-- ) b@+ c! ;
-: b>t  ( -- )  b@  >t ;
-: t>b  ( -- )  t>  b! ;
+val b   (val) t0
+: b!  ( n-- ) t0  ! ;
+: b+  ( --n ) b 1 t0 +! ;
+: !b+ ( n-- ) b+ c! ;
+: b>t ( -- )  b  >t ;
+: t>b ( -- )  t> b! ;
 
 : ab>t a>t b>t ;
 : t>ba t>b t>a ;
@@ -204,10 +199,10 @@ val b@   (val) t0
 : (") ( --a ) vhere dup a>t a! >in ++
     begin >in @ c@ >r >in ++
         r@ 0= r@ '"' = or
-        if  rdrop 0 !a+
-            comp? if (lit) , , a@ (vh) ! then t>a exit
+        if  rdrop 0 c!a+
+            comp? if (lit) , , a (vh) ! then t>a exit
         then
-        r> !a+
+        r> c!a+
     again ;
 
 : z" (") ; immediate
@@ -215,10 +210,10 @@ val b@   (val) t0
 
 : .word ( de-- ) cell+ 3 + ztype ;
 : words last a! 0 b! 0 >t begin
-        a@ dict-end < if0 '(' emit t> . ." words)" exit then
-        a@ .word tab
-        t++ b@+ 9 > if cr 0 b! then
-        a@ dup cell+ c@ + a!
+        a dict-end < if0 '(' emit t> . ." words)" exit then
+        a .word tab
+        t++ b+ 9 > if cr 0 b! then
+        a dup cell+ c@ + a!
     again ;
 
 : [[ vhere >t here >t 1 state ! ;
@@ -271,10 +266,10 @@ val b@   (val) t0
 : .hex/dec ( n-- ) dup ." ($" .hex ." /#" .dec ')' emit ;
 
 : aemit ( ch-- )     dup #32 #126 btwi if0 drop '.' then emit ;
-: t0    ( addr-- )   a>t a! $10 for @a+ aemit next t>a ;
+: t0    ( addr-- )   a>t a! $10 for c@a+ aemit next t>a ;
 : dump  ( addr n-- ) swap a! 0 t! for
-     t@+ if0 a@ cr .hex ." : " then @a+ .hex space
-     t@ $10 = if 0 t! space space a@ $10 - t0 then
+     t+ if0 a cr .hex ." : " then c@a+ .hex space
+     t $10 = if 0 t! space space a $10 - t0 then
    next ;
 
 var t0 3 cells allot
@@ -284,29 +279,29 @@ var t0 3 cells allot
 (( see <x> ))
 : .prim? ( xt--f ) dup 45 < if ." primitive " .hex/dec 1 exit then drop 0 ;
 : t0 ( n-- ) ." lit " $3fffffff and .hex/dec ;
-: .lit? ( b@--f ) b@ $3fffffff > if b@ t0 1 exit then 0 ;
-: find-xt ( xt--de 1 | 0 ) a@ >r last a!
+: .lit? ( b--f ) b $3fffffff > if b t0 1 exit then 0 ;
+: find-xt ( xt--de 1 | 0 ) a >r last a!
     begin
-        a@ dict-end < if0 r> a! drop 0 exit then
-        @ac over = if drop a@ 1 r> a! exit then
-        a@ dup cell+ c@ + a!
+        a dict-end < if0 r> a! drop 0 exit then
+         @a  over = if drop a 1 r> a! exit then
+        a dup cell+ c@ + a!
     again
 : next-xt ( de--xt ) >r last t!
     begin
-        t@ dict-end < if0 rdrop here exit then
-        t@ cell+ c@ t@ + b!
-        b@ r@ = if rdrop @tc exit then
-        b@ t!
+        t dict-end < if0 rdrop here exit then
+        t cell+ c@ t + b!
+        b r@ = if rdrop @t exit then
+        b t!
     again ;
-: .lit-jmp? ( b@-- ) b@ (lit) (jmpnz) btwi if space a@+ code@ .hex/dec then ;
-: t2 ( a@-- ) cr a@ .hex4 ." : " a@+ code@ dup .hex4 b!
+: .lit-jmp? ( b-- ) b (lit) (jmpnz) btwi if space a+ code@ .hex/dec then ;
+: t2 ( a@-- ) cr a .hex4 ." : " a+ code@ dup .hex4 b!
     space .lit? if exit then
-    b@ find-xt if 4 spaces .word then .lit-jmp? ;
-: see-range ( f t-- ) t! a! begin a@ t@ >= if exit then t2 again ;
+    b find-xt if 4 spaces .word then .lit-jmp? ;
+: see-range ( f t-- ) t! a! begin a t >= if exit then t2 again ;
 : see ' ?dup if0 ." -not found-" exit then
-    a! @ac .prim? if exit then
-    a@ .hex ':' emit space a@ .word
-    a@ next-xt t! @ac a! a@ t@ see-range ;
+    a!  @a  .prim? if exit then
+    a .hex ':' emit space a .word
+    a next-xt t!  @a  a! a t see-range ;
 
 (( Some simple benchmarks ))
 : t0 ztype '(' emit dup (.) ')' emit timer swap ;
@@ -315,7 +310,7 @@ var t0 3 cells allot
 : bm-while z" while " t0 begin 1- dup while drop elapsed ;
 : bm-loop  z" loop "  t0 for next elapsed ;
 : bm-fib   z" fib"    t0 fib space (.) elapsed ;
-: bm-fibs 1 b! for b@+ bm-fib next ;
+: bm-fibs 1 b! for b+ bm-fib next ;
 : mil #1000 dup * * ;
 : bm-all 250 mil bm-while 1000 mil bm-loop 30 bm-fib ;
 : bb 1000 mil bm-loop ;
@@ -326,9 +321,9 @@ mem 2 mil + const blocks
 : #blocks 512 ;
 : disk-sz #blocks block-sz * ;
 : disk-read z" blocks.fth" fopen-r dup a!
-    if blocks disk-sz a@ fread drop a@ fclose then ;
+    if blocks disk-sz a fread drop a fclose then ;
 : flush z" blocks.fth" fopen-w dup a!
-    if blocks disk-sz a@ fwrite drop a@ fclose then ;
+    if blocks disk-sz a fwrite drop a fclose then ;
 : block-addr ( n--a ) block-sz * blocks + ;
 disk-read
 : load ( n-- ) block-addr outer ;
@@ -347,7 +342,7 @@ var ed-buf block-sz allot
 : rc->off row rows * col + off! ;
 : blk>buf ( n-- ) block-addr ed-buf block-sz cmove ;
 : buf>blk ( n-- ) ed-buf swap block-addr block-sz cmove ;
-: show 1 1 ->cr ed-buf a! rows for cols for @a+ 32 max emit next cr next ;
+: show 1 1 ->cr ed-buf a! rows for cols for c@a+ 32 max emit next cr next ;
 
 (( Startup message ))
 : .version version <# # # #. # # #. #s 'v' #c #> ztype ;
