@@ -5,7 +5,7 @@
 : last (l) @ ;
 : here (h) @ ;
 : vhere (vh) @ ;
-: cell 4 ;
+: cell  4 ;
 $40 last cell + 1+ c!
 : cells cell * ;
 : cell+ cell + ;
@@ -74,11 +74,12 @@ vars (vh) !
 : -- ( a-- )  -1 swap +! ;
 : negate ( n--n' ) 0 swap - ;
 : abs    ( n--n' ) dup 0< if negate then ;
+: space 32 emit ;
+: cr 13 emit 10 emit ;
 
 var (neg)    1 allot
 var buf     65 allot
 var (buf) cell allot
-: space 32 emit ;
 : ?neg ( n--n' ) dup 0< dup (neg) c! if negate then ;
 : #c   ( c-- )   (buf) -- (buf) @ c! ;
 : #.   ( -- )    '.' #c ;
@@ -98,70 +99,64 @@ var (buf) cell allot
         (stk) cell+ >r depth for r@ @ . r> cell+ >r next
     then ')' emit rdrop ;
 
-(( a temporary circular stack ))
-var tstk $10 cells allot inline
-val tsp   (val) t0   : tsp! t0 ! ;
-: tsp++ ( -- )   tsp 1+ $0f and tsp! ;
-: tdrop ( -- )   tsp 1- $0f and tsp! ;
-: t-tos ( --a )  tsp cells tstk + ;
-: t!    ( n-- )  t-tos ! ;
-: t     ( --n )  t-tos @ ;
-: t++   ( -- )   1 t-tos +! ;
-: >t    ( n-- )  tsp++ t! ;
-: t>    ( --n )  t tdrop ;
-: t+    ( --n )  t t++ ;
-: @t    ( --n )  t @ ;
+(( a circular stack ))
+(( t0: stack start, t9: stack end ))
+(( t5: stack pointer address ))
+var t0 $10 cells allot inline
+vhere cell - const t9
+val tsp  (val)  t5
+: tsp!  ( n-- ) t5 ! ;
+: tsp++ ( -- )  cell t5 +! tsp t9 > if t0 tsp! then ;
+: tdrop ( -- )  -4   t5 +! tsp t0 < if t9 tsp! then ;
+: t!    ( n-- ) tsp ! ;
+: t     ( --n ) tsp @ ;
+: t++   ( -- )  1 tsp +! ;
+: >t    ( n-- ) tsp++ t! ;
+: t>    ( --n ) t tdrop ;
+: t+    ( --n ) t t++ ;
+: @t    ( --n ) t @ ;
 : .tstk $10 for t> . next ;
+t0 tsp!
 
-(( a temporary circular stack ))
-var xstk $10 cells allot inline
-vhere cell - const xstk-end
-var (xsp) cell allot inline
-: xsp   ( --a ) (xsp) @ ;
-: xsp!  ( a-- ) (xsp) ! ;
-: x!    ( --n ) xsp ! ;
-: x     ( --n ) xsp @ ;
-: xsp++ ( -- )  cell (xsp) +! xsp xstk-end > if xstk xsp! then ;
-: xdrop ( -- )  xsp cell - dup xstk < if drop xstk-end then xsp! ;
-: >x    ( n-- ) xsp++ x! ;
-: x>    ( --n ) x xdrop ;
-: @x+   ( --n ) x @ cell xsp +! ;
-: @x-   ( --n ) x dup cell - x! @ ;
-: c@x+  ( --n ) x c@  1 xsp +! ;
-: c@x-  ( --n ) x c@ -1 xsp +! ;
-: .xstk $10 for x> . next ;
-xstk xsp!
+val x    (val)  t0
+: x!    ( n-- ) t0 ! ;
+: x++   ( -- )  1 t0 +! ;
+: @x+   ( --n ) x  @ cell t0 +! ;
+: @x-   ( --n ) x  @ -4   t0 +! ;
+: c@x+  ( --c ) x c@ x++ ;
+: c@x-  ( --c ) x c@ -1 t0 +! ;
 
-val y   (val) t0
-: y!   ( n-- )  t0 ! ;
-: y++  ( n-- )  1 t0 +! ;
-: !y+  ( n-- )  y ! cell t0 +! ! ;
-: !y-  ( n-- )  y dup cell - y! ! ;
-: c!y+ ( n-- )  y c! y++ ;
-: c!y- ( n-- )  y c! -1 t0 +! ;
+val y   (val)  t0
+: y!   ( n-- ) t0 ! ;
+: y++  ( -- )  1 t0 +! ;
+: !y+  ( n-- ) y  ! cell t0 +! ;
+: !y-  ( n-- ) y  ! -4   t0 +! ;
+: c!y+ ( c-- ) y c! y++ ;
+: c!y- ( c-- ) y c! -1 t0 +! ;
 
-: move   ( f t n-- ) >r y! x! r> for @x+  !y+  next ;
+: move   ( f t n-- ) >r y! x! r> for  @x+  !y+ next ;
 : cmove  ( f t n-- ) >r y! x! r> for c@x+ c!y+ next ;
-: move>  ( f t n-- ) >r r@ 1- cells + y! r@ 1- cells + x! r> for @x-  !y-  next ;
+: move>  ( f t n-- ) >r r@ 1- cells + y! r@ 1- cells + x! r> for  @x-  !y- next ;
 : cmove> ( f t n-- ) >r r@ 1-       + y! r@ 1-       + x! r> for c@x- c!y- next ;
 
-(( an auxiliary circular stack from Peter Jakacki ))
-var (r1) $10 cells allot
-(r1) cell+ const (r2)
-(r2) cell+ const (r3)
-(r3) cell+ const (r4)
+(( a somewhat circular stack inspired by Peter Jakacki ))
+(( this provides efficient access to the top 3 entries, r1-r3 ))
+(( but pushing and popping entries is fairly expensive ))
+var t1 $10 cells allot
+  t1 cell+ const t2
+  t2 cell+ const t3
 
-: r1 ( --n ) (r1) @ ;
-: r2 ( --n ) (r2) @ ;
-: r3 ( --n ) (r3) @ ;
-: r4 ( --n ) (r4) @ ;
-: s1 ( n-- ) (r1) ! ;
-: ldrop ( -- ) (r2) (r1) $0f move ;
-: >l ( --n )   (r1) (r2) $0f move> s1 ;
-: l> ( n-- )  r1 ldrop ;
-: n>l ( <n> cnt-- ) for >l next ;
-: l>n ( cnt--<n> )  for l> next ;
-: .lstk (r1) >x $10 for @x+ . next xdrop ;
+: r1   ( --n ) t1 @ ;
+: r2   ( --n ) t2 @ ;
+: r3   ( --n ) t3 @ ;
+: r1!  ( n-- ) t1 ! ;
+: @r1+ ( n-- ) r1 @ cell t1 +! ;
+: pdrop ( -- ) t2 t1 $0f move ;
+: >p  ( n-- )  t1 t2 $0f move> r1! ;
+: p>  ( --n )  r1 pdrop ;
+: n-ppush ( <n> cnt-- ) for >p next ;
+: n-pdrop ( n-- ) for pdrop next ;
+: .pstk t1 >p $10 for @r1+ . next pdrop ;
 
 (( ColorForth variables ))
 val a  (val) t0
@@ -170,37 +165,26 @@ val a  (val) t0
 : @a   ( --n ) a  @ ;
 : c@a+ ( --n ) a+ c@ ;
 : c!a+ ( n-- ) a+ c! ;
-: a>t  ( -- )  a  >t ;
-: t>a  ( -- )  t> a! ;
+: >a   ( -- )  a >t a! ;
+: adrop ( -- ) t> a! ;
 
-val b   (val) t0
-: b!  ( n-- ) t0  ! ;
-: b+  ( --n ) b 1 t0 +! ;
-: !b+ ( n-- ) b+ c! ;
-: b>t ( -- )  b  >t ;
-: t>b ( -- )  t> b! ;
-
-: ab>t a>t b>t ;
-: t>ba t>b t>a ;
+val b    (val) t0
+: b!   ( n-- ) t0  ! ;
+: b+   ( --n ) b 1 t0 +! ;
 
 : spaces for space next ;
 : tab 9 emit ;
-: cr 13 emit 10 emit ;
-
 : /   /mod nip  ;
 : mod /mod drop ;
 : */ ( n m q--n' ) >r * r> / ;
-
-
 : ?dup ( n--n n | 0 ) dup if dup then ;
 : execute ( xt-- ) ?dup if >r then ;
-: ? @ . ;
 
-: (") ( --a ) vhere dup a>t a! >in ++
+: (") ( --a ) vhere dup >a >in ++
     begin >in @ c@ >r >in ++
         r@ 0= r@ '"' = or
         if  rdrop 0 c!a+
-            comp? if (lit) , , a (vh) ! then t>a exit
+            comp? if (lit) , , a (vh) ! then adrop exit
         then
         r> c!a+
     again ;
@@ -216,7 +200,7 @@ val b   (val) t0
         a dup cell+ c@ + a!
     again ;
 
-: [[ vhere >t here >t 1 state ! ;
+: [[ vhere >t  here >t  1 state ! ;
 : ]] (exit) , 0 state ! t> dup >r (h) ! t> (vh) ! ; immediate
 
 (( Files ))
@@ -266,7 +250,7 @@ val b   (val) t0
 : .hex/dec ( n-- ) dup ." ($" .hex ." /#" .dec ')' emit ;
 
 : aemit ( ch-- )     dup #32 #126 btwi if0 drop '.' then emit ;
-: t0    ( addr-- )   a>t a! $10 for c@a+ aemit next t>a ;
+: t0    ( addr-- )   >a $10 for c@a+ aemit next adrop ;
 : dump  ( addr n-- ) swap a! 0 t! for
      t+ if0 a cr .hex ." : " then c@a+ .hex space
      t $10 = if 0 t! space space a $10 - t0 then
@@ -283,7 +267,7 @@ var t0 3 cells allot
 : find-xt ( xt--de 1 | 0 ) a >r last a!
     begin
         a dict-end < if0 r> a! drop 0 exit then
-         @a  over = if drop a 1 r> a! exit then
+         @a over = if drop a 1 r> a! exit then
         a dup cell+ c@ + a!
     again
 : next-xt ( de--xt ) >r last t!
@@ -328,9 +312,7 @@ mem 2 mil + const blocks
 disk-read
 : load ( n-- ) block-addr outer ;
 
-(( Shell ))
-: ls z" ls -l" system ;
-: lg z" lazygit" system ;
+0 load
 
 (( Editor  ))
 val off (val) t0 : off! t0 ! ;
@@ -340,8 +322,8 @@ var ed-buf block-sz allot
 : rows 23 ;   : cols 89 ; (( NB: 23*89 = 2047 ))
 : off->rc off rows /mod row! col! ;
 : rc->off row rows * col + off! ;
-: blk>buf ( n-- ) block-addr ed-buf block-sz cmove ;
-: buf>blk ( n-- ) ed-buf swap block-addr block-sz cmove ;
+: blk>buf ( n-- ) block-addr ed-buf block-sz cell / move ;
+: buf>blk ( n-- ) ed-buf swap block-addr block-sz cell / move ;
 : show 1 1 ->cr ed-buf a! rows for cols for c@a+ 32 max emit next cr next ;
 
 (( Startup message ))
