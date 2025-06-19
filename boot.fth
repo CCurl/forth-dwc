@@ -2,35 +2,34 @@
 (  this comment leaves the state in COMPILE  )
 (( this comment leaves the state in INTERPRET ))
 
-: cell  4 ;
-: wc-sz 4 ;
 : last (l) @ ;
 : here (h) @ ;
 : vhere (vh) @ ;
-: immediate $80 last wc-sz + 1+ c! ;
+: cell  4 ;
+$40 last cell + 1+ c!
+: cells cell * ;
+: cell+ cell + ;
+: immediate $80 last cell+ 1+ c! ;
+: inline    $40 last cell+ 1+ c! ;
 
 : bye 999 state ! ;
-: (exit)    0 ; 
-: (lit)     1 ;
-: (jmp)     2 ;
-: (jmpz)    3 ;
-: (jmpnz)   4 ;
-: (=)      22 ;
-: (ztype)  25 ;
+: (exit)    0 ;  inline
+: (lit)     1 ;  inline
+: (jmp)     2 ;  inline
+: (jmpz)    3 ;  inline
+: (jmpnz)   4 ;  inline
+: (=)      21 ;  inline
+: (ztype)  35 ;  inline
 
-: ->code wc-sz * code + ;
-: , here dup 1 + (h) ! ->code ! ;
-: dict-end vars vars-sz + ;
-
-: cell+ cell + ;
-: cells cell * ;
-: 1- 1 - ;
-: 2* 2 * ;
+: ->code cells mem + ;
+: code@ ( h--dwc )  ->code @ ;
+: code! ( dwc h-- ) ->code ! ;
+: , here dup 1+ (h) ! code! ;
 
 : comp? ( --n ) state @ 1 = ;
 : if  (jmpz)  , here 0 ,  ; immediate
 : if0 (jmpnz) , here 0 ,  ; immediate
-: then here swap ->code ! ; immediate
+: then here swap code! ; immediate
 : begin here ; immediate
 : again (jmp)   , , ; immediate
 : while (jmpnz) , , ; immediate
@@ -40,62 +39,46 @@
 : hex     $10 base ! ;
 : binary  %10 base ! ;
 
-: aligned ( a1--a2 ) dup #3 and if0 exit then 1+ aligned ;
+: aligned ( a1--a2 ) #4 over #3 and - #3 and + ;
 : align ( -- ) vhere aligned (vh) ! ;
-: allot ( n-- ) vhere + (vh) ! ;
+: allot ( n-- ) (vh) +! ;
 : vc, ( c-- ) vhere c! 1 allot ;
 : v,  ( n-- ) vhere ! cell allot ;
 
 : const add-word (lit) , , (exit) , ;
-: var vhere const ;
+: var align vhere const ;
+mem mem-sz + const dict-end
+64 1024 * cells mem + const vars
+vars (vh) !
 
 ((  val and (val) define a very efficient variable mechanism  ))
 ((  Usage:  val xx   (val) (xx)   : xx! (xx) ! ;  ))
 : val   add-word (lit) , 0 , (exit) , ;
 : (val) add-word (lit) , here 3 - ->code , (exit) , ;
 
-: over >r dup r> swap ;
+: rdrop ( -- )  r> drop ; inline
 : tuck swap over ;
 : nip  swap drop ;
+: 2dup over over ;
+: 2drop drop drop ;
 : ?dup dup if dup then ;
-: 0= ( n -- f ) 0 = ;
-: 0< ( n -- f ) 0 < ;
-: +! ( n a-- )  dup >r @ + r> ! ;
-: ++ ( a-- )     1 swap +! ;
-: -- ( a-- )    -1 swap +! ;
-
-val a (val) (a)
-: a!   (a) ! ;
-: a+   a dup 1+ a! ;
-: a+c  a dup cell+ a! ;
-: @a   a c@ ;
-: @a+  a+ c@ ;
-: @ac  a @ ;
-: @a+c a+c @ ;
-: !a+  a+ c! ;
-: !a   a  c! ;
-
-val b (val) (b)
-: b! (b) ! ;
-: b+ b dup 1+ b! ;
-
-val t (val) (t)
-: t! (t) ! ;
-: t+ (t) @ dup 1+ t! ;
-
-: bl 32 ;
-: space bl emit ;
-: tab 9 emit ;
+: 0= ( n--f ) 0 = ;
+: 0< ( n--f ) 0 < ;
+: 2* dup + ;
+: <= ( a b--f ) > 0= ;
+: >= ( a b--f ) < 0= ;
+: min ( a b-a|b ) 2dup > if swap then drop ;
+: max ( a b-a|b ) 2dup < if swap then drop ;
+: btwi ( n l h--f ) >r over <= swap r> <= and ;
+: ++ ( a-- )   1 swap +! ;
+: -- ( a-- )  -1 swap +! ;
+: negate ( n--n' ) 0 swap - ;
+: abs    ( n--n' ) dup 0< if negate then ;
+: space 32 emit ;
 : cr 13 emit 10 emit ;
 
-: negate 0 swap - ;
-: abs dup 0< if negate then ;
-
-: /   /mod nip  ;
-: mod /mod drop ;
-
 var (neg)    1 allot
-var buf     65 allot align
+var buf     65 allot
 var (buf) cell allot
 : ?neg ( n--n' ) dup 0< dup (neg) c! if negate then ;
 : #c   ( c-- )   (buf) -- (buf) @ c! ;
@@ -105,70 +88,250 @@ var (buf) cell allot
 : #s   ( n--0 )  # dup if #s exit then ;
 : <#   ( n--m )  ?neg buf 65 + (buf) ! 0 #c ;
 : #>   ( n--a )  drop (neg) @ if '-' #c then (buf) @ ;
-
-: ?dup ( n--n n | 0 ) dup if dup then ;
-: execute ( xt-- ) ?dup if >R then ;
 : (.)   <# #s #> ztype ;
 : . (.) space ;
-: ? @ . ;
+: .nwb ( n width base-- )
+    base @ >r  base !  >r <# r> 1- for # next #s #> ztype  r> base ! ;
 
 : 0sp 0 (sp) ! ;
 : depth (sp) @ 1- ;
 : .s '(' emit space depth if
-        (stk) cell+ a! depth for @a+c . next 
-    then ')' emit ;
+        (stk) cell+ >r depth for r@ @ . r> cell+ >r next
+    then ')' emit rdrop ;
 
-: (") ( --a ) vhere dup a! >in ++
+(( a circular stack ))
+(( t0: stack start, t9: stack end ))
+(( t5: stack pointer address ))
+var t0 $10 cells allot inline
+vhere cell - const t9
+val tsp  (val)  t5
+: tsp!  ( n-- ) t5 ! ;
+: tsp++ ( -- )  cell t5 +! tsp t9 > if t0 tsp! then ;
+: tdrop ( -- )  -4   t5 +! tsp t0 < if t9 tsp! then ;
+: t!    ( n-- ) tsp ! ;
+: t     ( --n ) tsp @ ;
+: t++   ( -- )  1 tsp +! ;
+: >t    ( n-- ) tsp++ t! ;
+: t>    ( --n ) t tdrop ;
+: t+    ( --n ) t t++ ;
+: @t    ( --n ) t @ ;
+: .tstk $10 for t> . next ;
+t0 tsp!
+
+val x    (val)  t0
+: x!    ( n-- ) t0 ! ;
+: x++   ( -- )  1 t0 +! ;
+: @x+   ( --n ) x  @ cell t0 +! ;
+: @x-   ( --n ) x  @ -4   t0 +! ;
+: c@x+  ( --c ) x c@ x++ ;
+: c@x-  ( --c ) x c@ -1 t0 +! ;
+
+val y   (val)  t0
+: y!   ( n-- ) t0 ! ;
+: y++  ( -- )  1 t0 +! ;
+: !y+  ( n-- ) y  ! cell t0 +! ;
+: !y-  ( n-- ) y  ! -4   t0 +! ;
+: c!y+ ( c-- ) y c! y++ ;
+: c!y- ( c-- ) y c! -1 t0 +! ;
+
+: move   ( f t n-- ) >r y! x! r> for  @x+  !y+ next ;
+: cmove  ( f t n-- ) >r y! x! r> for c@x+ c!y+ next ;
+: move>  ( f t n-- ) >r r@ 1- cells + y! r@ 1- cells + x! r> for  @x-  !y- next ;
+: cmove> ( f t n-- ) >r r@ 1-       + y! r@ 1-       + x! r> for c@x- c!y- next ;
+
+(( a somewhat circular stack inspired by Peter Jakacki ))
+(( this provides efficient access to the top 3 entries, r1-r3 ))
+(( but pushing and popping entries is fairly expensive ))
+var t1 $10 cells allot
+  t1 cell+ const t2
+  t2 cell+ const t3
+
+: r1   ( --n ) t1 @ ;
+: r2   ( --n ) t2 @ ;
+: r3   ( --n ) t3 @ ;
+: r1!  ( n-- ) t1 ! ;
+: @r1+ ( n-- ) r1 @ cell t1 +! ;
+: pdrop ( -- ) t2 t1 $0f move ;
+: >p  ( n-- )  t1 t2 $0f move> r1! ;
+: p>  ( --n )  r1 pdrop ;
+: n-ppush ( <n> cnt-- ) for >p next ;
+: n-pdrop ( n-- ) for pdrop next ;
+: .pstk t1 >p $10 for @r1+ . next pdrop ;
+
+(( ColorForth variables ))
+val a  (val) t0
+: a!   ( n-- ) t0 ! ;
+: a+   ( --n ) a 1 t0 +! ;
+: @a   ( --n ) a  @ ;
+: c@a+ ( --n ) a+ c@ ;
+: c!a+ ( n-- ) a+ c! ;
+: >a   ( -- )  a >t a! ;
+: adrop ( -- ) t> a! ;
+
+val b    (val) t0
+: b!   ( n-- ) t0  ! ;
+: b+   ( --n ) b 1 t0 +! ;
+
+: spaces for space next ;
+: tab 9 emit ;
+: /   /mod nip  ;
+: mod /mod drop ;
+: */ ( n m q--n' ) >r * r> / ;
+: ?dup ( n--n n | 0 ) dup if dup then ;
+: execute ( xt-- ) ?dup if >r then ;
+
+: (") ( --a ) vhere dup >a >in ++
     begin >in @ c@ >r >in ++
         r@ 0= r@ '"' = or
-        if  r> drop 0 !a+
-            comp? if (lit) , , a (vh) ! then exit
+        if  rdrop 0 c!a+
+            comp? if (lit) , , a (vh) ! then adrop exit
         then
-        r> !a+
+        r> c!a+
     again ;
 
 : z" (") ; immediate
 : ." (") comp? if (ztype) , exit then ztype ;  immediate
 
-: words last a! 0 b! 0 t! begin
-        a dict-end < if0 '(' emit t . ." words)" exit then
-        a wc-sz + 3 + ztype tab
-        (t) ++ b+ 9 > if cr 0 b! then
-        a wc-sz + c@ a + a!
+: .word ( de-- ) cell+ 3 + ztype ;
+: words last a! 0 b! 0 >t begin
+        a dict-end < if0 '(' emit t> . ." words)" exit then
+        a .word tab
+        t++ b+ 9 > if cr 0 b! then
+        a dup cell+ c@ + a!
     again ;
 
+: [[ vhere >t  here >t  1 state ! ;
+: ]] (exit) , 0 state ! t> dup >r (h) ! t> (vh) ! ; immediate
+
+(( Files ))
+: fopen-r  ( nm--fh ) z" rb" fopen ;
+: fopen-w  ( nm--fh ) z" wb" fopen ;
+: ->file   ( fh-- )   output-fp ! ;
+: ->stdout ( -- )     0 ->file ;
+
+(( Strings / Memory ))
+: fill  ( a num ch-- ) x! swap y! for x c!y+ next ;
+: s-len ( str--len ) 0 y! x! begin c@x+ if0 y exit then y++ again ;
+: s-end ( str--end ) dup s-len + ;
+: s-cpy ( dst src--dst ) 2dup s-len 1+ cmove ;
+: s-cat ( dst src--dst ) over s-end over s-len 1+ cmove ;
+: s-catc ( dst ch--dst ) over s-end y! c!y+ 0 c!y+ ;
+: s-catn ( dst num--dst ) <# #s #> s-cat ;
+: p1 vhere 100 + ;
+: p2 p1 100 + ;
+
+(( Screen / Colors ))
+: csi          27 emit '[' emit ;
+: ->cr ( c r-- ) csi (.) ';' emit (.) 'H' emit ;
+: ->rc ( r c-- ) swap ->cr ;
+: cls          csi ." 2J" 1 dup ->cr ;
+: clr-eol      csi ." 0K" ;
+: cur-on       csi ." ?25h" ;
+: cur-off      csi ." ?25l" ;
+: cur-block    csi ." 2 q" ;
+: cur-bar      csi ." 5 q" ;
+
+: bg    ( color-- ) csi ." 48;5;" (.) 'm' emit ;
+: fg    ( color-- ) csi ." 38;5;" (.) 'm' emit ;
+: color ( bg fg-- ) fg bg ;
+: black   0 fg ;      : red    203 fg ;
+: green  40 fg ;      : yellow 226 fg ;
+: blue   63 fg ;      : purple 201 fg ;
+: cyan  117 fg ;      : grey   246 fg ;
+: white 255 fg ;
+
 (( Formatting number output ))
-: .nwb ( n wid base-- )
-    base @ >r  base !  >r <# r> 1- for # next #s #> ztype  r> base ! ;
 : .hex   ( n-- )  #2 $10 .nwb ;
 : .hex4  ( n-- )  #4 $10 .nwb ;
 : .hex8  ( n-- )  #8 $10 .nwb ;
 : .bin   ( n-- )  #8 %10 .nwb ;
 : .bin16 ( n-- ) #16 %10 .nwb ;
+: .dec   ( n-- )  #1 #10 .nwb ;
+: .hex/dec ( n-- ) dup ." ($" .hex ." /#" .dec ')' emit ;
 
-align var mkr 3 cells allot
-: marker here mkr !   last mkr cell+ !   vhere mkr 2 cells + ! ;
-: forget mkr @ (h) !  mkr cell+ @ (l) !  mkr 2 cells + @ (vh) ! ;
+: aemit ( ch-- )     dup #32 #126 btwi if0 drop '.' then emit ;
+: t0    ( addr-- )   >a $10 for c@a+ aemit next adrop ;
+: dump  ( addr n-- ) swap a! 0 t! for
+     t+ if0 a cr .hex ." : " then c@a+ .hex space
+     t $10 = if 0 t! space space a $10 - t0 then
+   next ;
 
-marker
+var t0 3 cells allot
+: marker here t0 !   last t0 cell+ !   vhere t0 2 cells + ! ;
+: forget t0 @ (h) !  t0 cell+ @ (l) !  t0 2 cells + @ (vh) ! ;
+
+(( see <x> ))
+: .prim? ( xt--f ) dup 45 < if ." primitive " .hex/dec 1 exit then drop 0 ;
+: t0 ( n-- ) ." lit " $3fffffff and .hex/dec ;
+: .lit? ( b--f ) b $3fffffff > if b t0 1 exit then 0 ;
+: find-xt ( xt--de 1 | 0 ) a >r last a!
+    begin
+        a dict-end < if0 r> a! drop 0 exit then
+         @a over = if drop a 1 r> a! exit then
+        a dup cell+ c@ + a!
+    again
+: next-xt ( de--xt ) >r last t!
+    begin
+        t dict-end < if0 rdrop here exit then
+        t cell+ c@ t + b!
+        b r@ = if rdrop @t exit then
+        b t!
+    again ;
+: .lit-jmp? ( b-- ) b (lit) (jmpnz) btwi if space a+ code@ .hex/dec then ;
+: t2 ( a@-- ) cr a .hex4 ." : " a+ code@ dup .hex4 b!
+    space .lit? if exit then
+    b find-xt if 4 spaces .word then .lit-jmp? ;
+: see-range ( f t-- ) t! a! begin a t >= if exit then t2 again ;
+: see ' ?dup if0 ." -not found-" exit then
+    a!  @a  .prim? if exit then
+    a .hex ':' emit space a .word
+    a next-xt t!  @a  a! a t see-range ;
 
 (( Some simple benchmarks ))
-: t. ztype '(' emit dup (.) ')' emit timer swap ;
+: t0 ztype '(' emit dup (.) ')' emit timer swap ;
 : fib ( n--fib ) 1- dup 2 < if drop 1 exit then dup fib swap 1- fib + ;
 : elapsed timer swap - ." , time: " . cr ;
-: bm-while z" while " t. begin 1- dup while drop elapsed ;
-: bm-loop  z" loop "  t. for next elapsed ;
-: bm-fib   z" fib"    t. fib space (.) elapsed ;
+: bm-while z" while " t0 begin 1- dup while drop elapsed ;
+: bm-loop  z" loop "  t0 for next elapsed ;
+: bm-fib   z" fib"    t0 fib space (.) elapsed ;
 : bm-fibs 1 b! for b+ bm-fib next ;
 : mil #1000 dup * * ;
 : bm-all 250 mil bm-while 1000 mil bm-loop 30 bm-fib ;
 : bb 1000 mil bm-loop ;
 
-: .version version <# # # #. # # #. #s #> ztype ;
+(( Blocks ))
+mem 2 mil + const blocks
+: block-sz 2048 ;
+: #blocks 512 ;
+: disk-sz #blocks block-sz * ;
+: disk-read z" blocks.fth" fopen-r dup a!
+    if blocks disk-sz a fread drop a fclose then ;
+: flush z" blocks.fth" fopen-w dup a!
+    if blocks disk-sz a fwrite drop a fclose then ;
+: block-addr ( n--a ) block-sz * blocks + ;
+disk-read
+: load ( n-- ) block-addr outer ;
+
+0 load
+
+(( Editor  ))
+val off (val) t0 : off! t0 ! ;
+val row (val) t0 : row! t0 ! ;
+val col (val) t0 : col! t0 ! ;
+var ed-buf block-sz allot
+: rows 23 ;   : cols 89 ; (( NB: 23*89 = 2047 ))
+: off->rc off rows /mod row! col! ;
+: rc->off row rows * col + off! ;
+: blk>buf ( n-- ) block-addr ed-buf block-sz cell / move ;
+: buf>blk ( n-- ) ed-buf swap block-addr block-sz cell / move ;
+: show 1 1 ->cr ed-buf a! rows for cols for c@a+ 32 max emit next cr next ;
+
+(( Startup message ))
+: .version version <# # # #. # # #. #s 'v' #c #> ztype ;
 : .banner
-    ." dwc - version " .version ."  - Chris Curl" cr
-    ."   Heap: " vars-sz . ." bytes, used: " vhere vars - . cr
-    ."   Code: " code-sz (.) ." , used: " here . cr
-    ."   Dict: " dict-end last - .  ." bytes used "cr
-    ;
-.banner (( forget ))
+    ." dwc " green .version white ."  - Chris Curl" cr
+    yellow ."   Memory: " white mem-sz . ." bytes, used: " vhere vars - . cr
+    yellow ."     Code: " white 64 1024 * (.) ." , used: " here . cr
+    yellow ."     Vars: " white vhere vars - .  ." bytes used" cr
+    yellow ."     Dict: " white dict-end last - .  ." bytes used" cr ;
+.banner   marker
