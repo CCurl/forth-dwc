@@ -46,11 +46,11 @@ vars (vh) !
 : val   add-word (lit) , 0 , (exit) , ;
 : (val) add-word (lit) , here 3 - ->code , (exit) , ;
 
-: space 32 emit ;
 : rdrop r> drop ; inline
 : ++ ( a-- )  1 swap +! ;
 : -- ( a-- ) -1 swap +! ;
 : cr 13 emit 10 emit ;
+: space 32 emit ;
 
 var (neg)    1 allot
 var buf     65 allot
@@ -71,18 +71,35 @@ var (buf) cell allot
         (stk) cell+ >r depth for r@ @ . r> cell+ >r next
     then ')' emit rdrop ;
 
-val a  (val) t0
-: a!   ( n-- ) t0 ! ;
-: a+   ( --n ) a 1 t0 +! ;
-: @a   ( --n ) a  @ ;
-: c@a+ ( --n ) a+ c@ ;
-: c!a+ ( n-- ) a+ c! ;
+(( a circular stack ))
+(( t8: stack start, t9: stack end ))
+(( t0: stack pointer, t1: stack pointer address ))
+var t8 $10 cells allot inline
+vhere cell - const t9
+val t0  (val)  t1
+: t2    ( -- )  cell t1 +! t0 t9 > if t8 t1 ! then ;
+: sdrop ( -- )  -4   t1 +! t0 t8 < if t9 t1 ! then ;
+: s!    ( n-- ) t0 ! ;
+: >s    ( n-- ) t2 s! ;
+: s@    ( --n ) t0 @ ;
+: s>    ( --n ) s@ sdrop ;
+: .stk '(' emit space $10 for t2 s@ . next ')' emit ;
+t8 t1 !
 
-: (") ( --a ) vhere dup a! >in ++
+val a@  (val) t0
+: a!    ( n-- ) t0 ! ;
+: adrop ( -- )  s> a! ;
+: >a    ( n-- ) a@ >s a! ;
+: a@+   ( --n ) a@ 1 t0 +! ;
+: c@a+  ( --n ) a@+ c@ ;
+: c!a+  ( n-- ) a@+ c! ;
+
+: (") ( --a ) vhere dup >a >in ++
     begin >in @ c@ >r >in ++
         r@ 0 = r@ '"' = or
         if  rdrop 0 c!a+
-            comp? if (lit) , , a (vh) ! then exit
+            comp? if (lit) , , a@ (vh) ! then
+            adrop exit
         then
         r> c!a+
     again ;
@@ -92,10 +109,10 @@ val a  (val) t0
 
 : fopen-r ( nm md--fh ) z" rb" fopen ;
 : block-sz 2048 ;
-: #blocks 512 ;
+: #blocks   512 ;
 #blocks block-sz * const disk-sz
-vars    1000000  + const disk
+1024 dup * vars + const disk
 ." loading disk ... " z" disk.fth" fopen-r a!
-disk disk-sz a fread a fclose . ." bytes" cr
+disk disk-sz a@ fread a@ fclose . ." bytes" cr
 
 disk outer
