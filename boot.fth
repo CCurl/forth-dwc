@@ -18,7 +18,6 @@ $40 last cell + 1+ c!
 : (jmp)     2 ;  inline
 : (jmpz)    3 ;  inline
 : (jmpnz)   4 ;  inline
-: (=)      21 ;  inline
 : (ztype)  35 ;  inline
 
 : ->code cells mem + ;
@@ -304,7 +303,7 @@ mem 2 mil + const blocks
 : block-sz 2048 ;
 : #blocks 512 ;
 : disk-sz #blocks block-sz * ;
-: disk-read z" blocks.fth" fopen-r dup a!
+: disk-read z" disk.fth" fopen-r dup a!
     if blocks disk-sz a fread drop a fclose then ;
 : flush z" blocks.fth" fopen-w dup a!
     if blocks disk-sz a fwrite drop a fclose then ;
