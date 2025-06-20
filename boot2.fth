@@ -62,8 +62,8 @@ var (buf) cell allot
 : #s   ( n--0 )  # dup if #s exit then ;
 : <#   ( n--m )  ?neg buf 65 + (buf) ! 0 #c ;
 : #>   ( n--a )  drop (neg) @ if '-' #c then (buf) @ ;
-: (.)   <# #s #> ztype ;
-: . (.) space ;
+: (.)  ( n-- )   <# #s #> ztype ;
+: .    ( n-- )   (.) space ;
 
 : 0sp 0 (sp) ! ;
 : depth (sp) @ 1- ;
@@ -94,7 +94,7 @@ val a  (val) t0
 : block-sz 2048 ;
 : #blocks 512 ;
 #blocks block-sz * const disk-sz
-vars  c 1000000  + const disk
+vars    1000000  + const disk
 ." loading disk ... " z" disk.fth" fopen-r a!
 disk disk-sz a fread a fclose . ." bytes" cr
 
