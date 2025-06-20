@@ -42,7 +42,7 @@ mem mem-sz + const dict-end
 64 1024 * cells mem + const vars
 vars (vh) !
 
-((  val and (val) define a very efficient variable mechanism  ))
+(( val and (val) define an efficient variable mechanism ))
 : val   add-word (lit) , 0 , (exit) , ;
 : (val) add-word (lit) , here 3 - ->code , (exit) , ;
 
@@ -68,8 +68,8 @@ var (buf) cell allot
 : 0sp 0 (sp) ! ;
 : depth (sp) @ 1- ;
 : .s '(' emit space depth if
-        (stk) cell+ >r depth for r@ @ . r> cell+ >r next
-    then ')' emit rdrop ;
+    (stk) cell+ >r depth for r@ @ . r> cell+ >r next
+  then ')' emit rdrop ;
 
 (( a circular stack ))
 (( t8: stack start, t9: stack end ))
@@ -94,24 +94,24 @@ val a@  (val) t0
 : c@a+  ( --n ) a@+ c@ ;
 : c!a+  ( n-- ) a@+ c! ;
 
-: (") ( --a ) vhere dup >a >in ++
-    begin >in @ c@ >r >in ++
-        r@ 0 = r@ '"' = or
-        if  rdrop 0 c!a+
-            comp? if (lit) , , a@ (vh) ! then
-            adrop exit
-        then
-        r> c!a+
-    again ;
+: t1 ( --a ) vhere dup >a >in ++
+  begin >in @ c@ >r >in ++
+    r@ 0 = r@ '"' = or
+    if  rdrop 0 c!a+
+      comp? if (lit) , , a@ (vh) ! then
+      adrop exit
+    then
+    r> c!a+
+  again ;
 
-: z" (") ; immediate
-: ." (") comp? if (ztype) , exit then ztype ;  immediate
+: z" t1 ; immediate
+: ." t1 comp? if (ztype) , exit then ztype ;  immediate
 
-: fopen-r ( nm md--fh ) z" rb" fopen ;
+: fopen-r ( nm--fh ) z" rb" fopen ;
 : block-sz 2048 ;
 : #blocks   512 ;
 #blocks block-sz * const disk-sz
-1024 dup * vars + const disk
+1024 1024 * vars + const disk
 ." loading disk ... " z" disk.fth" fopen-r a!
 disk disk-sz a@ fread a@ fclose . ." bytes" cr
 
