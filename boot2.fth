@@ -86,33 +86,52 @@ val t0  (val)  t1
 : .stk '(' emit space $10 for t2 s@ . next ')' emit ;
 t8 t1 !
 
-val a@  (val) t0
-: a!    ( n-- ) t0 ! ;
-: adrop ( -- )  s> a! ;
-: >a    ( n-- ) a@ >s a! ;
-: a@+   ( --n ) a@ 1 t0 +! ;
-: c@a+  ( --n ) a@+ c@ ;
-: c!a+  ( n-- ) a@+ c! ;
+(( ColorForth inspired words ))
+val x    (val)  t0
+: x!    ( n-- ) t0 ! ;
+: x++   ( -- )  1 t0 +! ;
+: @x+   ( --n ) x  @ cell t0 +! ;
+: @x-   ( --n ) x  @ -4   t0 +! ;
+: c@x+  ( --c ) x c@ x++ ;
+: c@x-  ( --c ) x c@ -1 t0 +! ;
 
-: t1 ( --a ) vhere dup >a >in ++
+val y   (val)  t0
+: y!   ( n-- ) t0 ! ;
+: y++  ( -- )  1 t0 +! ;
+: !y+  ( n-- ) y  ! cell t0 +! ;
+: !y-  ( n-- ) y  ! -4   t0 +! ;
+: c!y+ ( c-- ) y c! y++ ;
+: c!y- ( c-- ) y c! -1 t0 +! ;
+: >y   ( n-- ) y >s y! ;
+: y>>  ( -- )  s> y! ;
+: y>   ( --n ) y y>> ;
+
+: t1 ( --a ) vhere dup >y >in ++
   begin >in @ c@ >r >in ++
     r@ 0 = r@ '"' = or
-    if  rdrop 0 c!a+
-      comp? if (lit) , , a@ (vh) ! then
-      adrop exit
+    if rdrop 0 c!y+
+      comp? if (lit) , , y (vh) ! then
+      y>> exit
     then
-    r> c!a+
+    r> c!y+
   again ;
 
 : z" t1 ; immediate
 : ." t1 comp? if (ztype) , exit then ztype ;  immediate
 
+(( Blocks ))
+var block-fn 16 allot
 : fopen-r ( nm--fh ) z" rb" fopen ;
 : block-sz 2048 ;
 : #blocks   512 ;
 #blocks block-sz * const disk-sz
 1024 1024 * vars + const disk
-." loading disk ... " z" disk.fth" fopen-r a!
-disk disk-sz a@ fread a@ fclose . ." bytes" cr
+disk disk-sz + 1-  const disk-end
+disk           1-  const vars-end
+: block-addr ( n--a ) block-sz * disk + ;
+." loading disk ... " z" block-000.fth" fopen-r x!
+0 block-addr block-sz x fread x fclose . ." bytes" cr
+
+." here: " here . cr
 
 disk outer
