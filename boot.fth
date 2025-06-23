@@ -236,15 +236,15 @@ var t0 3 cells allot
 : marker here t0 !   last t0 cell+ !   vhere t0 2 cells + ! ;
 : forget t0 @ (h) !  t0 cell+ @ (l) !  t0 2 cells + @ (vh) ! ;
 
-(( Blocks ))
-vars 1024 1024 * + const blocks
+(( Disk: 512 blocks - 2048 bytes each ))
+var fn 32 allot
+vars 1024 1024 * + const disk
 : block-sz 2048 ;
-: #blocks 512 ;
-: disk-sz #blocks block-sz * ;
-: disk-read z" block-000.fth" fopen-r dup a!
-    if blocks disk-sz a fread drop a fclose then ;
-: block-addr ( n--a ) block-sz * blocks + ;
-disk-read
-: load ( n-- ) block-addr outer ;
+: block-fn ( n--a ) fn z" block-" s-cpy swap <# # # #s #> s-cat z" .fth" s-cat ;
+: block-addr  ( n--a ) block-sz * disk + ;
+: write-block ( n-- ) dup block-fn fopen-w >r block-addr block-sz r@ fwrite drop r> fclose ;
+: read-block ( n-- )  dup block-fn fopen-r >r block-addr block-sz r@ fread  drop r> fclose ;
+
+: load ( n-- ) dup read-block block-addr outer ;
 
 0 load
