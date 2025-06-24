@@ -59,6 +59,7 @@ vars (vh) !
 : ?dup  dup if dup then ;
 : 0= ( n--f ) 0 = ;
 : 0< ( n--f ) 0 < ;
+: 2+ ( n--m ) 1+ 1+ ;
 : 2* ( n--m ) dup + ;
 : <= ( a b--f ) > 0= ;
 : >= ( a b--f ) < 0= ;
@@ -132,10 +133,13 @@ val x    (val)  t0
 val y   (val)  t0
 : y!   ( n-- ) t0 ! ;
 : y++  ( -- )  1 t0 +! ;
+: y+   ( --n ) y y++ ;
 : !y+  ( n-- ) y  ! cell t0 +! ;
 : !y-  ( n-- ) y  ! -4   t0 +! ;
-: c!y+ ( c-- ) y c! y++ ;
+: c!y+ ( c-- ) y+ c! ;
 : c!y- ( c-- ) y c! -1 t0 +! ;
+: >y   ( n-- ) y >t y! ;
+: y>>  ( n-- ) t> y! ;
 
 (( Strings / Memory ))
 : fill   ( a num ch-- ) x! swap y! for x c!y+ next ;
@@ -164,24 +168,26 @@ val b    (val) t0
 : b!   ( n-- ) t0  ! ;
 : b+   ( --n ) b 1 t0 +! ;
 
-: (") ( --a ) vhere dup >a >in ++
+: (") ( --a ) vhere dup >y >in ++
     begin >in @ c@ >r >in ++
         r@ 0= r@ '"' = or
-        if  rdrop 0 c!a+
-            comp? if (lit) , , a (vh) ! then adrop exit
+        if  rdrop 0 c!y+
+            comp? if (lit) , , y (vh) ! then
+            y>> exit
         then
-        r> c!a+
+        r> c!y+
     again ;
 
 : z" (") ; immediate
 : ." (") comp? if (ztype) , exit then ztype ;  immediate
 
 : .word ( de-- ) cell+ 3 + ztype ;
-: words last a! 0 b! 0 >t begin
-        a dict-end < if0 '(' emit t> . ." words)" exit then
-        a .word tab
-        t++ b+ 9 > if cr 0 b! then
-        a dup cell+ c@ + a!
+: words last x! 0 y! 0 >t begin
+        x dict-end < if0 '(' emit t> . ." words)" exit then
+        x .word tab t++
+        x cell+ 2+ c@ 7 > if y++ then 
+        y+ 9 > if cr 0 y! then
+        x dup cell+ c@ + x!
     again ;
 
 : [[ vhere >t  here >t  1 state ! ;
