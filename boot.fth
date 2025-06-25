@@ -128,7 +128,7 @@ val x    (val)  t0
 : c@x+  ( --c ) x c@ x++ ;
 : c@x-  ( --c ) x c@ -1 t0 +! ;
 : >x    ( n-- ) x >t x! ;
-: x>>   ( n-- ) t> x! ;
+: x>>   ( -- )  t> x! ;
 
 val y   (val)  t0
 : y!   ( n-- ) t0 ! ;
@@ -139,19 +139,19 @@ val y   (val)  t0
 : c!y+ ( c-- ) y+ c! ;
 : c!y- ( c-- ) y c! -1 t0 +! ;
 : >y   ( n-- ) y >t y! ;
-: y>>  ( n-- ) t> y! ;
+: y>>  ( -- )  t> y! ;
 
 (( Strings / Memory ))
-: fill   ( a num ch-- ) x! swap y! for x c!y+ next ;
-: move   ( f t@ n-- ) >r y! x! r> for  @x+  !y+ next ;
-: cmove  ( f t@ n-- ) >r y! x! r> for c@x+ c!y+ next ;
-: move>  ( f t@ n-- ) >r r@ 1- cells + y! r@ 1- cells + x! r> for  @x-  !y- next ;
-: cmove> ( f t@ n-- ) >r r@ 1-       + y! r@ 1-       + x! r> for c@x- c!y- next ;
+: fill   ( a num ch-- ) >r swap >y for r@ c!y+ next y>> rdrop ;
+: move   ( f t n-- ) >r >y >x r> for  @x+  !y+ next x>> y>> ;
+: cmove  ( f t n-- ) >r >y >x r> for c@x+ c!y+ next x>> y>> ;
+: move>  ( f t n-- ) >r r@ 1- cells + >y r@ 1- cells + >x r> for  @x-  !y- next x>> y>> ;
+: cmove> ( f t n-- ) >r r@ 1-       + >y r@ 1-       + >x r> for c@x- c!y- next x>> y>> ;
 : s-len  ( str--len ) >x 0 begin c@x+ if0 x>> exit then 1+ again ;
 : s-end  ( str--end ) dup s-len + ;
 : s-cpy  ( dst src--dst ) 2dup s-len 1+ cmove ;
 : s-cat  ( dst src--dst ) over s-end over s-len 1+ cmove ;
-: s-catc ( dst ch--dst ) over s-end y! c!y+ 0 c!y+ ;
+: s-catc ( dst ch--dst )  over s-end >y c!y+ 0 c!y+ y>> ;
 : s-catn ( dst num--dst ) <# #s #> s-cat ;
 
 (( ColorForth variables ))
@@ -212,7 +212,7 @@ val b    (val) t0
 : .hex/dec ( n-- ) dup ." ($" .hex ." /#" .dec ')' emit ;
 
 : aemit ( ch-- )     dup #32 #126 btwi if0 drop '.' then emit ;
-: t0    ( addr-- )   >a $10 for c@a+ aemit next adrop ;
+: t0    ( addr-- )   >x $10 for c@x+ aemit next x>> ;
 : dump  ( addr n-- ) swap a! 0 t! for
      t+ if0 a cr .hex ." : " then c@a+ .hex space
      t@ $10 = if 0 t! space space a $10 - t0 then
@@ -228,8 +228,10 @@ vars 1024 1024 * + const disk
 : block-sz 2048 ;
 : block-fn ( n--a ) fn z" block-" s-cpy swap <# # # #s #> s-cat z" .fth" s-cat ;
 : block-addr  ( n--a ) block-sz * disk + ;
-: write-block ( n-- ) dup block-fn fopen-w >r block-addr block-sz r@ fwrite drop r> fclose ;
-: read-block ( n-- )  dup block-fn fopen-r >r block-addr block-sz r@ fread  drop r> fclose ;
+: write-block ( n-- ) dup block-fn fopen-w ?dup if0 drop exit then
+    >r block-addr block-sz r@ fwrite drop r> fclose ;
+: read-block ( n-- )  dup block-fn fopen-r ?dup if0 drop exit then
+    >r block-addr block-sz r@ fread  drop r> fclose ;
 
 : load ( n-- ) dup read-block block-addr outer ;
 : load-next ( n-- ) dup read-block block-addr >in ! ;
