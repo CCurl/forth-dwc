@@ -188,7 +188,7 @@ int isStateChange(const char *w) {
 	}
 	if (strEqI(w, "]"))  { return changeState(COMPILE); }
 	if (strEqI(w, ":"))  { return changeState(DEFINE); }
-	if (strEqI(w, ";"))  { comma(EXIT);  return changeState(INTERPRET); }
+	if (strEqI(w, ";"))  { comma(EXIT); return changeState(INTERPRET); }
 	if (strEqI(w, "["))  { return changeState(INTERPRET); }
 	if (strEqI(w, "("))  { return changeState(COMMENT); }
 	if (strEqI(w, "((")) { return changeState(COMMENT); }

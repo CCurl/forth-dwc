@@ -2,7 +2,8 @@
 
 DWC is an extremely minimal Forth system that can run stand-alone or be embedded into another program.
 
-DWC is implemented in 3 files, 32 base primitives, 13 system primitives.<br/>
+DWC has 32 base primitives, 13 system primitives.<br/>
+DWC is implemented in 3 files: (dwc-vm.c, dwc-vm.h, system.c). <br/>
 The VM itself is under 250 lines of code.
 
 On Windows, a 32-bit Release build compiles to a 17k executable. <br/>
@@ -57,11 +58,11 @@ An INLINE word is somewhat similar to a macro.<br/>
 When a word is INLINE, its definition is copied to the target.<br/>
 When not INLINE, a call is made to the word instead.
 
-## Temporary words
+## Transient words
 
-Words 't0' through 't9' are temporary and are not added to the dictionary.<br/>
-They are case sensitive: 't0' is a temporary word, 'T0' is not.<br/>
-This helps with factoring code and helps keep the dictionary uncluttered.
+Words 't0' through 't9' are transient and are not added to the dictionary.<br/>
+They help with factoring code and and keep the dictionary uncluttered.<br/>
+They are case sensitive: 't0' is a transient word, 'T0' is not.
 
 ## The VM Primitives
 
