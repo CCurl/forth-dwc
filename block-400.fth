@@ -16,4 +16,4 @@ var t1 $10 cells allot
 : >p   ( n-- )   1 >>p p1! ;
 : 2>p  ( x y-- ) 2 >>p p2! p1! ;
 : <p   ( n-- ) 1 <<p ;
-: .pstk t1 >x $10 for @x+ . next x>> ;
+: .pstk t1 >a $10 for @a+ . next <a ;

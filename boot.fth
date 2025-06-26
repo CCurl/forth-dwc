@@ -93,8 +93,6 @@ var (buf) cell allot
 : #>   ( n--a )  drop (neg) @ if '-' #c then (buf) @ ;
 : (.)   <# #s #> ztype ;
 : . (.) space ;
-: .nwb ( n width base-- )
-    base @ >r  base !  >r <# r> 1- for # next #s #> ztype  r> base ! ;
 
 : 0sp 0 (sp) ! ;
 : depth (sp) @ 1- ;
@@ -120,78 +118,68 @@ val t4  (val)  t5
 : .tstk '(' emit space $10 for t2 t@ . next ')' emit ;
 t8 t5 !
 
-val x    (val)  t0
-: x!    ( n-- ) t0 ! ;
-: x++   ( -- )  1 t0 +! ;
-: @x+   ( --n ) x  @ cell t0 +! ;
-: @x-   ( --n ) x  @ -4   t0 +! ;
-: c@x+  ( --c ) x c@ x++ ;
-: c@x-  ( --c ) x c@ -1 t0 +! ;
-: >x    ( n-- ) x >t x! ;
-: x>>   ( -- )  t> x! ;
-
-val y   (val)  t0
-: y!   ( n-- ) t0 ! ;
-: y++  ( -- )  1 t0 +! ;
-: y+   ( --n ) y y++ ;
-: !y+  ( n-- ) y  ! cell t0 +! ;
-: !y-  ( n-- ) y  ! -4   t0 +! ;
-: c!y+ ( c-- ) y+ c! ;
-: c!y- ( c-- ) y c! -1 t0 +! ;
-: >y   ( n-- ) y >t y! ;
-: y>>  ( -- )  t> y! ;
-
-(( Strings / Memory ))
-: fill   ( a num ch-- ) >r swap >y for r@ c!y+ next y>> rdrop ;
-: move   ( f t n-- ) >r >y >x r> for  @x+  !y+ next x>> y>> ;
-: cmove  ( f t n-- ) >r >y >x r> for c@x+ c!y+ next x>> y>> ;
-: move>  ( f t n-- ) >r r@ 1- cells + >y r@ 1- cells + >x r> for  @x-  !y- next x>> y>> ;
-: cmove> ( f t n-- ) >r r@ 1-       + >y r@ 1-       + >x r> for c@x- c!y- next x>> y>> ;
-: s-len  ( str--len ) >x 0 begin c@x+ if0 x>> exit then 1+ again ;
-: s-end  ( str--end ) dup s-len + ;
-: s-cpy  ( dst src--dst ) 2dup s-len 1+ cmove ;
-: s-cat  ( dst src--dst ) over s-end over s-len 1+ cmove ;
-: s-catc ( dst ch--dst )  over s-end >y c!y+ 0 c!y+ y>> ;
-: s-catn ( dst num--dst ) <# #s #> s-cat ;
-
 (( ColorForth variables ))
-val a  (val) t0
-: a!   ( n-- ) t0 ! ;
-: a+   ( --n ) a 1 t0 +! ;
-: @a   ( --n ) a  @ ;
-: c@a+ ( --n ) a+ c@ ;
-: c!a+ ( n-- ) a+ c! ;
-: >a   ( -- )  a >t a! ;
-: adrop ( -- ) t> a! ;
 
-val b    (val) t0
-: b!   ( n-- ) t0  ! ;
-: b+   ( --n ) b 1 t0 +! ;
+val a    (val)  t0
+: a!    ( n-- ) t0 ! ;
+: a++   ( -- )  1 t0 +! ;
+: a+    ( --n ) a a++ ;
+: @a    ( --n ) a  @ ;
+: @a+   ( --n ) a  @ cell t0 +! ;
+: @a-   ( --n ) a  @ -4   t0 +! ;
+: c@a+  ( --c ) a c@ a++ ;
+: c@a-  ( --c ) a c@ -1 t0 +! ;
+: >a    ( n-- ) a >t a! ;
+: <a    ( -- )  t> a! ;
 
-: (") ( --a ) vhere dup >y >in ++
+val b   (val)  t0
+: b!   ( n-- ) t0 ! ;
+: b++  ( -- )  1 t0 +! ;
+: b+   ( --n ) b b++ ;
+: !b+  ( n-- ) b  ! cell t0 +! ;
+: !b-  ( n-- ) b  ! -4   t0 +! ;
+: c!b+ ( c-- ) b+ c! ;
+: c!b- ( c-- ) b c! -1 t0 +! ;
+: >b   ( n-- ) b >t b! ;
+: <b   ( -- )  t> b! ;
+
+: (") ( --a ) vhere dup >b >in ++
     begin >in @ c@ >r >in ++
         r@ 0= r@ '"' = or
-        if  rdrop 0 c!y+
-            comp? if (lit) , , y (vh) ! then
-            y>> exit
+        if  rdrop 0 c!b+
+            comp? if (lit) , , b (vh) ! then
+            <b exit
         then
-        r> c!y+
+        r> c!b+
     again ;
 
 : z" (") ; immediate
 : ." (") comp? if (ztype) , exit then ztype ;  immediate
 
 : .word ( de-- ) cell+ 3 + ztype ;
-: words last x! 0 y! 0 >t begin
-        x dict-end < if0 '(' emit t> . ." words)" exit then
-        x .word tab t++
-        x cell+ 2+ c@ 7 > if y++ then 
-        y+ 9 > if cr 0 y! then
-        x dup cell+ c@ + x!
+: words last a! 0 b! 0 >t begin
+        a dict-end < if0 '(' emit t> . ." words)" exit then
+        a .word tab t++
+        a cell+ 2+ c@ 7 > if b++ then 
+        b+ 9 > if cr 0 b! then
+        a dup cell+ c@ + a!
     again ;
 
 : [[ vhere >t  here >t  1 state ! ;
 : ]] (exit) , 0 state ! t> dup >r (h) ! t> (vh) ! ; immediate
+
+(( Strings / Memory ))
+: fill   ( a num ch-- ) >r swap >b for r@ c!b+ next <b rdrop ;
+: move   ( f t n-- ) >r >b >a r> for  @a+  !b+ next <a <b ;
+: cmove  ( f t n-- ) >r >b >a r> for c@a+ c!b+ next <a <b ;
+: move>  ( f t n-- ) >r r@ 1- cells + >b r@ 1- cells + >a r> for  @a-  !b- next <a <b ;
+: cmove> ( f t n-- ) >r r@ 1-       + >b r@ 1-       + >a r> for c@a- c!b- next <a <b ;
+: s-len  ( str--len ) >a 0 begin c@a+ if0 <a exit then 1+ again ;
+: s-end  ( str--end ) dup s-len + ;
+: s-cpy  ( dst src--dst ) 2dup s-len 1+ cmove ;
+: s-cat  ( dst src--dst ) over s-end over s-len 1+ cmove ;
+: s-catc ( dst ch--dst )  over s-end >b c!b+ 0 c!b+ <b ;
+: s-catn ( dst num--dst ) <# #s #> s-cat ;
 
 (( Files ))
 : fopen-r  ( nm--fh ) z" rb" fopen ;
@@ -200,23 +188,25 @@ val b    (val) t0
 : ->stdout ( -- )     0 ->file ;
 
 (( Formatting number output ))
-: decimal ( -- ) #10 base ! ;
-: hex     ( -- ) $10 base ! ;
-: binary  ( -- ) %10 base ! ;
-: .hex   ( n-- )  #2 $10 .nwb ;
-: .hex4  ( n-- )  #4 $10 .nwb ;
-: .hex8  ( n-- )  #8 $10 .nwb ;
-: .bin   ( n-- )  #8 %10 .nwb ;
-: .bin16 ( n-- ) #16 %10 .nwb ;
-: .dec   ( n-- )  #1 #10 .nwb ;
+: .nwb ( n width base-- )
+    base @ >r  base !  >r <# r> 1- for # next #s #> ztype  r> base ! ;
+: decimal  ( -- )  #10 base ! ;
+: hex      ( -- )  $10 base ! ;
+: binary   ( -- )  %10 base ! ;
+: .hex     ( n-- )  #2 $10 .nwb ;
+: .hex4    ( n-- )  #4 $10 .nwb ;
+: .hex8    ( n-- )  #8 $10 .nwb ;
+: .bin     ( n-- )  #8 %10 .nwb ;
+: .bin16   ( n-- ) #16 %10 .nwb ;
+: .dec     ( n-- )  #1 #10 .nwb ;
 : .hex/dec ( n-- ) dup ." ($" .hex ." /#" .dec ')' emit ;
 
 : aemit ( ch-- )     dup #32 #126 btwi if0 drop '.' then emit ;
-: t0    ( addr-- )   >x $10 for c@x+ aemit next x>> ;
-: dump  ( addr n-- ) swap a! 0 t! for
+: t0    ( addr-- )   >a $10 for c@a+ aemit next <a ;
+: dump  ( addr n-- ) swap >a 0 >t for
      t+ if0 a cr .hex ." : " then c@a+ .hex space
      t@ $10 = if 0 t! space space a $10 - t0 then
-   next ;
+   next tdrop <a ;
 
 var t0 3 cells allot
 : marker here t0 !   last t0 cell+ !   vhere t0 2 cells + ! ;
@@ -228,9 +218,10 @@ vars 1024 1024 * + const disk
 : block-sz 2048 ;
 : block-fn ( n--a ) fn z" block-" s-cpy swap <# # # #s #> s-cat z" .fth" s-cat ;
 : block-addr  ( n--a ) block-sz * disk + ;
-: write-block ( n-- ) dup block-fn fopen-w ?dup if0 drop exit then
+: t1 drop ." -nf-" ;
+: write-block ( n-- ) dup block-fn fopen-w ?dup if0 t1 exit then
     >r block-addr block-sz r@ fwrite drop r> fclose ;
-: read-block ( n-- )  dup block-fn fopen-r ?dup if0 drop exit then
+: read-block  ( n-- ) dup block-fn fopen-r ?dup if0 t1 exit then
     >r block-addr block-sz r@ fread  drop r> fclose ;
 
 : load ( n-- ) dup read-block block-addr outer ;
