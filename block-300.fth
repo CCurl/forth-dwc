@@ -15,7 +15,7 @@
         b r@ = if rdrop @t exit then
         b t!
     again ;
-: .lit-jmp? ( b-- ) b (lit) (jmpnz) btwi if space a+ code@ .hex/dec then ;
+: .lit-jmp? ( b-- ) b (lit) (njmpnz) btwi if space a+ code@ .hex/dec then ;
 : t2 ( a@-- ) cr a .hex4 ." : " a+ code@ dup .hex4 b!
     space .lit? if exit then
     b find-xt if 4 spaces .word then .lit-jmp? ;

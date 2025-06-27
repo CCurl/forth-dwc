@@ -13,6 +13,8 @@ DE_T tmpWords[10];
 	X(JMP,    "jmp",      pc = code[pc]; ) \
 	X(JMPZ,   "jmpz",     if (pop()==0) { pc = code[pc]; } else { pc++; } ) \
 	X(JMPNZ,  "jmpnz",    if (pop()) { pc = code[pc]; } else { pc++; } ) \
+	X(NJMPZ,  "njmpz",    if (TOS==0) { pc = code[pc]; } else { pc++; } ) \
+	X(NJMPNZ, "njmpnz",   if (TOS) { pc = code[pc]; } else { pc++; } ) \
 	X(DUP,    "dup",      push(TOS); ) \
 	X(DROP,   "drop",     pop(); ) \
 	X(SWAP,   "swap",     t = TOS; TOS = NOS; NOS = t; ) \
@@ -38,8 +40,6 @@ DE_T tmpWords[10];
 	X(AND ,   "and",      t = pop(); TOS &= t; ) \
 	X(OR,     "or",       t = pop(); TOS |= t; ) \
 	X(XOR,    "xor",      t = pop(); TOS ^= t; ) \
-	X(INC,    "1+",       TOS++; ) \
-	X(DEC,    "1-",       TOS--; ) \
 	/* System primitives */ \
 	X(KEY,    "key",      push(key()); ) \
 	X(QKEY,   "?key",     push(qKey()); ) \
@@ -243,8 +243,8 @@ void dwcInit() {
 		{ "(h)",     (cell)&here },    { "(l)",       (cell)&last },
 		{ "(sp)",    (cell)&dsp },     { "(stk)",     (cell)&dstk[0] },
 		{ "state",   (cell)&state },   { "base",      (cell)&base },
-		{ "mem",     (cell)&mem[0] },  { "mem-sz",   MEM_SZ },
-		{ ">in",     (cell) & toIn},   { "output-fp", (cell)&outputFp },
+		{ "mem",     (cell)&mem[0] },  { "mem-sz",    (cell)MEM_SZ },
+		{ ">in",     (cell)&toIn},     { "output-fp", (cell)&outputFp },
 		{ 0, 0 }
 	};
 	for (int i = 0; nv[i].name; i++) { addLit(nv[i].name, nv[i].value); }

@@ -54,7 +54,7 @@ This gives the operator more flexibility.
 
 ## INLINE words
 
-An INLINE word is somewhat similar to a macro.<br/>
+An INLINE word is somewhat similar to a macro in other languages.<br/>
 When a word is INLINE, its definition is copied to the target.<br/>
 When not INLINE, a call is made to the word instead.
 
@@ -72,35 +72,35 @@ They are case sensitive: 't0' is a transient word, 'T0' is not.
 |   0       | exit     | (--)         | PC = RTOS. Discard RTOS. If (PC=0) then stop. |
 |   1       | lit      | (--)         | Push code[PC]. Increment PC. |
 |   2       | jmp      | (--)         | PC = code[PC]. |
-|   3       | jmpz     | (n--)        | If (TOS=0) then PC = code[PC] else PC = PC+1. Discard TOS. |
+|   3       | jmpz     | (n--)        | If (TOS==0) then PC = code[PC] else PC = PC+1. Discard TOS. |
 |   4       | jmpnz    | (n--)        | If (TOS!=0) then PC = code[PC] else PC = PC+1. Discard TOS. |
-|   5       | dup      | (n--n n)     | Push TOS. |
-|   6       | drop     | (n--)        | Discard TOS. |
-|   7       | swap     | (a b--b a)   | Swap TOS and NOS. |
-|   8       | over     | (a b--a b a) | Push NOS. |
-|   9       | !        | (n a--)      | CELL store NOS through TOS. Discard TOS and NOS. |
-|  10       | @        | (a--n)       | CELL fetch TOS through TOS. |
-|  11       | c!       | (b a--)      | BYTE store NOS through TOS. Discard TOS and NOS. |
-|  12       | c@       | (a--b)       | BYTE fetch TOS through TOS. |
-|  13       | >r       | (n--)        | Push TOS onto the return stack. Discard TOS. |
-|  14       | r@       | (--n)        | Push RTOS. |
-|  15       | r>       | (--n)        | Push RTOS. Discard RTOS. |
-|  16       | *        | (a b--c)     | TOS = NOS*TOS. Discard NOS. |
-|  17       | +        | (a b--c)     | TOS = NOS+TOS. Discard NOS. |
-|  18       | -        | (a b--c)     | TOS = NOS-TOS. Discard NOS. |
-|  19       | /mod     | (a b--r q)   | TOS = NOS/TOS. NOS = NOS%TOS. |
-|  20       | <        | (a b--f)     | If (NOS<TOS) then TOS = 1 else TOS = 0. Discard NOS. |
-|  21       | =        | (a b--f)     | If (NOS=TOS) then TOS = 1 else TOS = 0. Discard NOS. |
-|  22       | >        | (a b--f)     | If (NOS<TOS) then TOS = 1 else TOS = 0. Discard NOS. |
-|  23       | +!       | (n a--)      | Add NOS to the cell at TOS. Discard TOS and NOS. |
-|  24       | '        | (--a)        | Push the address of the next word from the dictionary. |
-|  25       | for      | (n--)        | Start a FOR loop. |
-|  26       | next     | (--)         | End the current FOR loop. |
-|  27       | and      | (a b--c)     | TOS = NOS and TOS. Discard NOS. |
-|  28       | or       | (a b--c)     | TOS = NOS or TOS. Discard NOS. |
-|  29       | xor      | (a b--c)     | TOS = NOS xor TOS. Discard NOS. |
-|  30       | 1+       | (a--b)       | TOS = TOS + 1. |
-|  31       | 1-       | (a--b)       | TOS = TOS - 1. |
+|   5       | njmpz    | (n--n)       | If (TOS==0) then PC = code[PC] else PC = PC+1. |
+|   6       | njmpnz   | (n--n)       | If (TOS!=0) then PC = code[PC] else PC = PC+1. |
+|   7       | dup      | (n--n n)     | Push TOS. |
+|   8       | drop     | (n--)        | Discard TOS. |
+|   9       | swap     | (a b--b a)   | Swap TOS and NOS. |
+|  10       | over     | (a b--a b a) | Push NOS. |
+|  11       | !        | (n a--)      | CELL store NOS through TOS. Discard TOS and NOS. |
+|  12       | @        | (a--n)       | CELL fetch TOS through TOS. |
+|  13       | c!       | (b a--)      | BYTE store NOS through TOS. Discard TOS and NOS. |
+|  14       | c@       | (a--b)       | BYTE fetch TOS through TOS. |
+|  15       | >r       | (n--)        | Push TOS onto the return stack. Discard TOS. |
+|  16       | r@       | (--n)        | Push RTOS. |
+|  17       | r>       | (--n)        | Push RTOS. Discard RTOS. |
+|  18       | *        | (a b--c)     | TOS = NOS*TOS. Discard NOS. |
+|  19       | +        | (a b--c)     | TOS = NOS+TOS. Discard NOS. |
+|  20       | -        | (a b--c)     | TOS = NOS-TOS. Discard NOS. |
+|  21       | /mod     | (a b--r q)   | TOS = NOS/TOS. NOS = NOS modulo TOS. |
+|  22       | <        | (a b--f)     | If (NOS<TOS) then TOS = 1 else TOS = 0. Discard NOS. |
+|  23       | =        | (a b--f)     | If (NOS=TOS) then TOS = 1 else TOS = 0. Discard NOS. |
+|  24       | >        | (a b--f)     | If (NOS<TOS) then TOS = 1 else TOS = 0. Discard NOS. |
+|  25       | +!       | (n a--)      | Add NOS to the cell at TOS. Discard TOS and NOS. |
+|  26       | '        | (--a)        | Push the address of the next word from the dictionary. |
+|  27       | for      | (n--)        | Start a FOR loop. |
+|  28       | next     | (--)         | End the current FOR loop. |
+|  29       | and      | (a b--c)     | TOS = NOS and TOS. Discard NOS. |
+|  30       | or       | (a b--c)     | TOS = NOS or TOS. Discard NOS. |
+|  31       | xor      | (a b--c)     | TOS = NOS xor TOS. Discard NOS. |
 |           |          |              | --- **System primitives** --- |
 |  32       | key      | (--n)        | Push the next keypress. Wait until one is available. |
 |  33       | ?key     | (--n)        | Push 1 if a keypress is available, else 0. |

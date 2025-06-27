@@ -6,11 +6,13 @@
 : here (h) @ ;
 : vhere (vh) @ ;
 : cell  4 ;
-$40 last cell + 1+ c!
+$40 last cell + 1 + c!
 : cells cell * ;
 : cell+ cell + ;
-: immediate $80 last cell+ 1+ c! ;
-: inline    $40 last cell+ 1+ c! ;
+: immediate $80 last cell+ 1 + c! ;
+: inline    $40 last cell+ 1 + c! ;
+: 1+ 1 + ; inline
+: 1- 1 - ; inline
 
 : bye 999 state ! ;
 : (exit)    0 ;  inline
@@ -18,6 +20,8 @@ $40 last cell + 1+ c!
 : (jmp)     2 ;  inline
 : (jmpz)    3 ;  inline
 : (jmpnz)   4 ;  inline
+: (njmpz)   5 ;  inline
+: (njmpnz)  6 ;  inline
 : (ztype)  35 ;  inline
 
 : ->code cells mem + ;
@@ -26,13 +30,17 @@ $40 last cell + 1+ c!
 : , here dup 1+ (h) ! code! ;
 
 : comp? ( --n ) state @ 1 = ;
-: if  (jmpz)  , here 0 ,  ; immediate
-: if0 (jmpnz) , here 0 ,  ; immediate
-: then here swap code! ; immediate
+: if   (jmpz)   , here 0 , ; immediate
+: -if  (njmpz)  , here 0 , ; immediate
+: if0  (jmpnz)  , here 0 , ; immediate
+: -if0 (njmpnz) , here 0 , ; immediate
+: then here swap code!   ; immediate
+
 : begin here ; immediate
-: again (jmp)   , , ; immediate
-: while (jmpnz) , , ; immediate
-: until (jmpz)  , , ; immediate
+: again (jmp)     , , ; immediate
+: while (jmpnz)   , , ; immediate
+: -while (njmpnz) , , ; immediate
+: until (jmpz)    , , ; immediate
 
 : aligned ( a1--a2 ) #4 over #3 and - #3 and + ;
 : align ( -- ) vhere aligned (vh) ! ;
@@ -56,10 +64,10 @@ vars (vh) !
 : nip   swap drop ;
 : 2dup  over over ;
 : 2drop drop drop ;
-: ?dup  dup if dup then ;
+: ?dup  -if dup then ;
 : 0= ( n--f ) 0 = ;
 : 0< ( n--f ) 0 < ;
-: 2+ ( n--m ) 1+ 1+ ;
+: 2+ ( n--m ) 2 + ;
 : 2* ( n--m ) dup + ;
 : <= ( a b--f ) > 0= ;
 : >= ( a b--f ) < 0= ;
