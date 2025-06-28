@@ -85,7 +85,6 @@ vars (vh) !
 : /   /mod nip  ;
 : mod /mod drop ;
 : */ ( n m q--n' ) >r * r> / ;
-: ?dup ( n--n n | 0 ) dup if dup then ;
 : execute ( xt-- ) ?dup if >r then ;
 
 var (neg)    1 allot
