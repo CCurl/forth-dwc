@@ -6,7 +6,7 @@
 : here (h) @ ;
 : vhere (vh) @ ;
 : cell  4 ;
-$40 last cell + 1 + c!
+$40 last cell + 1 + c! ( make inline )
 : cells cell * ;
 : cell+ cell + ;
 : immediate $80 last cell+ 1 + c! ;
@@ -95,7 +95,7 @@ var (buf) cell allot
 : #.   ( -- )    '.' #c ;
 : #n   ( n-- )   '0' + dup '9' > if 7 + then #c ;
 : #    ( n--m )  base @ /mod swap #n ;
-: #s   ( n--0 )  # dup if #s exit then ;
+: #s   ( n--0 )  # -if #s exit then ;
 : <#   ( n--m )  ?neg buf 65 + (buf) ! 0 #c ;
 : #>   ( n--a )  drop (neg) @ if '-' #c then (buf) @ ;
 : (.)   <# #s #> ztype ;
@@ -234,4 +234,114 @@ vars 1024 1024 * + const disk
 : load ( n-- ) dup read-block block-addr outer ;
 : load-next ( n-- ) dup read-block block-addr >in ! ;
 
-0 load
+(( 0 load ))
+
+
+
+
+(( Screen / Colors ))
+: csi          27 emit '[' emit ;
+: ->cr ( c r-- ) csi (.) ';' emit (.) 'H' emit ;
+: ->rc ( r c-- ) swap ->cr ;
+: cls          csi ." 2J" 1 dup ->cr ;
+: clr-eol      csi ." 0K" ;
+: cur-on       csi ." ?25h" ;
+: cur-off      csi ." ?25l" ;
+: cur-block    csi ." 2 q" ;
+: cur-bar      csi ." 5 q" ;
+
+: bg    ( color-- ) csi ." 48;5;" (.) 'm' emit ;
+: fg    ( color-- ) csi ." 38;5;" (.) 'm' emit ;
+: color ( bg fg-- ) fg bg ;
+: black   0 fg ;      : red    203 fg ;
+: green  40 fg ;      : yellow 226 fg ;
+: blue   63 fg ;      : purple 201 fg ;
+: cyan  117 fg ;      : grey   246 fg ;
+: white 255 fg ;
+
+
+
+
+(( Some simple benchmarks ))
+: t0 ztype '(' emit dup (.) ')' emit timer swap ;
+: fib ( n--fib ) 1- dup 2 < if drop 1 exit then dup fib swap 1- fib + ;
+: elapsed timer swap - ." , time: " . cr ;
+: bm-while ( n-- ) z" while " t0 begin 1- -while drop elapsed ;
+: bm-loop  ( n-- ) z" loop "  t0 for next elapsed ;
+: bm-fib   ( n-- ) z" fib"    t0 fib space (.) elapsed ;
+: bm-fibs  ( n-- ) 1 >b for b+ bm-fib next <b ;
+: mil ( n--m ) #1000 dup * * ;
+: bb 1000 mil bm-loop ;
+: bm-all 250 mil bm-while bb 30 bm-fib ;
+
+
+
+
+(( see <x> ))
+: .prim? ( xt--f ) dup 45 < if ." primitive " .hex/dec 1 exit then drop 0 ;
+: t0 ( n-- ) ." lit " $3fffffff and .hex/dec ;
+: .lit? ( b--f ) b $3fffffff > if b t0 1 exit then 0 ;
+: find-xt ( xt--de 1 | 0 ) a >r last a!
+    begin
+        a dict-end < if0 r> a! drop 0 exit then
+        @a over = if drop a 1 r> a! exit then
+        a dup cell+ c@ + a!
+    again
+: next-xt ( de--xt ) >r last t!
+    begin
+        t@ dict-end < if0 rdrop here exit then
+        t@ cell+ c@ t@ + b!
+        b r@ = if rdrop @t exit then
+        b t!
+    again ;
+: .lit-jmp? ( b-- ) b (lit) (njmpnz) btwi if space a+ code@ .hex/dec then ;
+: t2 ( a@-- ) cr a .hex4 ." : " a+ code@ dup .hex4 b!
+    space .lit? if exit then
+    b find-xt if 4 spaces .word then .lit-jmp? ;
+: see-range ( f t-- ) t! a! begin a t@ >= if exit then t2 again ;
+: see ' ?dup if0 ." -not found-" exit then
+    a!  @a  .prim? if exit then
+    a .hex ':' emit space a .word
+    a next-xt t!  @a  a! a t@ see-range ;
+
+
+
+
+(( a somewhat circular stack inspired by Peter Jakacki ))
+(( this provides efficient access to the top 2 entries, p1-p2 ))
+(( it is easy enough to extend this to p3 if desired ))
+(( but pushing and popping entries is fairly expensive ))
+
+var t1 $10 cells allot
+  t1 cell+ const t2
+
+: p1   ( --n ) t1 @ ;
+: p2   ( --n ) t2 @ ;
+: p1!  ( n-- ) t1 ! ;
+: p2!  ( n-- ) t2 ! ;
+: @p1+ ( n-- ) p1 @ cell t1 +! ;
+: >>p  ( n-- ) >r t1 t1 r@ cells + $10 r> - move> ;
+: <<p  ( n-- ) >r t1 r@ cells + t1 $10 r> - move ;
+: >p   ( n-- )   1 >>p p1! ;
+: 2>p  ( x y-- ) 2 >>p p2! p1! ;
+: <p   ( n-- ) 1 <<p ;
+: .pstk t1 >a $10 for @a+ . next <a ;
+
+
+
+
+(( shell words ))
+: lg z" lazygit" system ;
+: ll z" ls -l" system ;
+
+(( Startup message ))
+: .version version <# # # #. # # #. #s 'v' #c #> ztype ;
+: .banner
+    ." dwc " green .version white ."  - Chris Curl" cr
+    yellow ."   Memory: " white mem-sz . ." bytes." cr
+    yellow ."     Code: " white vars mem - cell / . ." cells, used: " here . cr
+    yellow ."     Vars: " white disk vars - . ." bytes, used: " vhere vars - . cr
+    yellow ."     Dict: " white dict-end last - .  ." bytes used" cr ;
+.banner   marker
+
+." hello."

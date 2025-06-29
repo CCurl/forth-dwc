@@ -12,7 +12,7 @@ On a Linux box, it is about 24k.
 **DWC** stands for "dword-code". This is inspired by Tachyon. <br/>
 In a DWC program, each instruction is a DWORD. <br/>
 - If <= the last primitive (44), then it is a primitive.
-- Else, if >= LIT_BITS ($3FFFFFFF), then it is a literal.
+- Else, if >= LIT_BITS ($3FFFFFFF), then it is a literal anded with LIT_BITS.
 - Else, it is the XT (code address) of a word in the dictionary.
 
 ## ColorForth influences
@@ -28,7 +28,7 @@ This gives the operator more flexibility.
 | 3     | INTERPRET |
 | 4     | COMMENT   |
 
-### DWC also hard-codes the following state-change words:
+### DWC also hard-codes the following IMMEDIATE state-change words:
 
 | Word | Action |
 |:--   |:-- |
