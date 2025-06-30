@@ -103,9 +103,9 @@ var (buf) cell allot
 
 : 0sp 0 (sp) ! ;
 : depth (sp) @ 1- ;
-: .s '(' emit space depth if
-        (stk) cell+ >r depth for r@ @ . r> cell+ >r next
-    then ')' emit rdrop ;
+: .s '(' emit space depth ?dup if
+        (stk) swap for cell+ dup @ . next drop
+    then ')' emit ;
 
 (( a circular stack ))
 (( t8: stack start,   t9: stack end ))
@@ -177,8 +177,8 @@ val b   (val)  t0
 
 (( Strings / Memory ))
 : fill   ( a num ch-- ) >r swap >b for r@ c!b+ next <b rdrop ;
-: move   ( f t n-- ) >r >b >a r> for  @a+  !b+ next <a <b ;
-: cmove  ( f t n-- ) >r >b >a r> for c@a+ c!b+ next <a <b ;
+: move   ( f t n-- ) >r >b >a r> ?dup if for  @a+  !b+ next then <a <b ;
+: cmove  ( f t n-- ) >r >b >a r> ?dup if for c@a+ c!b+ next then <a <b ;
 : move>  ( f t n-- ) >r r@ 1- cells + >b r@ 1- cells + >a r> for  @a-  !b- next <a <b ;
 : cmove> ( f t n-- ) >r r@ 1-       + >b r@ 1-       + >a r> for c@a- c!b- next <a <b ;
 : s-len  ( str--len ) >a 0 begin c@a+ if0 <a exit then 1+ again ;
