@@ -49,7 +49,7 @@ $40 last cell + 1 + c! ( make inline )
 : v,  ( n-- ) vhere ! cell allot ;
 
 : const add-word (lit) , , (exit) , ;
-: var align vhere const ;
+: var ( n-- ) align vhere const allot ;
 mem mem-sz + const dict-end
 64 1024 * cells mem + const vars
 vars (vh) !
@@ -87,9 +87,9 @@ vars (vh) !
 : */ ( n m q--n' ) >r * r> / ;
 : execute ( xt-- ) ?dup if >r then ;
 
-var (neg)    1 allot
-var buf     65 allot
-var (buf) cell allot
+   1 var (neg)
+  65 var buf
+cell var (buf)
 : ?neg ( n--n' ) dup 0< dup (neg) c! if negate then ;
 : #c   ( c-- )   (buf) -- (buf) @ c! ;
 : #.   ( -- )    '.' #c ;
@@ -110,7 +110,7 @@ var (buf) cell allot
 (( a circular stack ))
 (( t8: stack start,   t9: stack end ))
 (( t4: stack pointer, t5: stack pointer address ))
-var t8 $10 cells allot inline
+$10 cells var t8
 vhere cell - const t9
 val t4  (val)  t5
 : t2    ( -- )  cell t5 +! t4 t9 > if t8 t5 ! then ;
@@ -141,12 +141,12 @@ val a    (val)  t0
 
 val b   (val)  t0
 : b!   ( n-- ) t0 ! ;
-: b++  ( -- )  1 t0 +! ;
-: b+   ( --n ) b b++ ;
+: b++  ( -- )   1 t0 +! ;
+: b--  ( --n ) -1 t0 +! ;
 : !b+  ( n-- ) b  ! cell t0 +! ;
 : !b-  ( n-- ) b  ! -4   t0 +! ;
-: c!b+ ( c-- ) b+ c! ;
-: c!b- ( c-- ) b c! -1 t0 +! ;
+: c!b+ ( c-- ) b c! b++ ;
+: c!b- ( c-- ) b c! b-- ;
 : >b   ( n-- ) b >t b! ;
 : <b   ( -- )  t> b! ;
 
@@ -164,16 +164,18 @@ val b   (val)  t0
 : ." (") comp? if (ztype) , exit then ztype ;  immediate
 
 : .word ( de-- ) cell+ 3 + ztype ;
-: words last a! 0 b! 0 >t begin
+: words last a! 0 b! 1 >t begin
         a dict-end < if0 '(' emit t> . ." words)" exit then
         a .word tab t++
         a cell+ 2+ c@ 7 > if b++ then 
-        b+ 9 > if cr 0 b! then
-        a dup cell+ c@ + a!
+        b 9 > if cr 0 b! then
+        b++ a dup cell+ c@ + a!
     again ;
 
-: [[ vhere >t  here >t  1 state ! ;
-: ]] (exit) , 0 state ! t> dup >r (h) ! t> (vh) ! ; immediate
+cell var t4
+cell var t5
+: [[ here t4 !  vhere t5 !  1 state ! ;
+: ]] (exit) , 0 state ! t4 @ dup >r (h) ! t5 @ (vh) ! ; immediate
 
 (( Strings / Memory ))
 : fill   ( a num ch-- ) >r swap >b for r@ c!b+ next <b rdrop ;
@@ -208,19 +210,21 @@ val b   (val)  t0
 : .dec     ( n-- )  #1 #10 .nwb ;
 : .hex/dec ( n-- ) dup ." ($" .hex ." /#" .dec ')' emit ;
 
-: aemit ( ch-- )     dup #32 #126 btwi if0 drop '.' then emit ;
-: t0    ( addr-- )   >a $10 for c@a+ aemit next <a ;
-: dump  ( addr n-- ) swap >a 0 >t for
+: aemit ( ch-- )    dup #32 #126 btwi if0 drop '.' then emit ;
+: t0    ( addr-- )  >a $10 for c@a+ aemit next <a ;
+: dump  ( addr n--) swap >a 0 >t for
      t+ if0 a cr .hex ." : " then c@a+ .hex space
      t@ $10 = if 0 t! space space a $10 - t0 then
    next tdrop <a ;
 
-var t0 3 cells allot
-: marker here t0 !   last t0 cell+ !   vhere t0 2 cells + ! ;
-: forget t0 @ (h) !  t0 cell+ @ (l) !  t0 2 cells + @ (vh) ! ;
+cell var t0
+cell var t1
+cell var t2
+: marker  here t0 !   last t1 !   vhere t2 ! ;
+: forget  t0 @ (h) !  t1 @ (l) !  t2 @ (vh) ! ;
 
 (( Disk: 512 blocks - 2048 bytes each ))
-var fn 32 allot
+32 var fn
 vars 1024 1024 * + const disk
 : block-sz 2048 ;
 : block-fn ( n--a ) fn z" block-" s-cpy swap <# # # #s #> s-cat z" .fth" s-cat ;
@@ -269,7 +273,7 @@ vars 1024 1024 * + const disk
 : bm-while ( n-- ) z" while " t0 begin 1- -while drop elapsed ;
 : bm-loop  ( n-- ) z" loop "  t0 for next elapsed ;
 : bm-fib   ( n-- ) z" fib"    t0 fib space (.) elapsed ;
-: bm-fibs  ( n-- ) 1 >b for b+ bm-fib next <b ;
+: bm-fibs  ( n-- ) 1 >b for b b++ bm-fib next <b ;
 : mil ( n--m ) #1000 dup * * ;
 : bb 1000 mil bm-loop ;
 : bm-all 250 mil bm-while bb 30 bm-fib ;
@@ -312,8 +316,8 @@ vars 1024 1024 * + const disk
 (( it is easy enough to extend this to p3 if desired ))
 (( but pushing and popping entries is fairly expensive ))
 
-var t1 $10 cells allot
-  t1 cell+ const t2
+$10 cells var t1
+t1 cell+ const t2
 
 : p1   ( --n ) t1 @ ;
 : p2   ( --n ) t2 @ ;
@@ -333,6 +337,63 @@ var t1 $10 cells allot
 (( shell words ))
 : lg z" lazygit" system ;
 : ll z" ls -l" system ;
+
+
+
+
+
+(( Block #8 - vkey ))
+[ #256  #59 + const key-f1   [ #256  #60 + const key-f2
+[ #256  #61 + const key-f3   [ #256  #62 + const key-f4
+[ #256  #71 + const key-home   (( VT: 27 91 72 ))
+[ #256  #72 + const key-up     (( VT: 27 91 65 ))
+[ #256  #73 + const key-pgup   (( VT: 27 91 53 126 ))
+[ #256  #75 + const key-left   (( VT: 27 91 68 ))
+[ #256  #77 + const key-right  (( VT: 27 91 67 ))
+[ #256  #79 + const key-end    (( VT: 27 91 70 ))
+[ #256  #80 + const key-down   (( VT: 27 91 66 ))
+[ #256  #81 + const key-pgdn   (( VT: 27 91 54 126 ))
+[ #256  #82 + const key-ins    (( VT: 27 91 50 126 ))
+[ #256  #83 + const key-del    (( VT: 27 91 51 126 ))
+[ #256 #119 + const key-chome  (( VT: 27 91 ?? ??? ))
+[ #256 #117 + const key-cend   (( VT: 27 91 ?? ??? ))
+: vk2 ( --k ) key 126 = if0 27 exit then
+    a 50 = if key-ins   exit then
+    a 51 = if key-del   exit then
+    a 53 = if key-pgup  exit then
+    a 54 = if key-pgdn  exit then    27 ;
+: vk1 ( --k ) key a!
+    a 68 = if key-left  exit then
+    a 67 = if key-right exit then
+    a 65 = if key-up    exit then
+    a 66 = if key-down  exit then
+    a 72 = if key-home  exit then
+    a 70 = if key-end   exit then
+    a 49 > a 55 < and if vk2 exit then   27 ;
+: vt-key ( --k )  key 91 = if vk1 exit then 27 ;
+: vkey ( --k ) key dup if0 drop #256 key + exit then ( Windows FK )
+    dup 224 = if drop #256 key + exit then ( Windows )
+    dup  27 = if drop vt-key exit then ; ( VT )
+
+
+: printable? ( c--f ) dup 31 > swap 127 < and ;
+: bs 8 emit ; [ inline
+: accept ( dst-- ) dup >r >b 0 >a
+  begin key a!
+     a   3 =  a 27 = or if 0 r> c! <a <b exit then
+     a  13 = if 0 c!b+ <a <b rdrop exit then
+     a   8 = if 127 a! then ( Windows: 8=backspace )
+     a 127 = if r@ b < if b-- bs space bs then then
+     a printable? if a dup c!b+ emit then
+  again ;
+
+
+( fixed point )
+: f. 100 /mod (.) '.' emit abs 2 10 .nwb ;
+: f* * 100 / ;
+: f/ swap 100 * swap / ;
+: f+ + ;
+: f- - ;
 
 (( Startup message ))
 : .version version <# # # #. # # #. #s 'v' #c #> ztype ;
