@@ -212,7 +212,7 @@ cell var t5
 
 : aemit ( ch-- )    dup #32 #126 btwi if0 drop '.' then emit ;
 : t0    ( addr-- )  >a $10 for c@a+ aemit next <a ;
-: dump  ( addr n--) swap >a 0 >t for
+: dump  ( addr n-- ) swap >a 0 >t for
      t+ if0 a cr .hex ." : " then c@a+ .hex space
      t@ $10 = if 0 t! space space a $10 - t0 then
    next tdrop <a ;
