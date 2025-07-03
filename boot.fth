@@ -143,6 +143,7 @@ val b   (val)  t0
 : b!   ( n-- ) t0 ! ;
 : b++  ( -- )   1 t0 +! ;
 : b--  ( --n ) -1 t0 +! ;
+: b+   ( --n ) b b++ ;
 : !b+  ( n-- ) b  ! cell t0 +! ;
 : !b-  ( n-- ) b  ! -4   t0 +! ;
 : c!b+ ( c-- ) b c! b++ ;
@@ -168,8 +169,8 @@ val b   (val)  t0
         a dict-end < if0 '(' emit t> . ." words)" exit then
         a .word tab t++
         a cell+ 2+ c@ 7 > if b++ then 
-        b 9 > if cr 0 b! then
-        b++ a dup cell+ c@ + a!
+        b+ 9 > if cr 0 b! then
+        a dup cell+ c@ + a!
     again ;
 
 cell var t4
@@ -240,9 +241,6 @@ vars 1024 1024 * + const disk
 
 (( 0 load ))
 
-
-
-
 (( Screen / Colors ))
 : csi          27 emit '[' emit ;
 : ->cr ( c r-- ) csi (.) ';' emit (.) 'H' emit ;
@@ -253,6 +251,7 @@ vars 1024 1024 * + const disk
 : cur-off      csi ." ?25l" ;
 : cur-block    csi ." 2 q" ;
 : cur-bar      csi ." 5 q" ;
+: cur-rt       csi (.) 'C' emit ;
 
 : bg    ( color-- ) csi ." 48;5;" (.) 'm' emit ;
 : fg    ( color-- ) csi ." 38;5;" (.) 'm' emit ;
@@ -262,8 +261,6 @@ vars 1024 1024 * + const disk
 : blue   63 fg ;      : purple 201 fg ;
 : cyan  117 fg ;      : grey   246 fg ;
 : white 255 fg ;
-
-
 
 
 (( Some simple benchmarks ))
@@ -277,8 +274,6 @@ vars 1024 1024 * + const disk
 : mil ( n--m ) #1000 dup * * ;
 : bb 1000 mil bm-loop ;
 : bm-all 250 mil bm-while bb 30 bm-fib ;
-
-
 
 
 (( see <x> ))
@@ -307,8 +302,6 @@ vars 1024 1024 * + const disk
     a!  @a  .prim? if exit then
     a .hex ':' emit space a .word
     a next-xt t!  @a  a! a t@ see-range ;
-
-
 
 
 (( a somewhat circular stack inspired by Peter Jakacki ))
@@ -394,6 +387,27 @@ t1 cell+ const t2
 : f/ swap 100 * swap / ;
 : f+ + ;
 : f- - ;
+
+
+(( Editor  ))
+val off (val) t0  : off! t0 ! ;
+val row (val) t0  : row! t0 ! ;  : +row ( n-- ) t0 +! ;
+val col (val) t0  : col! t0 ! ;  : +col ( n-- ) t0 +! ;
+block-sz var ed-buf
+: rows 23 ;   : cols 89 ; (( NB: 23*89 = 2047 ))
+: off->rc ( off--c r ) cols /mod ;
+: rc->off ( r c--off ) swap cols * + ;
+: ed-norm ( -- ) off 0 max block-sz min off! off off->rc row! col! ;
+: ed-mv  ( r c-- ) +col +row row col rc->off off! ed-norm ;
+: ed-ch  ( r c--a ) rc->off ed-buf + ;
+: blk>buf ( n-- ) block-addr ed-buf block-sz cell / move ;
+: buf>blk ( n-- ) ed-buf swap block-addr block-sz cell / move ;
+: ed-hl   ( -- ) cols 2+ for '-' emit next ;
+: ed-vl   ( -- ) 2 >a rows for 1 a ->cr '|' emit  cols 2+ a+ ->cr '|' emit next <a ;
+: ed-box  ( -- ) 1 1 ->cr green ed-hl ed-vl cr ed-hl ;
+: ed-draw ( -- ) ed-buf >a rows for cols for c@a+ 32 max emit next cr cur-rt next <a ;
+: ed-show ( -- ) 1 if 2 2 ->cr white ed-draw then ;
+: ed-redraw ( -- ) cls ed-box ed-show ;
 
 (( Startup message ))
 : .version version <# # # #. # # #. #s 'v' #c #> ztype ;
