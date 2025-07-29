@@ -306,7 +306,7 @@ vars 1024 1024 * + const disk
 
 (( a somewhat circular stack inspired by Peter Jakacki ))
 (( this provides efficient access to the top 2 entries, p1-p2 ))
-(( it is easy enough to extend this to p3 if desired ))
+(( it is easy enough to extend this to p3/p4 if desired ))
 (( but pushing and popping entries is fairly expensive ))
 
 $10 cells var t1
@@ -390,24 +390,34 @@ t1 cell+ const t2
 
 
 (( Editor  ))
-val off (val) t0  : off! t0 ! ;
-val row (val) t0  : row! t0 ! ;  : +row ( n-- ) t0 +! ;
-val col (val) t0  : col! t0 ! ;  : +col ( n-- ) t0 +! ;
+val blk   (val) t0  : blk! t0 ! ;
+val off   (val) t0  : off! t0 ! ;
+val row   (val) t0  : row! t0 ! ;    : +row ( n-- ) t0 +! ;
+val col   (val) t0  : col! t0 ! ;    : +col ( n-- ) t0 +! ;
+val show? (val) t0  : show! 1 t0 ! ; : shown 0 t0 ! ;
+val mode  (val) t0  : mode! t0 ! ;
 block-sz var ed-buf
 : rows 23 ;   : cols 89 ; (( NB: 23*89 = 2047 ))
 : off->rc ( off--c r ) cols /mod ;
 : rc->off ( r c--off ) swap cols * + ;
 : ed-norm ( -- ) off 0 max block-sz min off! off off->rc row! col! ;
-: ed-mv  ( r c-- ) +col +row row col rc->off off! ed-norm ;
-: ed-ch  ( r c--a ) rc->off ed-buf + ;
-: blk>buf ( n-- ) block-addr ed-buf block-sz cell / move ;
-: buf>blk ( n-- ) ed-buf swap block-addr block-sz cell / move ;
+: ed-mv   ( r c-- ) +col +row row col rc->off off! ed-norm ;
+: ed-ch   ( r c--a ) rc->off ed-buf + ;
+: blk>buf ( n-- ) block-addr ed-buf block-sz 1+ cell / move ;
+: buf>blk ( n-- ) ed-buf swap block-addr block-sz 1+ cell / move ;
 : ed-hl   ( -- ) cols 2+ for '-' emit next ;
 : ed-vl   ( -- ) 2 >a rows for 1 a ->cr '|' emit  cols 2+ a+ ->cr '|' emit next <a ;
 : ed-box  ( -- ) 1 1 ->cr green ed-hl ed-vl cr ed-hl ;
 : ed-draw ( -- ) ed-buf >a rows for cols for c@a+ 32 max emit next cr cur-rt next <a ;
-: ed-show ( -- ) 1 if 2 2 ->cr white ed-draw then ;
-: ed-redraw ( -- ) cls ed-box ed-show ;
+: ed-foot ( -- )  ;
+: ed->cur ( -- ) col 2+ row 2+ ->cr ;
+: ed-show ( -- ) show? if 2 2 ->cr white ed-draw then shown ed-foot ;
+: ed-redraw ( -- ) cls show! ed-box ;
+: ed-key ( key-- ) dup . 3 = if 999 mode! then ;
+: ed-init ( blk-- ) blk! blk read-block blk blk>buf ed-redraw 0 off! ed-norm ;
+: edit ( blk-- ) ed-init begin ed-show ed->cur vkey ed-key mode 999 = until ;
+: ed ( -- ) blk edit ;
+1 blk!
 
 (( Startup message ))
 : .version version <# # # #. # # #. #s 'v' #c #> ztype ;
