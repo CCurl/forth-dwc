@@ -304,24 +304,27 @@ vars 1024 1024 * + const disk
     a next-xt t!  @a  a! a t@ see-range ;
 
 
-(( a somewhat circular stack inspired by Peter Jakacki ))
-(( this provides efficient access to the top 2 entries, p1-p2 ))
-(( it is easy enough to extend this to p3/p4 if desired ))
+(( a stack inspired by Peter Jakacki ))
+(( this provides efficient access to the top 3 entries, x,y,z ))
+(( it is easy enough to extend this if desired ))
 (( but pushing and popping entries is fairly expensive ))
 
 $10 cells var t1
 t1 cell+ const t2
+t2 cell+ const t3
 
-: p1   ( --n ) t1 @ ;
-: p2   ( --n ) t2 @ ;
-: p1!  ( n-- ) t1 ! ;
-: p2!  ( n-- ) t2 ! ;
-: @p1+ ( n-- ) p1 @ cell t1 +! ;
-: >>p  ( n-- ) >r t1 t1 r@ cells + $10 r> - move> ;
-: <<p  ( n-- ) >r t1 r@ cells + t1 $10 r> - move ;
-: >p   ( n-- )   1 >>p p1! ;
-: 2>p  ( x y-- ) 2 >>p p2! p1! ;
-: <p   ( n-- ) 1 <<p ;
+: x    ( --n ) t1 @ ; : x!  ( n-- ) t1 ! ;
+: y    ( --n ) t2 @ ; : y!  ( n-- ) t2 ! ;
+: z    ( --n ) t3 @ ; : z!  ( n-- ) t3 ! ;
+: @x+  ( n-- ) x @ cell t1 +! ;
+: >p   ( n-- ) >r t1 t1 r@ cells + $10 r> - move> ;
+: <p   ( n-- ) >r t1 r@ cells + t1 $10 r> - move ;
+: >x   ( n-- )     1 >p x! ;
+: >xy  ( x y-- )   2 >p y! x! ;
+: >xyz ( x y z-- ) 3 >p z! y! x! ;
+: <x   ( n-- ) 1 <p ;
+: <xy  ( n-- ) 2 <p ;
+: <xyz ( n-- ) 3 <p ;
 : .pstk t1 >a $10 for @a+ . next <a ;
 
 
@@ -381,7 +384,7 @@ t1 cell+ const t2
   again ;
 
 
-( fixed point )
+( simple fixed point )
 : f. 100 /mod (.) '.' emit abs 2 10 .nwb ;
 : f* * 100 / ;
 : f/ swap 100 * swap / ;
