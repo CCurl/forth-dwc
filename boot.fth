@@ -134,18 +134,20 @@ val a    (val)  t0
 : @a    ( --n ) a  @ ;
 : @a+   ( --n ) a  @ cell t0 +! ;
 : @a-   ( --n ) a  @ -4   t0 +! ;
-: c@a+  ( --c ) a c@ a++ ;
+: c@a   ( --c ) a c@ ;
+: c@a+  ( --c ) a+ c@ ;
 : c@a-  ( --c ) a c@ -1 t0 +! ;
 : >a    ( n-- ) a >t a! ;
 : <a    ( -- )  t> a! ;
 
 val b   (val)  t0
 : b!   ( n-- ) t0 ! ;
-: b++  ( -- )   1 t0 +! ;
-: b--  ( --n ) -1 t0 +! ;
+: b++  ( -- )  1 t0 +! ;
+: b--  ( -- ) -1 t0 +! ;
 : b+   ( --n ) b b++ ;
 : !b+  ( n-- ) b  ! cell t0 +! ;
 : !b-  ( n-- ) b  ! -4   t0 +! ;
+: c@b   ( --c ) b c@ ;
 : c!b+ ( c-- ) b c! b++ ;
 : c!b- ( c-- ) b c! b-- ;
 : >b   ( n-- ) b >t b! ;
@@ -190,6 +192,12 @@ cell var t5
 : s-cat  ( dst src--dst ) over s-end over s-len 1+ cmove ;
 : s-catc ( dst ch--dst )  over s-end >b c!b+ 0 c!b+ <b ;
 : s-catn ( dst num--dst ) <# #s #> s-cat ;
+: s-eq   ( s1 s2--f ) >a >b
+    begin
+        c@a c@b = if0 0 <b <a exit then
+        c@a if0 1 <b <a exit then
+        a++ b++
+    again ;
 
 (( Files ))
 : fopen-r  ( nm--fh ) z" rb" fopen ;
@@ -400,25 +408,61 @@ val col   (val) t0  : col! t0 ! ;    : +col ( n-- ) t0 +! ;
 val show? (val) t0  : show! 1 t0 ! ; : shown 0 t0 ! ;
 val mode  (val) t0  : mode! t0 ! ;
 block-sz var ed-buf
+64 var cmd-buf
 : rows 23 ;   : cols 89 ; (( NB: 23*89 = 2047 ))
 : off->rc ( off--c r ) cols /mod ;
 : rc->off ( r c--off ) swap cols * + ;
-: ed-norm ( -- ) off 0 max block-sz min off! off off->rc row! col! ;
+: ed-norm ( -- ) off 0 max block-sz 1- 1- min off! off off->rc row! col! ;
 : ed-mv   ( r c-- ) +col +row row col rc->off off! ed-norm ;
-: ed-ch   ( r c--a ) rc->off ed-buf + ;
+: ed-mvl  ( -- )  0 -1 ed-mv ;
+: ed-mvr  ( -- )  0  1 ed-mv ;
+: ed-mvu  ( -- ) -1  0 ed-mv ;
+: ed-mvd  ( -- )  1  0 ed-mv ;
+: ed-ch   ( -a ) row col rc->off ed-buf + ;
+: ed-ch!  ( c-- ) ed-ch c! show! ;
+: ed-pc?  ( a--f ) 32 126 btwi ;
+: ed-insb ( -- )  ;
+: ed-repc ( -- ) a ed-pc? if a ed-ch! ed-mvr then ;
+: ed-insc ( -- ) a ed-pc? if ed-insb a ed-ch! ed-mvr then ;
 : blk>buf ( n-- ) block-addr ed-buf block-sz 1+ cell / move ;
 : buf>blk ( n-- ) ed-buf swap block-addr block-sz 1+ cell / move ;
 : ed-hl   ( -- ) cols 2+ for '-' emit next ;
 : ed-vl   ( -- ) 2 >a rows for 1 a ->cr '|' emit  cols 2+ a+ ->cr '|' emit next <a ;
 : ed-box  ( -- ) 1 1 ->cr green ed-hl ed-vl cr ed-hl ;
 : ed-draw ( -- ) ed-buf >a rows for cols for c@a+ 32 max emit next cr cur-rt next <a ;
-: ed-foot ( -- )  ;
+: ed-md.  ( -- ) mode if0 ."  (norm) " then 
+    mode 1 = if red ."  (ins) " white then
+    mode 2 = if green ."  (repl) " white then ;
+: ed-foot ( -- ) 1 rows 3 + ->cr clr-eol
+    blk . ." : " row 1+ (.) '/' emit col 1+ (.) 
+    ed-md. ;
 : ed->cur ( -- ) col 2+ row 2+ ->cr ;
 : ed-show ( -- ) show? if 2 2 ->cr white ed-draw then shown ed-foot ;
 : ed-redraw ( -- ) cls show! ed-box ;
-: ed-key ( key-- ) dup . 3 = if 999 mode! then ;
-: ed-init ( blk-- ) blk! blk read-block blk blk>buf ed-redraw 0 off! ed-norm ;
-: edit ( blk-- ) ed-init begin ed-show ed->cur vkey ed-key mode 999 = until ;
+: ed-cmdx ( -- )
+    cmd-buf z" wq" s-eq if blk buf>blk blk write-block 999 mode! then
+    cmd-buf z" q"  s-eq if 999 mode! then
+    cmd-buf z" q!" s-eq if 999 mode! then ;
+: ed-cmd 1 rows 3 + ->cr ':' emit clr-eol cmd-buf accept ed-cmdx ;
+: ed-key ( -- ) vkey a!
+    a  3  = if 0 mode! exit then
+    a 27  = if 0 mode! exit then
+    1 mode = if ed-insc exit then
+    2 mode = if ed-repc exit then
+    a 'h' = if ed-mvl exit then
+    a 'j' = if ed-mvd exit then
+    a 'k' = if ed-mvu exit then
+    a 'l' = if ed-mvr exit then
+    a '_' = if 0 col! exit then
+    a 'g' = if 0 col! 0 row! exit then
+    a  9  = if 0 8 ed-mv     exit then
+    a 13  = if ed-mvd 0 col! exit then
+    a 'i' = if 1 mode! exit then
+    a 'R' = if 2 mode! exit then
+    a ':' = if ed-cmd exit then
+    ;
+: ed-init ( blk-- ) 0 mode! blk! blk read-block blk blk>buf ed-redraw 0 off! ed-norm ;
+: edit ( blk-- ) ed-init begin ed-show ed->cur ed-key mode 999 = until ;
 : ed ( -- ) blk edit ;
 1 blk!
 
