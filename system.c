@@ -57,11 +57,6 @@ int key() {
 	return x;
 }
 void ms(cell sleepForMS) {
-	while (sleepForMS > 1000) {
-		usleep(500000);
-		usleep(500000);
-		sleepForMS -= 1000;
-	}
 	if (sleepForMS > 0) { usleep(sleepForMS * 1000); }
 }
 

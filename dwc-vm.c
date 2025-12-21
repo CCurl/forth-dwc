@@ -75,17 +75,6 @@ void addLit(const char *name, cell val) {
 	if (btwi(val,0,LIT_BITS)) { dp->fl = INLINE; }
 }
 
-int strLen(const char *str) {
-	int ln = 0;
-	while (*(str++)) { ln++; }
-	return ln;
-}
-
-void strCpy(char *dst, const char *src) {
-	while (*src) { *(dst++) = *(src++); }
-	*dst = 0;
-}
-
 int strEqI(const char *src, const char *dst) {
 	while (lower(*src) == lower(*dst)) {
 		if (*src == 0) { return 1; }
@@ -101,7 +90,10 @@ void compileNum(cell n) {
 
 int nextWord() {
 	int ln = 0;
-	while (*toIn && (*toIn < 33)) { if (btwi(*toIn, COMPILE, COMMENT)) { changeState(*toIn); } ++toIn; }
+	while (*toIn && (*toIn < 33)) {
+		if (btwi(*toIn, COMPILE, COMMENT)) { changeState(*toIn); }
+		++toIn;
+	}
 	while (*toIn > 32) { wd[ln++] = *(toIn++); }
 	wd[ln] = 0;
 	return ln;
@@ -117,9 +109,8 @@ int isNum(const char *w, cell b) {
 	if (w[0] == 0) { return 0; }
 	while (*w) {
 		char c = lower(*(w++));
-		n = (n*b);
-		if (btwi(c,'0','9') && btwi(c,'0','0'+b-1)) { n += (c-'0'); }
-		else if (btwi(c,'a','a'+b-11)) { n += (c-'a'+10); }
+		if (btwi(c,'0','9') && btwi(c,'0','0'+b-1)) { n = (n*b)+(c-'0'); }
+		else if (btwi(c,'a','a'+b-11)) { n = (n*b)+(c-'a'+10); }
 		else return 0;
 	}
 	push(isNeg ? -n : n);
@@ -132,7 +123,7 @@ DE_T *addToDict(const char *w) {
 		w = &wd[0];
 	}
 	if (isTmpW(w)) { DE_T *x = &tmpWords[w[1]-'0']; x->xt = here; return x; }
-	int ln = strLen(w);
+	int ln = strlen(w);
 	if (ln == 0) { return (DE_T*)0; }
 	byte sz = CELL_SZ + 3 + ln + 1;
 	while (sz & 0x03) { ++sz; }
@@ -143,7 +134,7 @@ DE_T *addToDict(const char *w) {
 	dp->sz = sz;
 	dp->fl = 0;
 	dp->ln = ln;
-	strCpy(dp->nm, w);
+	strcpy(dp->nm, w);
 	return dp;
 }
 
@@ -153,7 +144,7 @@ DE_T *findInDict(char *w) {
 		w = &wd[0];
 	}
 	if (isTmpW(w)) { return &tmpWords[w[1]-'0']; }
-	cell cw = last, ln = strLen(w);
+	cell cw = last, ln = strlen(w);
 	while (cw < (cell)&mem[MEM_SZ]) {
 		DE_T *dp = (DE_T *)cw;
 		if ((dp->ln == ln) && (strEqI(dp->nm, w))) { return dp; }
@@ -181,17 +172,15 @@ next:
 }
 
 int isStateChange(const char *w) {
-	if (state == COMMENT) {
-		if (strEqI(w, ")"))  { return changeState(COMPILE); }
-		if (strEqI(w, "))")) { return changeState(INTERPRET); }
-		return state;
-	}
+	if (state == COMMENT) { return 1; }
 	if (strEqI(w, "]"))  { return changeState(COMPILE); }
 	if (strEqI(w, ":"))  { return changeState(DEFINE); }
 	if (strEqI(w, ";"))  { comma(EXIT); return changeState(INTERPRET); }
 	if (strEqI(w, "["))  { return changeState(INTERPRET); }
-	if (strEqI(w, "("))  { return changeState(COMMENT); }
-	if (strEqI(w, "((")) { return changeState(COMMENT); }
+	if (strEqI(w, "("))  {
+		while (nextWord() && !strEqI(wd, ")")) { }
+		return 1;
+	}
 	return 0;
 }
 

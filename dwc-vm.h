@@ -10,9 +10,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include <time.h>
 
-#define VERSION         20250626
+#define VERSION         20251220
 #define MEM_SZ          0x400000
 #define STK_SZ                63
 #define NAME_LEN              25

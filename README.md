@@ -4,13 +4,13 @@ DWC is an extremely minimal Forth system that can run stand-alone or be embedded
 
 DWC has 32 base primitives, 13 system primitives.<br/>
 DWC is implemented in 3 files: (dwc-vm.c, dwc-vm.h, system.c). <br/>
-The VM itself is 250 lines of code.
+The VM itself is under 250 lines of code.
 
 On Windows, a 32-bit Release build compiles to a 17k executable. <br/>
-On a Linux box, it is about 24k.
+On a Linux box, it is about 25k.
 
 **DWC** stands for "dword-code". This is inspired by Tachyon. <br/>
-In a DWC program, each instruction is a DWORD. <br/>
+In a DWC program, each instruction is a DWORD (32-bits). <br/>
 - If <= the last primitive (44), then it is a primitive.
 - Else, if >= LIT_BITS ($3FFFFFFF), then it is a literal anded with LIT_BITS.
 - Else, it is the XT (code address) of a word in the dictionary.
@@ -36,10 +36,9 @@ This gives the operator more flexibility.
 | ;    | Compile EXIT and change state to INTERPRET. |
 | [    | Change state to INTERPRET. |
 | ]    | Change state to COMPILE. |
-| (    | Change state to COMMENT. |
-| )    | Change state to COMPILE. |
-| ((   | Change state to COMMENT. |
-| ))   | Change state to INTERPRET. |
+
+**NOTE**: The '(' word skips words until it finds a word ')'.
+**NOTE**: It does **NOT** change the state to COMMENT.
 
 ## What DWC does in each state
 
@@ -48,9 +47,7 @@ This gives the operator more flexibility.
 | COMPILE   | Compile the current word/number. |
 | DEFINE    | Add the current word to the dictionary, change to COMPILE. |
 | INTERPRET | Execute the current word. |
-| COMMENT   | Ignore the current word if it is not ')' or '))'. |
-
-**NOTE: When in the COMMENT state, only ')' or '))' changes the state.**
+| COMMENT   | Ignore the current word. |
 
 ## INLINE words
 
@@ -61,8 +58,8 @@ When not INLINE, a call is made to the word instead.
 ## Transient words
 
 Words 't0' through 't9' are transient and are not added to the dictionary.<br/>
-They help with factoring code and and keep the dictionary uncluttered.<br/>
 They are case sensitive: 't0' is a transient word, 'T0' is not.
+They help with factoring code and and keep the dictionary uncluttered.<br/>
 
 ## The VM Primitives
 
@@ -99,7 +96,7 @@ They are case sensitive: 't0' is a transient word, 'T0' is not.
 |  27       | for      | (n--)        | Start a FOR loop. |
 |  28       | next     | (--)         | End the current FOR loop. |
 |  29       | and      | (a b--c)     | TOS = NOS and TOS. Discard NOS. |
-|  30       | or       | (a b--c)     | TOS = NOS or TOS. Discard NOS. |
+|  30       | or       | (a b--c)     | TOS = NOS or  TOS. Discard NOS. |
 |  31       | xor      | (a b--c)     | TOS = NOS xor TOS. Discard NOS. |
 |           |          |              | --- **System primitives** --- |
 |  32       | key      | (--n)        | Push the next keypress. Wait until one is available. |

@@ -1,6 +1,6 @@
 (  comments are built in!  )
 (  this comment leaves the state in COMPILE  )
-(( this comment leaves the state in INTERPRET ))
+( this comment leaves the state in INTERPRET )
 
 : last (l) @ ;
 : here (h) @ ;
@@ -54,8 +54,8 @@ mem mem-sz + const dict-end
 64 1024 * cells mem + const vars
 vars (vh) !
 
-((  val and (val) define a very efficient variable mechanism  ))
-((  Usage:  val xx   (val) (xx)   : xx! (xx) ! ;  ))
+(  val and (val) define a very efficient variable mechanism  )
+(  Usage:  val xx   (val) (xx)   : xx! (xx) ! ;  )
 : val   add-word (lit) , 0 , (exit) , ;
 : (val) add-word (lit) , here 3 - ->code , (exit) , ;
 
@@ -107,9 +107,9 @@ cell var (buf)
         (stk) swap for cell+ dup @ . next drop
     then ')' emit ;
 
-(( a circular stack ))
-(( t8: stack start,   t9: stack end ))
-(( t4: stack pointer, t5: stack pointer address ))
+( a circular stack )
+( t8: stack start,   t9: stack end )
+( t4: stack pointer, t5: stack pointer address )
 $10 cells var t8
 vhere cell - const t9
 val t4  (val)  t5
@@ -125,7 +125,7 @@ val t4  (val)  t5
 : .tstk '(' emit space $10 for t2 t@ . next ')' emit ;
 t8 t5 !
 
-(( ColorForth variables ))
+( ColorForth variables )
 
 val a    (val)  t0
 : a!    ( n-- ) t0 ! ;
@@ -180,7 +180,7 @@ cell var t5
 : [[ here t4 !  vhere t5 !  1 state ! ;
 : ]] (exit) , 0 state ! t4 @ dup >r (h) ! t5 @ (vh) ! ; immediate
 
-(( Strings / Memory ))
+( Strings / Memory )
 : fill   ( a num ch-- ) >r swap >b for r@ c!b+ next <b rdrop ;
 : move   ( f t n-- ) >r >b >a r> ?dup if for  @a+  !b+ next then <a <b ;
 : cmove  ( f t n-- ) >r >b >a r> ?dup if for c@a+ c!b+ next then <a <b ;
@@ -199,13 +199,13 @@ cell var t5
         a++ b++
     again ;
 
-(( Files ))
+( Files )
 : fopen-r  ( nm--fh ) z" rb" fopen ;
 : fopen-w  ( nm--fh ) z" wb" fopen ;
 : ->file   ( fh-- )   output-fp ! ;
 : ->stdout ( -- )     0 ->file ;
 
-(( Formatting number output ))
+( Formatting number output )
 : .nwb ( n width base-- )
     base @ >r  base !  >r <# r> 1- for # next #s #> ztype  r> base ! ;
 : decimal  ( -- )  #10 base ! ;
@@ -232,7 +232,7 @@ cell var t2
 : marker  here t0 !   last t1 !   vhere t2 ! ;
 : forget  t0 @ (h) !  t1 @ (l) !  t2 @ (vh) ! ;
 
-(( Disk: 512 blocks - 2048 bytes each ))
+( Disk: 512 blocks - 2048 bytes each )
 32 var fn
 vars 1024 1024 * + const disk
 : block-sz 2048 ;
@@ -247,9 +247,9 @@ vars 1024 1024 * + const disk
 : load ( n-- ) dup read-block block-addr outer ;
 : load-next ( n-- ) dup read-block block-addr >in ! ;
 
-(( 0 load ))
+( 0 load )
 
-(( Screen / Colors ))
+( Screen / Colors )
 : csi          27 emit '[' emit ;
 : ->cr ( c r-- ) csi (.) ';' emit (.) 'H' emit ;
 : ->rc ( r c-- ) swap ->cr ;
@@ -271,7 +271,7 @@ vars 1024 1024 * + const disk
 : white 255 fg ;
 
 
-(( Some simple benchmarks ))
+( Some simple benchmarks )
 : t0 ztype '(' emit dup (.) ')' emit timer swap ;
 : fib ( n--fib ) 1- dup 2 < if drop 1 exit then dup fib swap 1- fib + ;
 : elapsed timer swap - ." , time: " . cr ;
@@ -284,7 +284,7 @@ vars 1024 1024 * + const disk
 : bm-all 250 mil bm-while bb 30 bm-fib ;
 
 
-(( see <x> ))
+( see <x> )
 : .prim? ( xt--f ) dup 45 < if ." primitive " .hex/dec 1 exit then drop 0 ;
 : t0 ( n-- ) ." lit " $3fffffff and .hex/dec ;
 : .lit? ( b--f ) b $3fffffff > if b t0 1 exit then 0 ;
@@ -312,10 +312,10 @@ vars 1024 1024 * + const disk
     a next-xt t!  @a  a! a t@ see-range ;
 
 
-(( a stack inspired by Peter Jakacki ))
-(( this provides efficient access to the top 3 entries, x,y,z ))
-(( it is easy enough to extend this if desired ))
-(( but pushing and popping entries is fairly expensive ))
+( a stack inspired by Peter Jakacki )
+( this provides efficient access to the top 3 entries, x,y,z )
+( it is easy enough to extend this if desired )
+( but pushing and popping entries is fairly expensive )
 
 $10 cells var t1
 t1 cell+ const t2
@@ -338,7 +338,7 @@ t2 cell+ const t3
 
 
 
-(( shell words ))
+( shell words )
 : lg z" lazygit" system ;
 : ll z" ls -l" system ;
 
@@ -346,21 +346,21 @@ t2 cell+ const t3
 
 
 
-(( Block #8 - vkey ))
+( Block #8 - vkey )
 [ #256  #59 + const key-f1   [ #256  #60 + const key-f2
 [ #256  #61 + const key-f3   [ #256  #62 + const key-f4
-[ #256  #71 + const key-home   (( VT: 27 91 72 ))
-[ #256  #72 + const key-up     (( VT: 27 91 65 ))
-[ #256  #73 + const key-pgup   (( VT: 27 91 53 126 ))
-[ #256  #75 + const key-left   (( VT: 27 91 68 ))
-[ #256  #77 + const key-right  (( VT: 27 91 67 ))
-[ #256  #79 + const key-end    (( VT: 27 91 70 ))
-[ #256  #80 + const key-down   (( VT: 27 91 66 ))
-[ #256  #81 + const key-pgdn   (( VT: 27 91 54 126 ))
-[ #256  #82 + const key-ins    (( VT: 27 91 50 126 ))
-[ #256  #83 + const key-del    (( VT: 27 91 51 126 ))
-[ #256 #119 + const key-chome  (( VT: 27 91 ?? ??? ))
-[ #256 #117 + const key-cend   (( VT: 27 91 ?? ??? ))
+[ #256  #71 + const key-home   ( VT: 27 91 72 )
+[ #256  #72 + const key-up     ( VT: 27 91 65 )
+[ #256  #73 + const key-pgup   ( VT: 27 91 53 126 )
+[ #256  #75 + const key-left   ( VT: 27 91 68 )
+[ #256  #77 + const key-right  ( VT: 27 91 67 )
+[ #256  #79 + const key-end    ( VT: 27 91 70 )
+[ #256  #80 + const key-down   ( VT: 27 91 66 )
+[ #256  #81 + const key-pgdn   ( VT: 27 91 54 126 )
+[ #256  #82 + const key-ins    ( VT: 27 91 50 126 )
+[ #256  #83 + const key-del    ( VT: 27 91 51 126 )
+[ #256 #119 + const key-chome  ( VT: 27 91 ?? ??? )
+[ #256 #117 + const key-cend   ( VT: 27 91 ?? ??? )
 : vk2 ( --k ) key 126 = if0 27 exit then
     a 50 = if key-ins   exit then
     a 51 = if key-del   exit then
@@ -400,7 +400,7 @@ t2 cell+ const t3
 : f- - ;
 
 
-(( Editor  ))
+( Editor  )
 val blk   (val) t0  : blk! t0 ! ;
 val off   (val) t0  : off! t0 ! ;
 val row   (val) t0  : row! t0 ! ;    : +row ( n-- ) t0 +! ;
@@ -409,7 +409,7 @@ val show? (val) t0  : show! 1 t0 ! ; : shown 0 t0 ! ;
 val mode  (val) t0  : mode! t0 ! ;
 block-sz var ed-buf
 64 var cmd-buf
-: rows 23 ;   : cols 89 ; (( NB: 23*89 = 2047 ))
+: rows 23 ;   : cols 89 ; ( NB: 23*89 = 2047 )
 : off->rc ( off--c r ) cols /mod ;
 : rc->off ( r c--off ) swap cols * + ;
 : ed-norm ( -- ) off 0 max block-sz 1- 1- min off! off off->rc row! col! ;
@@ -466,7 +466,7 @@ block-sz var ed-buf
 : ed ( -- ) blk edit ;
 1 blk!
 
-(( Startup message ))
+( Startup message )
 : .version version <# # # #. # # #. #s 'v' #c #> ztype ;
 : .banner
     ." dwc " green .version white ."  - Chris Curl" cr
