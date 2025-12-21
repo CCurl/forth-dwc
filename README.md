@@ -37,8 +37,7 @@ This gives the operator more flexibility.
 | [    | Change state to INTERPRET. |
 | ]    | Change state to COMPILE. |
 
-**NOTE**: The '(' word skips words until it finds a word ')'.
-**NOTE**: It does **NOT** change the state to COMMENT.
+**NOTE**: The '(' word skips words until it finds a word ')'. It does **NOT** change the state to COMMENT.
 
 ## What DWC does in each state
 
