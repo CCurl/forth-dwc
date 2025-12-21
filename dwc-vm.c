@@ -42,7 +42,7 @@ DE_T tmpWords[10];
 	X(XOR,    "xor",      t = pop(); TOS ^= t; ) \
 	/* System primitives */ \
 	X(KEY,    "key",      push(key()); ) \
-	X(QKEY,   "?key",     push(qKey()); ) \
+	X(QKEY,   "key?",     push(qKey()); ) \
 	X(EMIT,   "emit",     emit(pop()); ) \
 	X(ZTYPE,  "ztype",    zType((const char*)pop()); ) \
 	X(fOPEN,  "fopen",    t = pop(); TOS = fOpen(TOS, t); ) \

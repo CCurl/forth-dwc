@@ -99,7 +99,7 @@ They help with factoring code and and keep the dictionary uncluttered.<br/>
 |  31       | xor      | (a b--c)     | TOS = NOS xor TOS. Discard NOS. |
 |           |          |              | --- **System primitives** --- |
 |  32       | key      | (--n)        | Push the next keypress. Wait until one is available. |
-|  33       | ?key     | (--n)        | Push 1 if a keypress is available, else 0. |
+|  33       | key?     | (--n)        | Push 1 if a keypress is available, else 0. |
 |  34       | emit     | (n--)        | Output char TOS. Discard TOS. |
 |  35       | ztype    | (a--)        | Output null-terminated string TOS. Discard TOS. |
 |  36       | fopen    | (nm md--h)   | Open file NOS using mode TOS (h=0 if error). |
