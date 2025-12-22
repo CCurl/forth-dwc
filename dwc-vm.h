@@ -1,4 +1,4 @@
-// A ColorForth inspired system, MIT license
+// A ColorForth inspired system, MIT license, (c) 2025 Chris Curl
 
 #ifndef __DWC_H__
 
@@ -13,7 +13,7 @@
 #include <string.h>
 #include <time.h>
 
-#define VERSION         20251220
+#define VERSION         20251221
 #define MEM_SZ          0x400000
 #define STK_SZ                63
 #define NAME_LEN              25

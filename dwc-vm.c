@@ -1,4 +1,10 @@
+// A ColorForth inspired system, MIT license, (c) 2025 Chris Curl
+
 #include "dwc-vm.h"
+
+#define X1(op, name, code) op,
+#define X2(op, name, code) case op: code goto next;
+#define X3(op, name, code) { name, op },
 
 char mem[MEM_SZ], *toIn, wd[32];
 ucell *code, dsp, rsp, lsp;
@@ -6,7 +12,7 @@ cell dstk[STK_SZ+1], rstk[STK_SZ+1], lstk[STK_SZ+1];
 cell here, last, vhere, base, state, outputFp;
 DE_T tmpWords[10];
 
-#define PRIMS \
+#define PRIMS(X) \
 	/* DWC primitives */ \
 	X(EXIT,   "exit",     pc = (ucell)rpop(); if (pc==0) { return; } ) \
 	X(LIT,    "lit",      push(code[pc++]); ) \
@@ -55,8 +61,7 @@ DE_T tmpWords[10];
 	X(OUTER,  "outer",    t = pop(); outer((char*)t); ) \
 	X(LASTOP, "system",   system((char*)pop()); )
 
-#define X(op, name, code) op,
-enum { PRIMS };
+enum { PRIMS(X1) };
 
 DE_T *addToDict(const char *w);
 void outer(const char *src);
@@ -153,16 +158,13 @@ DE_T *findInDict(char *w) {
 	return (DE_T *)0;
 }
 
-#undef X
-#define X(op, name, code) case op: code goto next;
-
 void inner(ucell pc) {
 	ucell ir;
 	cell n, t;
 next:
 	ir = code[pc++];
 	switch (ir)	{
-		PRIMS
+		PRIMS(X2)
 	default:
 		if (LIT_BITS <= ir) { push(ir & LIT_BITS); goto next; }
 		if (code[pc] != EXIT) { rpush(pc); }
@@ -215,9 +217,6 @@ void outer(const char *src) {
 	toIn = svIn;
 }
 
-#undef X
-#define X(op, name, code) { name, op },
-
 void dwcInit() {
 	code = (ucell *)&mem[0];
 	last = (cell)&mem[MEM_SZ];
@@ -225,12 +224,14 @@ void dwcInit() {
 	here = LASTOP+1;
 	base = 10;
 	state = INTERPRET;
-	NVP_T prims[] = { PRIMS { 0, 0 } };
+	NVP_T prims[] = { PRIMS(X3) { 0, 0 } };
 	for (int i = 0; prims[i].name; i++) { addPrim(prims[i].name, prims[i].value); }
 	NVP_T nv[] = {
 		{ "version", VERSION },        { "(vh)",      (ucell)&vhere },
 		{ "(h)",     (cell)&here },    { "(l)",       (cell)&last },
-		{ "(sp)",    (cell)&dsp },     { "(stk)",     (cell)&dstk[0] },
+		{ "(lsp)",   (cell)&lsp },     { "lstk",      (cell)&lstk[0] },
+		{ "(rsp)",   (cell)&rsp },     { "rstk",      (cell)&rstk[0] },
+		{ "(sp)",    (cell)&dsp },     { "stk",       (cell)&dstk[0] },
 		{ "state",   (cell)&state },   { "base",      (cell)&base },
 		{ "mem",     (cell)&mem[0] },  { "mem-sz",    (cell)MEM_SZ },
 		{ ">in",     (cell)&toIn},     { "output-fp", (cell)&outputFp },

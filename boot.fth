@@ -104,7 +104,7 @@ cell var (buf)
 : 0sp 0 (sp) ! ;
 : depth (sp) @ 1- ;
 : .s '(' emit space depth ?dup if
-        (stk) swap for cell+ dup @ . next drop
+        stk swap for cell+ dup @ . next drop
     then ')' emit ;
 
 ( a circular stack )

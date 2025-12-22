@@ -1,4 +1,4 @@
-// A ColorForth inspired system, MIT license
+// A ColorForth inspired system, MIT license, (c) 2025 Chris Curl
 
 #include "dwc-vm.h"
 
