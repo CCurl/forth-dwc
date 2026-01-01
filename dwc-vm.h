@@ -3,8 +3,11 @@
 #ifndef __DWC_H__
 
 #ifdef _MSC_VER
-#define _CRT_SECURE_NO_WARNINGS
-#define IS_WINDOWS 1
+    #define _CRT_SECURE_NO_WARNINGS
+    #define IS_WINDOWS 1
+    #define strEqI(s, d)  (_strcmpi(s, d) == 0)
+#else
+    #define strEqI(s, d)  (strcasecmp(s, d) == 0)
 #endif
 
 #include <stdio.h>
@@ -13,8 +16,8 @@
 #include <string.h>
 #include <time.h>
 
-#define VERSION         20251221
-#define MEM_SZ          0x400000
+#define VERSION         20251231
+#define MEM_SZ         0x1000000
 #define STK_SZ                63
 #define NAME_LEN              25
 #define IMMED               0x80
@@ -53,6 +56,5 @@ extern cell fOpen(cell name, cell mode);
 extern void fClose(cell fh);
 extern cell fRead(cell buf, cell sz, cell fh);
 extern cell fWrite(cell buf, cell sz, cell fh);
-extern cell fSeek(cell fh, cell offset);
 
 #endif //  __DWC_H__

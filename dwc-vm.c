@@ -9,7 +9,7 @@
 char mem[MEM_SZ], *toIn, wd[32];
 ucell *code, dsp, rsp, lsp;
 cell dstk[STK_SZ+1], rstk[STK_SZ+1], lstk[STK_SZ+1];
-cell here, last, vhere, base, state, outputFp;
+cell here, last, base, state, outputFp;
 DE_T tmpWords[10];
 
 #define PRIMS(X) \
@@ -73,19 +73,10 @@ cell rpop() { return (0 < rsp) ? rstk[rsp--] : 0; }
 void comma(ucell val) { code[here++] = val; }
 int  changeState(int st) { state = st; return st; }
 void addPrim(const char *nm, ucell op) { DE_T *dp = addToDict(nm); if (dp) { dp->xt = op; } }
-int  lower(int c) { return btwi(c, 'A', 'Z') ? c+32 : c; }
 int  isTmpW(const char *w) { return (w[0]=='t') && btwi(w[1],'0','9') && (w[2]==0) ? 1 : 0; }
 void addLit(const char *name, cell val) {
 	DE_T *dp = addToDict(name); compileNum(val); comma(EXIT);
 	if (btwi(val,0,LIT_BITS)) { dp->fl = INLINE; }
-}
-
-int strEqI(const char *src, const char *dst) {
-	while (lower(*src) == lower(*dst)) {
-		if (*src == 0) { return 1; }
-		src++; dst++;
-	}
-	return 0;
 }
 
 void compileNum(cell n) {
@@ -113,7 +104,7 @@ int isNum(const char *w, cell b) {
 	if ((b == 10) && (w[0] == '-')) { isNeg = 1; ++w; }
 	if (w[0] == 0) { return 0; }
 	while (*w) {
-		char c = lower(*(w++));
+		char x = *(w++), c = btwi(x,'A','Z') ? x+32 : x;
 		if (btwi(c,'0','9') && btwi(c,'0','0'+b-1)) { n = (n*b)+(c-'0'); }
 		else if (btwi(c,'a','a'+b-11)) { n = (n*b)+(c-'a'+10); }
 		else return 0;
@@ -133,7 +124,6 @@ DE_T *addToDict(const char *w) {
 	byte sz = CELL_SZ + 3 + ln + 1;
 	while (sz & 0x03) { ++sz; }
 	last -= sz;
-	if (last < vhere) { last += sz; return (DE_T*)0; }
 	DE_T *dp = (DE_T*)last;
 	dp->xt = (ucell)here;
 	dp->sz = sz;
@@ -159,14 +149,13 @@ DE_T *findInDict(char *w) {
 }
 
 void inner(ucell pc) {
-	ucell ir;
-	cell n, t;
+	cell ir, n, t;
 next:
 	ir = code[pc++];
 	switch (ir)	{
 		PRIMS(X2)
 	default:
-		if (LIT_BITS <= ir) { push(ir & LIT_BITS); goto next; }
+		if ((ir & LIT_MASK) == LIT_MASK) { push(ir & LIT_BITS); goto next; }
 		if (code[pc] != EXIT) { rpush(pc); }
 		pc = ir;
 		goto next;
@@ -175,10 +164,10 @@ next:
 
 int isStateChange(const char *w) {
 	if (state == COMMENT) { return 1; }
-	if (strEqI(w, "]"))  { return changeState(COMPILE); }
 	if (strEqI(w, ":"))  { return changeState(DEFINE); }
 	if (strEqI(w, ";"))  { comma(EXIT); return changeState(INTERPRET); }
 	if (strEqI(w, "["))  { return changeState(INTERPRET); }
+	if (strEqI(w, "]"))  { return changeState(COMPILE); }
 	if (strEqI(w, "("))  {
 		while (nextWord() && !strEqI(wd, ")")) { }
 		return 1;
@@ -218,24 +207,22 @@ void outer(const char *src) {
 }
 
 void dwcInit() {
-	code = (ucell *)&mem[0];
+	code = (ucell*)&mem[0];
 	last = (cell)&mem[MEM_SZ];
-	vhere = (cell)&mem[0];
 	here = LASTOP+1;
 	base = 10;
 	state = INTERPRET;
 	NVP_T prims[] = { PRIMS(X3) { 0, 0 } };
 	for (int i = 0; prims[i].name; i++) { addPrim(prims[i].name, prims[i].value); }
 	NVP_T nv[] = {
-		{ "version", VERSION },        { "(vh)",      (ucell)&vhere },
+		{ "version", VERSION },        { "output-fp", (cell)&outputFp },
 		{ "(h)",     (cell)&here },    { "(l)",       (cell)&last },
 		{ "(lsp)",   (cell)&lsp },     { "lstk",      (cell)&lstk[0] },
 		{ "(rsp)",   (cell)&rsp },     { "rstk",      (cell)&rstk[0] },
 		{ "(sp)",    (cell)&dsp },     { "stk",       (cell)&dstk[0] },
 		{ "state",   (cell)&state },   { "base",      (cell)&base },
 		{ "mem",     (cell)&mem[0] },  { "mem-sz",    (cell)MEM_SZ },
-		{ ">in",     (cell)&toIn},     { "output-fp", (cell)&outputFp },
-		{ 0, 0 }
+		{ ">in",     (cell)&toIn},     { 0, 0 }
 	};
 	for (int i = 0; nv[i].name; i++) { addLit(nv[i].name, nv[i].value); }
 }

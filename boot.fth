@@ -1,14 +1,14 @@
 (  comments are built in!  )
-(  this comment leaves the state in COMPILE  )
-( this comment leaves the state in INTERPRET )
 
 : last (l) @ ;
 : here (h) @ ;
-: vhere (vh) @ ;
 : cell  4 ;
 $40 last cell + 1 + c! ( make inline )
 : cells cell * ;
 : cell+ cell + ;
+: ->code ( off--addr ) cells mem + ;
+: code@ ( off--op )  ->code @ ;
+: code! ( op off-- ) ->code ! ;
 : immediate $80 last cell+ 1 + c! ;
 : inline    $40 last cell+ 1 + c! ;
 : 1+ 1 + ; inline
@@ -24,10 +24,10 @@ $40 last cell + 1 + c! ( make inline )
 : (njmpnz)  6 ;  inline
 : (ztype)  35 ;  inline
 
-: ->code cells mem + ;
-: code@ ( h--dwc )  ->code @ ;
-: code! ( dwc h-- ) ->code ! ;
 : , here dup 1+ (h) ! code! ;
+: const add-word (lit) , , (exit) , ;
+32 ->code const (vh)
+: vhere (vh) @ ;
 
 : comp? ( --n ) state @ 1 = ;
 : if   (jmpz)   , here 0 , ; immediate
@@ -48,7 +48,6 @@ $40 last cell + 1 + c! ( make inline )
 : vc, ( c-- ) vhere c! 1 allot ;
 : v,  ( n-- ) vhere ! cell allot ;
 
-: const add-word (lit) , , (exit) , ;
 : var ( n-- ) align vhere const allot ;
 mem mem-sz + const dict-end
 64 1024 * cells mem + const vars
@@ -469,7 +468,7 @@ block-sz var ed-buf
 ( Startup message )
 : .version version <# # # #. # # #. #s 'v' #c #> ztype ;
 : .banner
-    ." dwc " green .version white ."  - Chris Curl" cr
+    yellow ." DWC " green .version white ."  - Chris Curl" cr
     yellow ."   Memory: " white mem-sz . ." bytes." cr
     yellow ."     Code: " white vars mem - cell / . ." cells, used: " here . cr
     yellow ."     Vars: " white disk vars - . ." bytes, used: " vhere vars - . cr
