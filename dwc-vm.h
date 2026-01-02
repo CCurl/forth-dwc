@@ -33,6 +33,7 @@
 #define NOS           dstk[dsp-1]
 #define L0            lstk[lsp]
 #define L1            lstk[lsp-1]
+#define L2            lstk[lsp-2]
 
 enum { COMPILE=1, DEFINE, INTERPRET, COMMENT };
 typedef struct { ucell xt; byte sz; byte fl; byte ln; char nm[NAME_LEN+1]; } DE_T;

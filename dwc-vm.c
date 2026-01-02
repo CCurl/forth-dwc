@@ -7,20 +7,20 @@
 #define X3(op, name, code) { name, op },
 
 char mem[MEM_SZ], *toIn, wd[32];
-ucell *code, dsp, rsp, lsp;
-cell dstk[STK_SZ+1], rstk[STK_SZ+1], lstk[STK_SZ+1];
+ucell *code, dsp, rsp, lsp, tsp;
+cell dstk[STK_SZ+1], rstk[STK_SZ+1], lstk[STK_SZ+1], tstk[STK_SZ+1];
 cell here, last, base, state, outputFp;
 DE_T tmpWords[10];
 
 #define PRIMS(X) \
 	/* DWC primitives */ \
 	X(EXIT,   "exit",     pc = (ucell)rpop(); if (pc==0) { return; } ) \
-	X(LIT,    "lit",      push(code[pc++]); ) \
-	X(JMP,    "jmp",      pc = code[pc]; ) \
-	X(JMPZ,   "jmpz",     if (pop()==0) { pc = code[pc]; } else { pc++; } ) \
-	X(JMPNZ,  "jmpnz",    if (pop()) { pc = code[pc]; } else { pc++; } ) \
-	X(NJMPZ,  "njmpz",    if (TOS==0) { pc = code[pc]; } else { pc++; } ) \
-	X(NJMPNZ, "njmpnz",   if (TOS) { pc = code[pc]; } else { pc++; } ) \
+	X(LIT,    "",         push(code[pc++]); ) \
+	X(JMP,    "",         pc = code[pc]; ) \
+	X(JMPZ,   "",         if (pop()==0) { pc = code[pc]; } else { pc++; } ) \
+	X(JMPNZ,  "",         if (pop()) { pc = code[pc]; } else { pc++; } ) \
+	X(NJMPZ,  "",         if (TOS==0) { pc = code[pc]; } else { pc++; } ) \
+	X(NJMPNZ, "",         if (TOS) { pc = code[pc]; } else { pc++; } ) \
 	X(DUP,    "dup",      push(TOS); ) \
 	X(DROP,   "drop",     pop(); ) \
 	X(SWAP,   "swap",     t = TOS; TOS = NOS; NOS = t; ) \
@@ -40,17 +40,18 @@ DE_T tmpWords[10];
 	X(EQ,     "=",        t = pop(); TOS = (TOS == t) ? 1 : 0; ) \
 	X(GT,     ">",        t = pop(); TOS = (TOS  > t) ? 1 : 0; ) \
 	X(PLSTO,  "+!",       t = pop(); n = pop(); *(cell *)t += n; ) \
-	X(FIND,   "'",        push((cell)findInDict((char *)0)); ) \
-	X(FOR,    "for",      lsp += 2; L0 = pop(); L1 = pc; ) \
-	X(NEXT,   "next",     if (0 < --L0) { pc = (ucell)L1; } else { lsp = (1<lsp) ? lsp-2: 0; } ) \
+	X(FOR,    "for",      lsp += 3; L0 = 0; L1 = pop(); L2 = pc; ) \
+	X(I,      "i",        push(L0); ) \
+	X(NEXT,   "next",     if (++L0 < L1) { pc = (ucell)L2; } else { lsp = (2<lsp) ? lsp-3 : 0; } ) \
 	X(AND ,   "and",      t = pop(); TOS &= t; ) \
 	X(OR,     "or",       t = pop(); TOS |= t; ) \
 	X(XOR,    "xor",      t = pop(); TOS ^= t; ) \
 	/* System primitives */ \
+	X(ZTYPE,  "ztype",    zType((const char*)pop()); ) \
+	X(FIND,   "find",     push((cell)findInDict((char *)0)); ) \
 	X(KEY,    "key",      push(key()); ) \
 	X(QKEY,   "key?",     push(qKey()); ) \
 	X(EMIT,   "emit",     emit(pop()); ) \
-	X(ZTYPE,  "ztype",    zType((const char*)pop()); ) \
 	X(fOPEN,  "fopen",    t = pop(); TOS = fOpen(TOS, t); ) \
 	X(fCLOSE, "fclose",   fClose(pop()); ) \
 	X(fREAD,  "fread",    t = pop(); n = pop(); TOS = fRead(TOS, n, t); ) \
@@ -59,6 +60,10 @@ DE_T tmpWords[10];
 	X(TIMER,  "timer",    push(timer()); ) \
 	X(ADDW,   "add-word", addToDict(0); ) \
 	X(OUTER,  "outer",    t = pop(); outer((char*)t); ) \
+	X(TTO,    ">t",       if (tsp < STK_SZ) { tstk[++tsp] = pop(); } ) \
+	X(TFET,   "t@",       push(tstk[tsp]); ) \
+	X(TSTO,   "t!",       tstk[tsp] = pop(); ) \
+	X(TFROM,  "t>",       push(0<tsp ? tstk[tsp--]: 0); ) \
 	X(LASTOP, "system",   system((char*)pop()); )
 
 enum { PRIMS(X1) };
@@ -121,7 +126,7 @@ DE_T *addToDict(const char *w) {
 	if (isTmpW(w)) { DE_T *x = &tmpWords[w[1]-'0']; x->xt = here; return x; }
 	int ln = strlen(w);
 	if (ln == 0) { return (DE_T*)0; }
-	byte sz = CELL_SZ + 3 + ln + 1;
+	byte sz = CELL_SZ + 3 + ln + 1; // xt, sz, fl, ln, name[], null
 	while (sz & 0x03) { ++sz; }
 	last -= sz;
 	DE_T *dp = (DE_T*)last;
@@ -218,6 +223,7 @@ void dwcInit() {
 		{ "version", VERSION },        { "output-fp", (cell)&outputFp },
 		{ "(h)",     (cell)&here },    { "(l)",       (cell)&last },
 		{ "(lsp)",   (cell)&lsp },     { "lstk",      (cell)&lstk[0] },
+		{ "(tsp)",   (cell)&tsp },     { "tstk",      (cell)&tstk[0] },
 		{ "(rsp)",   (cell)&rsp },     { "rstk",      (cell)&rstk[0] },
 		{ "(sp)",    (cell)&dsp },     { "stk",       (cell)&dstk[0] },
 		{ "state",   (cell)&state },   { "base",      (cell)&base },
