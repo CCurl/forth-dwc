@@ -112,14 +112,14 @@ cell var (buf)
 vhere const t9 cell allot
 val tsp@   (val) t0
 : tsp! t0 ! ;
-: t@   ( --n ) tsp@ @ ;
-: t!   ( n-- ) tsp@ ! ;
-: <t   ( -- )  tsp@ cell- dup tstk < if drop t9 then tsp! ;
-: >t   ( n-- ) tsp@ cell+ dup t9 > if drop tstk then tsp! t! ;
-: t>   ( --n ) t@ <t ;
-: t+   ( -- )  t@ 1+ t! ;
-: t@+  ( --n ) t@ t+ ;
-: @t   ( --n ) t@ @ ;
+: t@    ( --n ) tsp@ @ ;
+: t!    ( n-- ) tsp@ ! ;
+: tdrop ( -- )  tsp@ cell- dup tstk < if drop t9 then tsp! ;
+: >t    ( n-- ) tsp@ cell+ dup t9 > if drop tstk then tsp! t! ;
+: t>    ( --n ) t@ tdrop ;
+: t+    ( -- )  t@ 1+ t! ;
+: t@+   ( --n ) t@ t+ ;
+: @t    ( --n ) t@ @ ;
 : .tstk '(' emit space 8 for i cells tstk + @ . next ')' emit ;
 tstk tsp!
 
@@ -132,7 +132,7 @@ val asp@    (val) t0
 : asp! t0 ! ;
 : a@    ( n-- ) asp@ @ ;
 : a!    ( n-- ) asp@ ! ;
-: <a    ( -- )  asp@ cell- dup astk < if drop t9 then asp! ;
+: adrop ( -- )  asp@ cell- dup astk < if drop t9 then asp! ;
 : >a    ( n-- ) asp@ cell+ dup t9 > if drop astk then asp! a! ;
 : a+    ( -- )  a@ 1+ a! ;
 : a@+   ( --n ) a@ a+ ;
@@ -146,24 +146,24 @@ val asp@    (val) t0
 astk asp!
 
 val b@   (val)  t0
-: b!   ( n-- ) t0 ! ;
-: >b   ( n-- ) b@ >t b! ;
-: <b   ( -- )  t> b! ;
-: b+   ( -- )  1 t0 +! ;
-: b-   ( -- ) -1 t0 +! ;
-: b@+  ( --n ) b@ b+ ;
-: !b+  ( n-- ) b@ ! cell  t0 +! ;
-: !b-  ( n-- ) b@ ! -cell t0 +! ;
-: c@b  ( --c ) b@ c@ ;
-: c!b+ ( c-- ) b@ c! b+ ;
-: c!b- ( c-- ) b@ c! b- ;
+: b!    ( n-- ) t0 ! ;
+: >b    ( n-- ) b@ >t b! ;
+: bdrop ( -- )  t> b! ;
+: b+    ( -- )  1 t0 +! ;
+: b-    ( -- ) -1 t0 +! ;
+: b@+   ( --n ) b@ b+ ;
+: !b+   ( n-- ) b@ ! cell  t0 +! ;
+: !b-   ( n-- ) b@ ! -cell t0 +! ;
+: c@b   ( --c ) b@ c@ ;
+: c!b+  ( c-- ) b@ c! b+ ;
+: c!b-  ( c-- ) b@ c! b- ;
 
 : t3 ( --a ) vhere dup >b >in ++
     begin >in @ c@ >r >in ++
         r@ 0= r@ '"' = or
         if  rdrop 0 c!b+
             comp? if (lit) , , b@ (vh) ! then
-            <b exit
+            bdrop exit
         then
         r> c!b+
     again ;
@@ -173,7 +173,7 @@ val b@   (val)  t0
 
 : .word ( de-- ) cell+ 3 + ztype ;
 : words last >a 0 >b 1 >t begin
-        a@ dict-end < if0 '(' emit t> . ." words)" <b <a exit then
+        a@ dict-end < if0 '(' emit t> . ." words)" bdrop adrop exit then
         a@ .word tab t+
         a@ cell+ 2+ c@ 7 > if b+ then 
         b@+ 9 > if cr 0 b! then
@@ -186,21 +186,21 @@ cell var t5
 : ]] (exit) , 0 state ! t4 @ dup >r (h) ! t5 @ (vh) ! ; immediate
 
 ( Strings / Memory )
-: fill   ( a num ch-- ) >r swap >b for r@ c!b+ next <b rdrop ;
-: move   ( f t n-- ) >r >b >a r> ?dup if for  @a+  !b+ next then <a <b ;
-: cmove  ( f t n-- ) >r >b >a r> ?dup if for c@a+ c!b+ next then <a <b ;
-: move>  ( f t n-- ) >r r@ 1- cells + >b r@ 1- cells + >a r> for  @a-  !b- next <a <b ;
-: cmove> ( f t n-- ) >r r@ 1-       + >b r@ 1-       + >a r> for c@a- c!b- next <a <b ;
-: s-len  ( str--len ) >a 0 begin c@a+ if0 <a exit then 1+ again ;
+: fill   ( a num ch-- ) >r swap >b for r@ c!b+ next bdrop rdrop ;
+: move   ( f t n-- ) >r >b >a r> ?dup if for  @a+  !b+ next then adrop bdrop ;
+: cmove  ( f t n-- ) >r >b >a r> ?dup if for c@a+ c!b+ next then adrop bdrop ;
+: move>  ( f t n-- ) >r r@ 1- cells + >b r@ 1- cells + >a r> for  @a-  !b- next adrop bdrop ;
+: cmove> ( f t n-- ) >r r@ 1-       + >b r@ 1-       + >a r> for c@a- c!b- next adrop bdrop ;
+: s-len  ( str--len ) >a 0 begin c@a+ if0 adrop exit then 1+ again ;
 : s-end  ( str--end ) dup s-len + ;
 : s-cpy  ( dst src--dst ) 2dup s-len 1+ cmove ;
 : s-cat  ( dst src--dst ) over s-end over s-len 1+ cmove ;
-: s-catc ( dst ch--dst )  over s-end >b c!b+ 0 c!b+ <b ;
+: s-catc ( dst ch--dst )  over s-end >b c!b+ 0 c!b+ bdrop ;
 : s-catn ( dst num--dst ) <# #s #> s-cat ;
 : s-eq   ( s1 s2--f ) >a >b
     begin
-        c@a c@b = if0 0 <b <a exit then
-        c@a if0 1 <b <a exit then
+        c@a c@b = if0 0 bdrop adrop exit then
+        c@a if0 1 bdrop adrop exit then
         a+ b+ 
     again ;
 
@@ -225,11 +225,11 @@ cell var t5
 : .hex/dec ( n-- ) dup ." ($" .hex ." /#" .dec ')' emit ;
 
 : aemit ( ch-- )    dup #32 #126 btwi if0 drop '.' then emit ;
-: t0    ( addr-- )  >a $10 for c@a+ aemit next <a ;
+: t0    ( addr-- )  >a $10 for c@a+ aemit next adrop ;
 : dump  ( addr n-- ) swap >a 0 >t for
      t@+ if0 a@ cr .hex ." : " then c@a+ .hex space
      t@ $10 = if 0 t! space space a@ $10 - t0 then
-   next <t <a ;
+   next tdrop adrop ;
 
 cell var t0
 cell var t1
@@ -283,7 +283,7 @@ vars 1024 1024 * + const disk
 : bm-while ( n-- ) z" while " t0 begin 1- -while drop elapsed ;
 : bm-loop  ( n-- ) z" loop "  t0 for next elapsed ;
 : bm-fib   ( n-- ) z" fib"    t0 fib space (.) elapsed ;
-: bm-fibs  ( n-- ) 1 >b for b@ b+ bm-fib next <b ;
+: bm-fibs  ( n-- ) 1 >b for b@ b+ bm-fib next bdrop ;
 : mil ( n--m ) #1000 dup * * ;
 : bb 1000 mil bm-loop ;
 : bm-all 250 mil bm-while bb 30 bm-fib ;
@@ -338,7 +338,7 @@ t2 cell+ const t3
 : <x   ( n-- ) 1 <p ;
 : <xy  ( n-- ) 2 <p ;
 : <xyz ( n-- ) 3 <p ;
-: .pstk t1 >a $10 for @a+ . next <a ;
+: .pstk t1 >a $10 for @a+ . next adrop ;
 
 
 
@@ -389,8 +389,8 @@ t2 cell+ const t3
 : bs 8 emit ; [ inline
 : accept ( dst-- ) dup >r >b 0 >a
   begin key a!
-     a@   3 =  a@ 27 = or if 0 r> c! <a <b exit then
-     a@  13 = if 0 c!b+ <a <b rdrop exit then
+     a@   3 =  a@ 27 = or if 0 r> c! adrop bdrop exit then
+     a@  13 = if 0 c!b+ adrop bdrop rdrop exit then
      a@   8 = if 127 a! then ( Windows: 8=backspace )
      a@ 127 = if r@ b@ < if b- bs space bs then then
      a@ printable? if a@ dup c!b+ emit then
@@ -432,9 +432,9 @@ block-sz var ed-buf
 : blk>buf ( n-- ) block-addr ed-buf block-sz 1+ cell / move ;
 : buf>blk ( n-- ) ed-buf swap block-addr block-sz 1+ cell / move ;
 : ed-hl   ( -- ) cols 2+ for '-' emit next ;
-: ed-vl   ( -- ) 2 >a rows for 1 a@ ->cr '|' emit  cols 2+ a@+ ->cr '|' emit next <a ;
+: ed-vl   ( -- ) 2 >a rows for 1 a@ ->cr '|' emit  cols 2+ a@+ ->cr '|' emit next adrop ;
 : ed-box  ( -- ) 1 1 ->cr green ed-hl ed-vl cr ed-hl ;
-: ed-draw ( -- ) ed-buf >a rows for cols for c@a+ 32 max emit next cr cur-rt next <a ;
+: ed-draw ( -- ) ed-buf >a rows for cols for c@a+ 32 max emit next cr cur-rt next adrop ;
 : ed-md.  ( -- ) mode if0 ."  (norm) " then 
     mode 1 = if red ."  (ins) " white then
     mode 2 = if green ."  (repl) " white then ;

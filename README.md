@@ -9,7 +9,7 @@ The VM itself is under 250 lines of code.
 On Windows, a 32-bit Release build compiles to a 17k executable. <br/>
 On a Linux box, it is about 25k.
 
-**DWC** stands for "dword-code". This is inspired by Tachyon. <br/>
+**DWC** stands for "DWord-Code". This is inspired by Tachyon. <br/>
 In a DWC program, each instruction is a DWORD (32-bits). <br/>
 - If <= the last primitive (44), then it is a primitive.
 - Else, if >= LIT_BITS ($3FFFFFFF), then it is a literal anded with LIT_BITS.
@@ -62,7 +62,7 @@ They help with factoring code and and keep the dictionary uncluttered.<br/>
 
 ## The VM Primitives
 
-| Primitive | Word     | Stack        | Action |
+| Primitive | Op/Word  | Stack        | Description |
 |:--        |:--       |:--           |:-- |
 |           |          |              | --- **DWC primitives** --- |
 |   0       | exit     | (--)         | PC = R-TOS. Discard R-TOS. If (PC=0) then stop. |
