@@ -6,12 +6,6 @@
 #define X2(op, name, code) case op: code goto next;
 #define X3(op, name, code) { name, op },
 
-char mem[MEM_SZ], *toIn, wd[32];
-ucell *code, dsp, rsp, lsp;
-cell dstk[STK_SZ+1], rstk[STK_SZ+1], lstk[STK_SZ+1];
-cell here, last, base, state, outputFp;
-DE_T tmpWords[10];
-
 #define PRIMS(X) \
 	/* DWC primitives */ \
 	X(EXIT,   "exit",     pc = (ucell)rpop(); if (pc==0) { return; } ) \
@@ -63,6 +57,13 @@ DE_T tmpWords[10];
 	X(LASTOP, "system",   system((char*)pop()); )
 
 enum { PRIMS(X1) };
+
+char mem[MEM_SZ], *toIn, wd[32];
+ucell *code=(ucell*)&mem[0], dsp, rsp, lsp;
+cell dstk[STK_SZ+1], rstk[STK_SZ+1], lstk[STK_SZ+1];
+cell here=LASTOP+1, last=(cell)&mem[MEM_SZ];
+cell base=10, state=INTERPRET, outputFp=0;
+DE_T tmpWords[10];
 
 DE_T *addToDict(const char *w);
 void outer(const char *src);
@@ -208,11 +209,6 @@ void outer(const char *src) {
 }
 
 void dwcInit() {
-	code = (ucell*)&mem[0];
-	last = (cell)&mem[MEM_SZ];
-	here = LASTOP+1;
-	base = 10;
-	state = INTERPRET;
 	NVP_T prims[] = { PRIMS(X3) { 0, 0 } };
 	for (int i = 0; prims[i].name; i++) { addPrim(prims[i].name, prims[i].value); }
 	NVP_T nv[] = {
