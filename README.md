@@ -2,7 +2,7 @@
 
 DWC is an extremely minimal Forth system that can run stand-alone or be embedded into another program.
 
-DWC has 32 base primitives, 13 system primitives.<br/>
+DWC has 32 base primitives, 14 system primitives.<br/>
 DWC is implemented in 3 files: (dwc-vm.c, dwc-vm.h, system.c). <br/>
 The VM itself is under 250 lines of code.
 
@@ -111,11 +111,7 @@ They help with factoring code and and keep the dictionary uncluttered.<br/>
 |  42       | timer    | (--n)        | Push the current system time. |
 |  43       | add-word | (--)         | Add the next word to the dictionary. |
 |  44       | outer    | (a--)        | Run the outer interpreter on TOS. Discard TOS. |
-|  45       | >t       | (n--)        | Push TOS onto the T stack. Discard TOS. |
-|  46       | t@       | (--n)        | Push T-TOS. |
-|  47       | t!       | (N--)        | Set T-TOS = N. |
-|  48       | t>       | (--n)        | Push T-TOS. Discard T-TOS. |
-|  49       | system   | (a--)        | Execute system(TOS). Discard TOS. |
+|  45       | system   | (a--)        | Execute system(TOS). Discard TOS. |
 
 ## Embedding DWC in your C or C++ project
 
