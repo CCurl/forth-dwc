@@ -7,8 +7,8 @@
 #define X3(op, name, code) { name, op },
 
 char mem[MEM_SZ], *toIn, wd[32];
-ucell *code, dsp, rsp, lsp, tsp;
-cell dstk[STK_SZ+1], rstk[STK_SZ+1], lstk[STK_SZ+1], tstk[STK_SZ+1];
+ucell *code, dsp, rsp, lsp;
+cell dstk[STK_SZ+1], rstk[STK_SZ+1], lstk[STK_SZ+1];
 cell here, last, base, state, outputFp;
 DE_T tmpWords[10];
 
@@ -60,10 +60,6 @@ DE_T tmpWords[10];
 	X(TIMER,  "timer",    push(timer()); ) \
 	X(ADDW,   "add-word", addToDict(0); ) \
 	X(OUTER,  "outer",    t = pop(); outer((char*)t); ) \
-	X(TTO,    ">t",       if (tsp < STK_SZ) { tstk[++tsp] = pop(); } ) \
-	X(TFET,   "t@",       push(tstk[tsp]); ) \
-	X(TSTO,   "t!",       tstk[tsp] = pop(); ) \
-	X(TFROM,  "t>",       push(0<tsp ? tstk[tsp--]: 0); ) \
 	X(LASTOP, "system",   system((char*)pop()); )
 
 enum { PRIMS(X1) };
@@ -223,7 +219,6 @@ void dwcInit() {
 		{ "version", VERSION },        { "output-fp", (cell)&outputFp },
 		{ "(h)",     (cell)&here },    { "(l)",       (cell)&last },
 		{ "(lsp)",   (cell)&lsp },     { "lstk",      (cell)&lstk[0] },
-		{ "(tsp)",   (cell)&tsp },     { "tstk",      (cell)&tstk[0] },
 		{ "(rsp)",   (cell)&rsp },     { "rstk",      (cell)&rstk[0] },
 		{ "(sp)",    (cell)&dsp },     { "stk",       (cell)&dstk[0] },
 		{ "state",   (cell)&state },   { "base",      (cell)&base },

@@ -3,9 +3,11 @@
 : last (l) @ ;
 : here (h) @ ;
 : inline    $40 last 4 + 1 + c! ;
-: cell  4 ; inline
+: cell   4 ; inline
+: -cell -4 ; inline
 : cells cell * ; inline
 : cell+ cell + ; inline
+: cell- cell - ; inline
 : ->code ( off--addr ) cells mem + ;
 : code@ ( off--op )  ->code @ ;
 : code! ( op off-- ) ->code ! ;
@@ -89,7 +91,7 @@ vars (vh) !
   65 var buf
 cell var (buf)
 : ?neg ( n--n' ) dup 0< dup (neg) c! if negate then ;
-: #c   ( c-- )   (buf) -- (buf) @ c! ;
+: #c   ( c-- )   -1 (buf) +! (buf) @ c! ;
 : #.   ( -- )    '.' #c ;
 : #n   ( n-- )   '0' + dup '9' > if 7 + then #c ;
 : #    ( n--m )  base @ /mod swap #n ;
@@ -105,28 +107,43 @@ cell var (buf)
         stk swap for cell+ dup @ . next drop
     then ')' emit ;
 
-( operations on t: stack )
-: tdrop ( -- )  t> drop ;
-: t+    ( -- )  t@ 1+ t! ;
-: t@+   ( --n ) t@ t+ ;
-: @t    ( --n ) t@ @ ;
+( T - a circular stack )
+7 cells var tstk
+vhere const t9 cell allot
+val tsp@   (val) t0
+: tsp! t0 ! ;
+: t@   ( --n ) tsp@ @ ;
+: t!   ( n-- ) tsp@ ! ;
+: <t   ( -- )  tsp@ cell- dup tstk < if drop t9 then tsp! ;
+: >t   ( n-- ) tsp@ cell+ dup t9 > if drop tstk then tsp! t! ;
+: t>   ( --n ) t@ <t ;
+: t+   ( -- )  t@ 1+ t! ;
+: t@+  ( --n ) t@ t+ ;
+: @t   ( --n ) t@ @ ;
+: .tstk '(' emit space 8 for i cells tstk + @ . next ')' emit ;
+tstk tsp!
 
 ( ColorForth variables )
 
-val a@  (val)  t0
-: a!    ( n-- ) t0 ! ;
-: >a    ( n-- ) a@ >t a! ;
-: <a    ( -- )  t> a! ;
-: a+    ( -- )  1 t0 +! ;
+( A - a circular stack )
+7 cells var astk
+vhere const t9 cell allot
+val asp@    (val) t0
+: asp! t0 ! ;
+: a@    ( n-- ) asp@ @ ;
+: a!    ( n-- ) asp@ ! ;
+: <a    ( -- )  asp@ cell- dup astk < if drop t9 then asp! ;
+: >a    ( n-- ) asp@ cell+ dup t9 > if drop astk then asp! a! ;
+: a+    ( -- )  a@ 1+ a! ;
 : a@+   ( --n ) a@ a+ ;
 : @a    ( --n ) a@ @ ;
-: @a+   ( --n ) a@ @ cell t0 +! ;
-: @a-   ( --n ) a@ @ -4 t0 +! ;
-: c@a   ( --n ) a@ c@ ;
+: @a+   ( --n ) a@ @  a@ cell+ a! ;
+: @a-   ( --n ) a@ @  a@ cell- a! ;
+: c@a   ( --n ) a@  c@ ;
 : c@a+  ( --n ) a@+ c@ ;
-: c@a-  ( --n ) a@ c@ -1 t0 +! ;
-
-( : +! [n a-] dup >r @ + r> ! ; )
+: c@a-  ( --n ) a@ c@  a@ 1- a! ;
+: .astk '(' emit space 8 for i cells astk + @ . next ')' emit ;
+astk asp!
 
 val b@   (val)  t0
 : b!   ( n-- ) t0 ! ;
@@ -135,8 +152,8 @@ val b@   (val)  t0
 : b+   ( -- )  1 t0 +! ;
 : b-   ( -- ) -1 t0 +! ;
 : b@+  ( --n ) b@ b+ ;
-: !b+  ( n-- ) b@ ! cell t0 +! ;
-: !b-  ( n-- ) b@ ! -4   t0 +! ;
+: !b+  ( n-- ) b@ ! cell  t0 +! ;
+: !b-  ( n-- ) b@ ! -cell t0 +! ;
 : c@b  ( --c ) b@ c@ ;
 : c!b+ ( c-- ) b@ c! b+ ;
 : c!b- ( c-- ) b@ c! b- ;
@@ -155,8 +172,8 @@ val b@   (val)  t0
 : ." t3 comp? if (ztype) , exit then ztype ;  immediate
 
 : .word ( de-- ) cell+ 3 + ztype ;
-: words last a! 0 b! 1 >t begin
-        a@ dict-end < if0 '(' emit t> . ." words)" exit then
+: words last >a 0 >b 1 >t begin
+        a@ dict-end < if0 '(' emit t> . ." words)" <b <a exit then
         a@ .word tab t+
         a@ cell+ 2+ c@ 7 > if b+ then 
         b@+ 9 > if cr 0 b! then
@@ -212,7 +229,7 @@ cell var t5
 : dump  ( addr n-- ) swap >a 0 >t for
      t@+ if0 a@ cr .hex ." : " then c@a+ .hex space
      t@ $10 = if 0 t! space space a@ $10 - t0 then
-   next tdrop <a ;
+   next <t <a ;
 
 cell var t0
 cell var t1
@@ -465,3 +482,24 @@ block-sz var ed-buf
 .banner   marker
 
 ." hello."
+
+
+: msz 31 ;
+msz 1+ cells var mstk
+val msp@ (val) t0  : msp! t0 ! ;
+: m@  ( --n ) msp@ cells mstk + @ ;
+: m!  ( n-- ) msp@ cells mstk + ! ;
+: >m  ( n-- ) msp@ 1+ msz and msp! m! ;
+: m>  ( --n ) m@ msp@ 1- msz and msp! ;
+
+: nsz 15 ;
+nsz cells var nstk
+vhere const nstk-end cell allot
+val nsp@   (val) t0
+: nsp! t0 ! ;
+: n@  ( --n ) nsp@ @ ;
+: n!  ( n-- ) nsp@ ! ;
+: >n  ( n-- ) nsp@ cell+ dup nstk-end > if drop nstk then nsp! n! ;
+: n>  ( --n ) n@ nsp@ cell- dup nstk < if drop nstk-end then nsp! ;
+: .ns '(' emit space nsz 1+ for i cells nstk + @ . next ')' emit ;
+nstk nsp!
