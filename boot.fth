@@ -124,16 +124,10 @@ val tsp@   (val) t0
 tstk tsp!
 
 ( ColorForth variables )
-
-( A - a circular stack )
-7 cells var astk
-vhere const t9 cell allot
-val asp@    (val) t0
-: asp! t0 ! ;
-: a@    ( n-- ) asp@ @ ;
-: a!    ( n-- ) asp@ ! ;
-: adrop ( -- )  asp@ cell- dup astk < if drop t9 then asp! ;
-: >a    ( n-- ) asp@ cell+ dup t9 > if drop astk then asp! a! ;
+val a@   (val)  t0
+: a!    ( n-- ) t0 ! ;
+: >a    ( n-- ) a@ >t a! ;
+: adrop ( -- )  t> a! ;
 : a+    ( -- )  a@ 1+ a! ;
 : a@+   ( --n ) a@ a+ ;
 : @a    ( --n ) a@ @ ;
@@ -142,8 +136,6 @@ val asp@    (val) t0
 : c@a   ( --n ) a@  c@ ;
 : c@a+  ( --n ) a@+ c@ ;
 : c@a-  ( --n ) a@ c@  a@ 1- a! ;
-: .astk '(' emit space 8 for i cells astk + @ . next ')' emit ;
-astk asp!
 
 val b@   (val)  t0
 : b!    ( n-- ) t0 ! ;
@@ -316,7 +308,6 @@ vars 1024 1024 * + const disk
     a@ .hex ':' emit space a@ .word
     a@ next-xt t!  @a  a! a@ t@ see-range ;
 
-
 ( a stack inspired by Peter Jakacki )
 ( this provides efficient access to the top 3 entries, x,y,z )
 ( it is easy enough to extend this if desired )
@@ -340,18 +331,12 @@ t2 cell+ const t3
 : <xyz ( n-- ) 3 <p ;
 : .pstk t1 >a $10 for @a+ . next adrop ;
 
-
-
-
 ( shell words )
 : lg z" lazygit" system ;
 : ll z" ls -l" system ;
 : vi z" vi boot.fth" system ;
 
-
-
-
-( Block #8 - vkey )
+( vkey )
 [ #256  #59 + const key-f1   [ #256  #60 + const key-f2
 [ #256  #61 + const key-f3   [ #256  #62 + const key-f4
 [ #256  #71 + const key-home   ( VT: 27 91 72 )
@@ -396,14 +381,12 @@ t2 cell+ const t3
      a@ printable? if a@ dup c!b+ emit then
   again ;
 
-
 ( simple fixed point )
 : f. 100 /mod (.) '.' emit abs 2 10 .nwb ;
 : f* * 100 / ;
 : f/ swap 100 * swap / ;
 : f+ + ;
 : f- - ;
-
 
 ( Editor  )
 val blk   (val) t0  : blk! t0 ! ;
@@ -482,24 +465,3 @@ block-sz var ed-buf
 .banner   marker
 
 ." hello."
-
-
-: msz 31 ;
-msz 1+ cells var mstk
-val msp@ (val) t0  : msp! t0 ! ;
-: m@  ( --n ) msp@ cells mstk + @ ;
-: m!  ( n-- ) msp@ cells mstk + ! ;
-: >m  ( n-- ) msp@ 1+ msz and msp! m! ;
-: m>  ( --n ) m@ msp@ 1- msz and msp! ;
-
-: nsz 15 ;
-nsz cells var nstk
-vhere const nstk-end cell allot
-val nsp@   (val) t0
-: nsp! t0 ! ;
-: n@  ( --n ) nsp@ @ ;
-: n!  ( n-- ) nsp@ ! ;
-: >n  ( n-- ) nsp@ cell+ dup nstk-end > if drop nstk then nsp! n! ;
-: n>  ( --n ) n@ nsp@ cell- dup nstk < if drop nstk-end then nsp! ;
-: .ns '(' emit space nsz 1+ for i cells nstk + @ . next ')' emit ;
-nstk nsp!

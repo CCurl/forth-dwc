@@ -1,18 +1,18 @@
-# forth-dwc: a minimal DWORD-Code based Forth
+# forth-dwc: a minimal ColorForth DWORD-Code Forth
 
 DWC is an extremely minimal Forth system that can run stand-alone or be embedded into another program.
 
 DWC has 32 base primitives, 14 system primitives.<br/>
 DWC is implemented in 3 files: (dwc-vm.c, dwc-vm.h, system.c). <br/>
-The VM itself is under 250 lines of code.
+The VM itself is under 225 lines of code.
 
 On Windows, a 32-bit Release build compiles to a 17k executable. <br/>
-On a Linux box, it is about 25k.
+On a Linux box, it is about 21k.
 
 **DWC** stands for "DWord-Code". This is inspired by Tachyon. <br/>
 In a DWC program, each instruction is a DWORD (32-bits). <br/>
-- If <= the last primitive (44), then it is a primitive.
-- Else, if >= LIT_BITS ($3FFFFFFF), then it is a literal anded with LIT_BITS.
+- If <= the last primitive (45), then it is a primitive.
+- Else, if the top 3 bits are set, then it is a literal anded with $3FFFFFFF.
 - Else, it is the XT (code address) of a word in the dictionary.
 
 ## ColorForth influences
@@ -21,8 +21,8 @@ DWC supports control chars in the whitespace to change the state.<br/>
 DWC has 4 states: COMPILE, DEFINE, INTERPRET, and COMMENT. <br/>
 This gives the operator more flexibility.
 
-| Ascii | State |
-|:--    |:-- |
+| Ascii | State     |
+|:--    |:--        |
 | 1     | COMPILE   |
 | 2     | DEFINE    |
 | 3     | INTERPRET |
@@ -32,10 +32,10 @@ This gives the operator more flexibility.
 
 | Word | Action |
 |:--   |:-- |
-| :    | Change state to DEFINE. |
-| ;    | Compile EXIT and change state to INTERPRET. |
-| [    | Change state to INTERPRET. |
-| ]    | Change state to COMPILE. |
+|  :   | Change state to DEFINE. |
+|  ;   | Compile EXIT and change state to INTERPRET. |
+|  [   | Change state to INTERPRET. |
+|  ]   | Change state to COMPILE. |
 
 **NOTE**: The '(' word skips words until it finds a word ')'. It does **NOT** change the state to COMMENT.
 
@@ -43,7 +43,7 @@ This gives the operator more flexibility.
 
 | State     | Behavior |
 |:--        |:-- |
-| COMPILE   | Compile the current word/number. |
+| COMPILE   | If IMMEDIATE, execute it. Else, compile the current word/number. |
 | DEFINE    | Add the current word to the dictionary, change to COMPILE. |
 | INTERPRET | Execute the current word. |
 | COMMENT   | Ignore the current word. |
@@ -51,7 +51,7 @@ This gives the operator more flexibility.
 ## INLINE words
 
 An INLINE word is somewhat similar to a macro in other languages.<br/>
-When a word is INLINE, its definition is copied to the target.<br/>
+When a word is INLINE, its definition is copied to the target, up to the first `exit`.<br/>
 When not INLINE, a call is made to the word instead.
 
 ## Transient words
@@ -99,20 +99,41 @@ They help with factoring code and and keep the dictionary uncluttered.<br/>
 |  31       | xor      | (a b--c)     | TOS = NOS xor TOS. Discard NOS. |
 |           |          |              | --- **System primitives** --- |
 |  32       | ztype    | (a--)        | Output null-terminated string TOS. Discard TOS. |
-|  33       | find     | (--a)        | Push the address of the next word from the dictionary. |
-|  34       | key      | (--n)        | Push the next keypress. Wait until one is available. |
-|  35       | key?     | (--n)        | Push 1 if a keypress is available, else 0. |
-|  36       | emit     | (n--)        | Output char TOS. Discard TOS. |
-|  37       | fopen    | (nm md--h)   | Open file NOS using mode TOS (h=0 if error). |
-|  38       | fclose   | (h--)        | Close file TOS. Discard TOS. |
-|  39       | fread    | (a sz h--n)  | Read NOS chars from file TOS to a. |
-|  30       | fwrite   | (a sz h--n)  | Write NOS chars from file TOS from a. |
+|  33       | find     | (--a)        | Push the dictionary address of the next word. |
+|  34       | key      | (--n)        | Push the next keypress. Wait if ncessary. |
+|  35       | key?     | (--f)        | Push 1 if a keypress is available, else 0. |
+|  36       | emit     | (c--)        | Output char TOS. Discard TOS. |
+|  37       | fopen    | (nm md--fh)  | Open file NOS using mode TOS (h=0 if error). |
+|  38       | fclose   | (fh--)       | Close file TOS. Discard TOS. |
+|  39       | fread    | (a sz fh--n) | Read NOS chars from file TOS to a. |
+|  30       | fwrite   | (a sz fh--n) | Write NOS chars from file TOS from a. |
 |  41       | ms       | (n--)        | Wait/sleep for TOS milliseconds |
 |  42       | timer    | (--n)        | Push the current system time. |
 |  43       | add-word | (--)         | Add the next word to the dictionary. |
 |  44       | outer    | (a--)        | Run the outer interpreter on TOS. Discard TOS. |
 |  45       | system   | (a--)        | Execute system(TOS). Discard TOS. |
 
-## Embedding DWC in your C or C++ project
+## Other built-in words
+
+| Word      | Stack | Description |
+|:--        |:--    |:-- |
+| version   | (--n) | Current version number. |
+| output-fp | (--n) | File handle. 0 means STDOUT. |
+| (h)       | (--a) | Address of HERE. |
+| (l)       | (--a) | Address of LAST. |
+| (lsp)     | (--a) | Address of the loop stack pointer. |
+| lstk      | (--a) | Address of the loop stack. |
+| (rsp)     | (--a) | Address of the return stack pointer. |
+| rstk      | (--a) | Address of the return stack. |
+| (sp)      | (--a) | Address of the data stack pointer. |
+| stk       | (--a) | Address of the data stack. |
+| state     | (--a) | Address of STATE. |
+| base      | (--a) | Address of BASE. |
+| mem       | (--a) | Address of the beginning of the memory area. |
+| mem-sz    | (--n) | The number of BYTEs in the memory area. |
+| >in       | (--a) | Address of the text input buffer pointer. |
+
+
+##   Embedding DWC in your C or C++ project
 
 See system.c. It embeds the DWC VM into a C program.

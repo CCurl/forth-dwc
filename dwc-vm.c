@@ -65,17 +65,14 @@ cell here=LASTOP+1, last=(cell)&mem[MEM_SZ];
 cell base=10, state=INTERPRET, outputFp=0;
 DE_T tmpWords[10];
 
-DE_T *addToDict(const char *w);
-void outer(const char *src);
-void compileNum(cell n);
 void push(cell v) { if (dsp < STK_SZ) { dstk[++dsp] = v; } }
 cell pop() { return (0 < dsp) ? dstk[dsp--] : 0; }
 void rpush(cell v) { if (rsp < STK_SZ) { rstk[++rsp] = v; } }
 cell rpop() { return (0 < rsp) ? rstk[rsp--] : 0; }
 void comma(ucell val) { code[here++] = val; }
 int  changeState(int st) { state = st; return st; }
-void addPrim(const char *nm, ucell op) { DE_T *dp = addToDict(nm); if (dp) { dp->xt = op; } }
 int  isTmpW(const char *w) { return (w[0]=='t') && btwi(w[1],'0','9') && (w[2]==0) ? 1 : 0; }
+void addPrim(const char *nm, ucell op) { DE_T *dp = addToDict(nm); if (dp) { dp->xt = op; } }
 void addLit(const char *name, cell val) {
 	DE_T *dp = addToDict(name); compileNum(val); comma(EXIT);
 	if (btwi(val,0,LIT_BITS)) { dp->fl = INLINE; }
@@ -166,11 +163,11 @@ next:
 
 int isStateChange(const char *w) {
 	if (state == COMMENT) { return 1; }
-	if (strEqI(w, ":"))  { return changeState(DEFINE); }
-	if (strEqI(w, ";"))  { comma(EXIT); return changeState(INTERPRET); }
-	if (strEqI(w, "["))  { return changeState(INTERPRET); }
-	if (strEqI(w, "]"))  { return changeState(COMPILE); }
-	if (strEqI(w, "("))  {
+	if (strEqI(w, ":")) { return changeState(DEFINE); }
+	if (strEqI(w, ";")) { comma(EXIT); return changeState(INTERPRET); }
+	if (strEqI(w, "[")) { return changeState(INTERPRET); }
+	if (strEqI(w, "]")) { return changeState(COMPILE); }
+	if (strEqI(w, "(")) {
 		while (nextWord() && !strEqI(wd, ")")) { }
 		return 1;
 	}
@@ -197,8 +194,7 @@ void outer(const char *src) {
 			code[10] = dp->xt;
 			code[11] = EXIT;
 			inner(10);
-		}
-		else {
+		} else { // Must be COMPILE state
 			if (dp->fl & INLINE) {
 				ucell x = dp->xt;
 				while (code[x] != EXIT) { comma(code[x++]); }
@@ -210,7 +206,6 @@ void outer(const char *src) {
 
 void dwcInit() {
 	NVP_T prims[] = { PRIMS(X3) { 0, 0 } };
-	for (int i = 0; prims[i].name; i++) { addPrim(prims[i].name, prims[i].value); }
 	NVP_T nv[] = {
 		{ "version", VERSION },        { "output-fp", (cell)&outputFp },
 		{ "(h)",     (cell)&here },    { "(l)",       (cell)&last },
@@ -222,4 +217,5 @@ void dwcInit() {
 		{ ">in",     (cell)&toIn},     { 0, 0 }
 	};
 	for (int i = 0; nv[i].name; i++) { addLit(nv[i].name, nv[i].value); }
+	for (int i = 0; prims[i].name; i++) { addPrim(prims[i].name, prims[i].value); }
 }
