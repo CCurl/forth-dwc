@@ -1,10 +1,10 @@
-# forth-dwc: a minimal ColorForth DWORD-Code Forth
+# forth-dwc: a minimal DWORD-Code Forth
 
 DWC is an extremely minimal Forth system that can run stand-alone or be embedded into another program.
 
 DWC has 32 base primitives, 14 system primitives.<br/>
 DWC is implemented in 3 files: (dwc-vm.c, dwc-vm.h, system.c). <br/>
-The VM itself is under 225 lines of code.
+The VM itself is under 201 lines of code.
 
 On Windows, a 32-bit Release build compiles to a 17k executable. <br/>
 On a Linux box, it is about 21k.
@@ -15,38 +15,15 @@ In a DWC program, each instruction is a DWORD (32-bits). <br/>
 - Else, if the top 3 bits are set, then it is a literal anded with $3FFFFFFF.
 - Else, it is the XT (code address) of a word in the dictionary.
 
-## ColorForth influences
-
-DWC supports control chars in the whitespace to change the state.<br/>
-DWC has 4 states: COMPILE, DEFINE, INTERPRET, and COMMENT. <br/>
-This gives the operator more flexibility.
-
-| Ascii | State     |
-|:--    |:--        |
-| 1     | COMPILE   |
-| 2     | DEFINE    |
-| 3     | INTERPRET |
-| 4     | COMMENT   |
-
-### DWC also hard-codes the following IMMEDIATE state-change words:
+### DWC hard-codes the following IMMEDIATE state-change words:
 
 | Word | Action |
 |:--   |:-- |
-|  :   | Change state to DEFINE. |
+|  :   | Add the next word to the dictionary, set STATE to COMPILE. |
 |  ;   | Compile EXIT and change state to INTERPRET. |
-|  [   | Change state to INTERPRET. |
-|  ]   | Change state to COMPILE. |
-
-**NOTE**: The '(' word skips words until it finds a word ')'. It does **NOT** change the state to COMMENT.
-
-## What DWC does in each state
-
-| State     | Behavior |
-|:--        |:-- |
-| COMPILE   | If IMMEDIATE, execute it. Else, compile the current word/number. |
-| DEFINE    | Add the current word to the dictionary, change to COMPILE. |
-| INTERPRET | Execute the current word. |
-| COMMENT   | Ignore the current word. |
+|  [   | Change STATE to INTERPRET. |
+|  ]   | Change STATE to COMPILE. |
+|  (   | Skip words until the next ')' word. |
 
 ## INLINE words
 

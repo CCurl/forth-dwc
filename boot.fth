@@ -30,6 +30,9 @@
 32 ->code const (vh)
 : vhere (vh) @ ;
 
+( STATES: 0=INTERPRET, 1=COMPILE )
+: [ 0 state ! ; immediate
+: ] 1 state ! ; immediate
 : comp? ( --n ) state @ 1 = ;
 : if   (jmpz)   , here 0 , ; immediate
 : -if  (njmpz)  , here 0 , ; immediate
@@ -337,20 +340,22 @@ t2 cell+ const t3
 : vi z" vi boot.fth" system ;
 
 ( vkey )
-[ #256  #59 + const key-f1   [ #256  #60 + const key-f2
-[ #256  #61 + const key-f3   [ #256  #62 + const key-f4
-[ #256  #71 + const key-home   ( VT: 27 91 72 )
-[ #256  #72 + const key-up     ( VT: 27 91 65 )
-[ #256  #73 + const key-pgup   ( VT: 27 91 53 126 )
-[ #256  #75 + const key-left   ( VT: 27 91 68 )
-[ #256  #77 + const key-right  ( VT: 27 91 67 )
-[ #256  #79 + const key-end    ( VT: 27 91 70 )
-[ #256  #80 + const key-down   ( VT: 27 91 66 )
-[ #256  #81 + const key-pgdn   ( VT: 27 91 54 126 )
-[ #256  #82 + const key-ins    ( VT: 27 91 50 126 )
-[ #256  #83 + const key-del    ( VT: 27 91 51 126 )
-[ #256 #119 + const key-chome  ( VT: 27 91 ?? ??? )
-[ #256 #117 + const key-cend   ( VT: 27 91 ?? ??? )
+#256  #59 + const key-f1
+#256  #60 + const key-f2
+#256  #61 + const key-f3
+#256  #62 + const key-f4
+#256  #71 + const key-home   ( VT: 27 91 72 )
+#256  #72 + const key-up     ( VT: 27 91 65 )
+#256  #73 + const key-pgup   ( VT: 27 91 53 126 )
+#256  #75 + const key-left   ( VT: 27 91 68 )
+#256  #77 + const key-right  ( VT: 27 91 67 )
+#256  #79 + const key-end    ( VT: 27 91 70 )
+#256  #80 + const key-down   ( VT: 27 91 66 )
+#256  #81 + const key-pgdn   ( VT: 27 91 54 126 )
+#256  #82 + const key-ins    ( VT: 27 91 50 126 )
+#256  #83 + const key-del    ( VT: 27 91 51 126 )
+#256 #119 + const key-chome  ( VT: 27 91 ?? ??? )
+#256 #117 + const key-cend   ( VT: 27 91 ?? ??? )
 : vk2 ( --k ) key 126 = if0 27 exit then
     a@ 50 = if key-ins   exit then
     a@ 51 = if key-del   exit then
@@ -371,7 +376,7 @@ t2 cell+ const t3
 
 
 : printable? ( c--f ) dup 31 > swap 127 < and ;
-: bs 8 emit ; [ inline
+: bs 8 emit ; inline
 : accept ( dst-- ) dup >r >b 0 >a
   begin key a!
      a@   3 =  a@ 27 = or if 0 r> c! adrop bdrop exit then

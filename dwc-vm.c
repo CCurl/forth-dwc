@@ -1,5 +1,4 @@
-// A ColorForth inspired system, MIT license, (c) 2025 Chris Curl
-
+// MIT license, (c) 2025 Chris Curl
 #include "dwc-vm.h"
 
 #define X1(op, name, code) op,
@@ -7,7 +6,6 @@
 #define X3(op, name, code) { name, op },
 
 #define PRIMS(X) \
-	/* DWC primitives */ \
 	X(EXIT,   "exit",     pc = (ucell)rpop(); if (pc==0) { return; } ) \
 	X(LIT,    "",         push(code[pc++]); ) \
 	X(JMP,    "",         pc = code[pc]; ) \
@@ -40,7 +38,6 @@
 	X(AND ,   "and",      t = pop(); TOS &= t; ) \
 	X(OR,     "or",       t = pop(); TOS |= t; ) \
 	X(XOR,    "xor",      t = pop(); TOS ^= t; ) \
-	/* System primitives */ \
 	X(ZTYPE,  "ztype",    zType((const char*)pop()); ) \
 	X(FIND,   "find",     push((cell)findInDict((char *)0)); ) \
 	X(KEY,    "key",      push(key()); ) \
@@ -62,7 +59,7 @@ char mem[MEM_SZ], *toIn, wd[32];
 ucell *code=(ucell*)&mem[0], dsp, rsp, lsp;
 cell dstk[STK_SZ+1], rstk[STK_SZ+1], lstk[STK_SZ+1];
 cell here=LASTOP+1, last=(cell)&mem[MEM_SZ];
-cell base=10, state=INTERPRET, outputFp=0;
+cell base=10, state=INTERPRET, outputFp=0, n, t, ir;
 DE_T tmpWords[10];
 
 void push(cell v) { if (dsp < STK_SZ) { dstk[++dsp] = v; } }
@@ -70,7 +67,7 @@ cell pop() { return (0 < dsp) ? dstk[dsp--] : 0; }
 void rpush(cell v) { if (rsp < STK_SZ) { rstk[++rsp] = v; } }
 cell rpop() { return (0 < rsp) ? rstk[rsp--] : 0; }
 void comma(ucell val) { code[here++] = val; }
-int  changeState(int st) { state = st; return st; }
+void doComment() { while (nextWord() && !strEqI(wd, ")")) {} }
 int  isTmpW(const char *w) { return (w[0]=='t') && btwi(w[1],'0','9') && (w[2]==0) ? 1 : 0; }
 void addPrim(const char *nm, ucell op) { DE_T *dp = addToDict(nm); if (dp) { dp->xt = op; } }
 void addLit(const char *name, cell val) {
@@ -85,10 +82,7 @@ void compileNum(cell n) {
 
 int nextWord() {
 	int ln = 0;
-	while (*toIn && (*toIn < 33)) {
-		if (btwi(*toIn, COMPILE, COMMENT)) { changeState(*toIn); }
-		++toIn;
-	}
+	while (*toIn && (*toIn < 33)) { ++toIn; }
 	while (*toIn > 32) { wd[ln++] = *(toIn++); }
 	wd[ln] = 0;
 	return ln;
@@ -148,9 +142,7 @@ DE_T *findInDict(char *w) {
 }
 
 void inner(ucell pc) {
-	cell ir, n, t;
-next:
-	ir = code[pc++];
+next: ir = code[pc++];
 	switch (ir)	{
 		PRIMS(X2)
 	default:
@@ -161,25 +153,13 @@ next:
 	}
 }
 
-int isStateChange(const char *w) {
-	if (state == COMMENT) { return 1; }
-	if (strEqI(w, ":")) { return changeState(DEFINE); }
-	if (strEqI(w, ";")) { comma(EXIT); return changeState(INTERPRET); }
-	if (strEqI(w, "[")) { return changeState(INTERPRET); }
-	if (strEqI(w, "]")) { return changeState(COMPILE); }
-	if (strEqI(w, "(")) {
-		while (nextWord() && !strEqI(wd, ")")) { }
-		return 1;
-	}
-	return 0;
-}
-
 void outer(const char *src) {
 	char *svIn = toIn;
 	toIn = (char *)src;
 	while (nextWord()) {
-		if (isStateChange(wd)) { continue; }
-		if (state == DEFINE) { addToDict(wd); changeState(COMPILE); continue; }
+		if (strEqI(wd, "(")) { doComment(); continue; }
+		if (strEqI(wd, ";")) { state=INTERPRET; comma(EXIT); continue; }
+		if (strEqI(wd, ":")) { state=COMPILE; addToDict(0); continue; }
 		if (isNum(wd, base)) {
 			if (state == COMPILE) { compileNum(pop()); }
 			continue;
