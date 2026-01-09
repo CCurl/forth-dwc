@@ -414,7 +414,7 @@ block-sz var ed-buf
 : ed-ch   ( -a ) row col rc->off ed-buf + ;
 : ed-ch!  ( c-- ) ed-ch c! show! ;
 : ed-pc?  ( a--f ) 32 126 btwi ;
-: ed-insb ( -- )  ;
+: ed-insb ( -- ) ( TODO! )  ;
 : ed-repc ( -- ) a@ ed-pc? if a@ ed-ch! ed-mvr then ;
 : ed-insc ( -- ) a@ ed-pc? if ed-insb a@ ed-ch! ed-mvr then ;
 : blk>buf ( n-- ) block-addr ed-buf block-sz 1+ cell / move ;
@@ -424,8 +424,8 @@ block-sz var ed-buf
 : ed-box  ( -- ) 1 1 ->cr green ed-hl ed-vl cr ed-hl ;
 : ed-draw ( -- ) ed-buf >a rows for cols for c@a+ 32 max emit next cr cur-rt next adrop ;
 : ed-md.  ( -- ) mode if0 ."  (norm) " then 
-    mode 1 = if red ."  (ins) " white then
-    mode 2 = if green ."  (repl) " white then ;
+    mode 1 = if green ."  (ins) " white then
+    mode 2 = if red ."  (repl) " white then ;
 : ed-foot ( -- ) 1 rows 3 + ->cr clr-eol
     blk . ." : " row 1+ (.) '/' emit col 1+ (.) 
     ed-md. ;

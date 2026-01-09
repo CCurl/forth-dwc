@@ -4,7 +4,7 @@ DWC is an extremely minimal Forth system that can run stand-alone or be embedded
 
 DWC has 32 base primitives, 14 system primitives.<br/>
 DWC is implemented in 3 files: (dwc-vm.c, dwc-vm.h, system.c). <br/>
-The VM itself is under 201 lines of code.
+The VM itself is under 200 lines of code.
 
 On Windows, a 32-bit Release build compiles to a 17k executable. <br/>
 On a Linux box, it is about 21k.

@@ -57,9 +57,8 @@ enum { PRIMS(X1) };
 
 char mem[MEM_SZ], *toIn, wd[32];
 ucell *code=(ucell*)&mem[0], dsp, rsp, lsp;
-cell dstk[STK_SZ+1], rstk[STK_SZ+1], lstk[STK_SZ+1];
-cell here=LASTOP+1, last=(cell)&mem[MEM_SZ];
-cell base=10, state=INTERPRET, outputFp=0, n, t, ir;
+cell dstk[STK_SZ+1], rstk[STK_SZ+1], lstk[STK_SZ+1], outputFp=0;
+cell here=LASTOP+1, last=(cell)&mem[MEM_SZ], base=10, state=INTERPRET;
 DE_T tmpWords[10];
 
 void push(cell v) { if (dsp < STK_SZ) { dstk[++dsp] = v; } }
@@ -68,6 +67,7 @@ void rpush(cell v) { if (rsp < STK_SZ) { rstk[++rsp] = v; } }
 cell rpop() { return (0 < rsp) ? rstk[rsp--] : 0; }
 void comma(ucell val) { code[here++] = val; }
 void doComment() { while (nextWord() && !strEqI(wd, ")")) {} }
+void doNum() { if (state == COMPILE) { compileNum(pop()); } }
 int  isTmpW(const char *w) { return (w[0]=='t') && btwi(w[1],'0','9') && (w[2]==0) ? 1 : 0; }
 void addPrim(const char *nm, ucell op) { DE_T *dp = addToDict(nm); if (dp) { dp->xt = op; } }
 void addLit(const char *name, cell val) {
@@ -142,6 +142,7 @@ DE_T *findInDict(char *w) {
 }
 
 void inner(ucell pc) {
+	cell n, t, ir;
 next: ir = code[pc++];
 	switch (ir)	{
 		PRIMS(X2)
@@ -160,10 +161,7 @@ void outer(const char *src) {
 		if (strEqI(wd, "(")) { doComment(); continue; }
 		if (strEqI(wd, ";")) { state=INTERPRET; comma(EXIT); continue; }
 		if (strEqI(wd, ":")) { state=COMPILE; addToDict(0); continue; }
-		if (isNum(wd, base)) {
-			if (state == COMPILE) { compileNum(pop()); }
-			continue;
-		}
+		if (isNum(wd, base)) { doNum(); continue; }
 		DE_T *dp = findInDict(wd);
 		if (!dp) {
 			zType("\n-word:["); zType(wd); zType("]?-\n");
