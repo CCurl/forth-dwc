@@ -16,7 +16,7 @@
 #include <string.h>
 #include <time.h>
 
-#define VERSION         20251231
+#define VERSION         20260109
 #define MEM_SZ         0x1000000
 #define STK_SZ                63
 #define NAME_LEN              25
@@ -33,8 +33,9 @@
 #define NOS           dstk[dsp-1]
 #define L0            lstk[lsp]
 #define L1            lstk[lsp-1]
+#define L2            lstk[lsp-2]
 
-enum { COMPILE=1, DEFINE, INTERPRET, COMMENT };
+enum { INTERPRET=0, COMPILE=1 };
 typedef struct { ucell xt; byte sz; byte fl; byte ln; char nm[NAME_LEN+1]; } DE_T;
 typedef struct { char *name; ucell value; } NVP_T;
 
@@ -42,6 +43,9 @@ typedef struct { char *name; ucell value; } NVP_T;
 extern void inner(ucell start);
 extern void outer(const char *src);
 extern void dwcInit();
+extern int nextWord();
+extern DE_T *addToDict(const char *w);
+extern void compileNum(cell n);
 extern cell state, outputFp;
 extern char mem[];
 
