@@ -12,6 +12,8 @@
 : code@ ( off--op )  ->code @ ;
 : code! ( op off-- ) ->code ! ;
 : immediate $80 last cell+ 1 + c! ;
+: [ ( -- ) 0 state ! ; immediate
+: ] ( -- ) 1 state ! ; immediate
 : 1+ 1 + ; inline
 : 1- 1 - ; inline
 
@@ -233,15 +235,15 @@ cell var t2
 : forget  t0 @ (h) !  t1 @ (l) !  t2 @ (vh) ! ;
 
 ( Disk: 512 blocks - 2048 bytes each )
+: mb 1024 1024 * * ;
+mem 14 mb + const disk
 32 var fn
-vars 1024 1024 * + const disk
 : block-sz 2048 ;
 : block-fn ( n--a ) fn z" block-" s-cpy swap <# # # #s #> s-cat z" .fth" s-cat ;
 : block-addr  ( n--a ) block-sz * disk + ;
-: t1 drop ." -nf-" ;
-: write-block ( n-- ) dup block-fn fopen-w ?dup if0 t1 exit then
+: write-block ( n-- ) dup block-fn fopen-w ?dup if0 ." -err-" drop exit then
     >r block-addr block-sz r@ fwrite drop r> fclose ;
-: read-block  ( n-- ) dup block-fn fopen-r ?dup if0 t1 exit then
+: read-block  ( n-- ) dup block-fn fopen-r ?dup if0 ." -nf-" drop exit then
     >r block-addr block-sz r@ fread  drop r> fclose ;
 
 : load ( n-- ) dup read-block block-addr outer ;

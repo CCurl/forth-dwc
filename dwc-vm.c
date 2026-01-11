@@ -1,9 +1,9 @@
 // MIT license, (c) 2025 Chris Curl
 #include "dwc-vm.h"
 
-#define X1(op, name, code) op,
-#define X2(op, name, code) case op: code goto next;
-#define X3(op, name, code) { name, op },
+#define X1(op, name, theCode) op,
+#define X2(op, name, theCode) case op: theCode goto next;
+#define X3(op, name, theCode) { name, op },
 
 #define PRIMS(X) \
 	X(EXIT,   "exit",     pc = (ucell)rpop(); if (pc==0) { return; } ) \
@@ -70,10 +70,7 @@ void doComment() { while (nextWord() && !strEqI(wd, ")")) {} }
 void doNum() { if (state == COMPILE) { compileNum(pop()); } }
 int  isTmpW(const char *w) { return (w[0]=='t') && btwi(w[1],'0','9') && (w[2]==0) ? 1 : 0; }
 void addPrim(const char *nm, ucell op) { DE_T *dp = addToDict(nm); if (dp) { dp->xt = op; } }
-void addLit(const char *name, cell val) {
-	DE_T *dp = addToDict(name); compileNum(val); comma(EXIT);
-	if (btwi(val,0,LIT_BITS)) { dp->fl = INLINE; }
-}
+void addLit(const char *name, cell val) { addToDict(name); compileNum(val); comma(EXIT); }
 
 void compileNum(cell n) {
 	if (btwi(n,0,LIT_BITS)) { comma((ucell)(n | LIT_MASK)); }
@@ -128,7 +125,7 @@ DE_T *addToDict(const char *w) {
 
 DE_T *findInDict(char *w) {
 	if (!w) {
-		if (!nextWord()) return (DE_T*)0;
+		if (!nextWord()) { return (DE_T*)0; }
 		w = &wd[0];
 	}
 	if (isTmpW(w)) { return &tmpWords[w[1]-'0']; }
