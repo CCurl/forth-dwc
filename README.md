@@ -4,7 +4,7 @@ DWC is an extremely minimal Forth system that can run stand-alone or be embedded
 
 DWC has 32 base primitives, 14 system primitives.<br/>
 DWC is implemented in 3 files: (dwc-vm.c, dwc-vm.h, system.c). <br/>
-The VM itself is 200 lines of code.
+The VM itself is under 200 lines of code.
 
 On Windows, a 32-bit Release build compiles to a 17k executable. <br/>
 On a Linux box, it is about 21k.
@@ -21,7 +21,8 @@ In a DWC program, each instruction is a DWORD (32-bits). <br/>
 |:--   |:-- |
 |  :   | Add the next word to the dictionary, set STATE to COMPILE. |
 |  ;   | Compile EXIT and change state to INTERPRET. |
-|  (   | Skip words until the next ')' word. |
+
+**NOTE**: '(' skip words until the next ')' word.
 
 ## INLINE words
 
@@ -32,7 +33,7 @@ When not INLINE, a call is made to the word instead.
 ## Transient words
 
 Words 't0' through 't9' are transient and are not added to the dictionary.<br/>
-They are case sensitive: 't0' is a transient word, 'T0' is not.
+They are case sensitive: 't0' is a transient word, 'T0' is not.<br/>
 They help with factoring code and and keep the dictionary uncluttered.<br/>
 
 ## The VM Primitives
@@ -93,7 +94,7 @@ They help with factoring code and and keep the dictionary uncluttered.<br/>
 | Word      | Stack | Description |
 |:--        |:--    |:-- |
 | version   | (--n) | Current version number. |
-| output-fp | (--n) | File handle. 0 means STDOUT. |
+| output-fp | (--a) | Address of the output file handle. 0 means STDOUT. |
 | (h)       | (--a) | Address of HERE. |
 | (l)       | (--a) | Address of LAST. |
 | (lsp)     | (--a) | Address of the loop stack pointer. |
@@ -107,7 +108,6 @@ They help with factoring code and and keep the dictionary uncluttered.<br/>
 | mem       | (--a) | Address of the beginning of the memory area. |
 | mem-sz    | (--n) | The number of BYTEs in the memory area. |
 | >in       | (--a) | Address of the text input buffer pointer. |
-
 
 ##   Embedding DWC in your C or C++ project
 
