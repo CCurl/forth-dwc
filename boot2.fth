@@ -1,4 +1,6 @@
-(  comments are built in!  )
+( these are created later as -last- and -here- )
+( they are used later for reboot )
+(h) @   (l) @ 
 
 : last (l) @ ;
 : here (h) @ ;
@@ -31,8 +33,17 @@
 
 : , here dup 1+ (h) ! code! ;
 : const add-word (lit) , , (exit) , ;
+
+(  val and (val) define a very efficient variable mechanism  )
+(  Usage:  val a@   (val) (a)   : a! (xx) ! ;  )
+: val   0 const ;
+: (val) here 2 - ->code const ;
+
 32 ->code const (vh)
 : vhere (vh) @ ;
+
+( the original here and last  )
+const -l-   const -h-
 
 ( STATES: 0=INTERPRET, 1=COMPILE )
 : [ 0 state ! ; immediate
@@ -59,20 +70,17 @@ mem mem-sz + const dict-end
 64 1024 * cells mem + const vars
 vars (vh) !
 
-(  val and (val) define a very efficient variable mechanism  )
-(  Usage:  val xx   (val) (xx)   : xx! (xx) ! ;  )
-: val   add-word (lit) , 0 , (exit) , ;
-: (val) add-word (lit) , here 3 - ->code , (exit) , ;
-
 ( Local variables x, y, z )
-60 cells var t0     ( the stack )
+60 cells var t0         ( the stack )
 vhere 3cells - const t2 ( the stack top limit )
-val sp@   (val) t1  ( the stack pointer )
+val sp@   (val) t1      ( the stack pointer )
+t0 t1 !                 ( initialize sp )
 : +L ( -- ) sp@ 3cells + dup t2 > if drop t2 then t1 ! ;
 : -L ( -- ) sp@ 3cells - dup t0 < if drop t0 then t1 ! ;
-: x@ ( --n ) sp@ @ ;           : x! ( n-- ) sp@ ! ;
-: y@ ( --n ) sp@ cell + @ ;    : y! ( n-- ) sp@ cell + ! ;
-: z@ ( --n ) sp@ 2cells + @ ;  : z! ( n-- ) sp@ 2cells + ! ;
+
+: x@   ( --n ) sp@ @ ;            : x!   ( n-- ) sp@ ! ;
+: y@   ( --n ) sp@ cell + @ ;     : y!   ( n-- ) sp@ cell + ! ;
+: z@   ( --n ) sp@ 2cells + @ ;    : z!  ( n-- ) sp@ 2cells + ! ;
 
 : c@x  ( --c ) x@ c@ ;            : c!x  ( c-- ) x@ c! ;
 : c@x+ ( --c ) x@ dup 1+ x! c@ ;  : c@x- ( --c ) x@ dup 1- x! c@ ;
@@ -81,7 +89,6 @@ val sp@   (val) t1  ( the stack pointer )
 : c@y  ( --c ) y@ c@ ;            : c!y  ( c-- ) y@ c! ;
 : c@y+ ( --c ) y@ dup 1+ y! c@ ;  : c@y- ( --c ) y@ dup 1- y! c@ ;
 : c!y+ ( c-- ) y@ dup 1+ y! c! ;  : c!y- ( c-- ) y@ dup 1- y! c! ;
-t0 t1 !
 
 : rdrop ( -- ) r> drop ; inline
 : tuck  swap over ;
@@ -229,6 +236,13 @@ cell var t5
 : ->stdout  ( -- )     0 ->file ;
 : ->stdout! ( -- )     output-fp @ fclose ->stdout ;
 
+: t4 100000 ;
+: t5 mem t4 + ;
+: rb ( -- ) z" boot2.fth" fopen-r ?dup if0 ." -nf-" exit then
+    a! t5 t4 a@ fread drop a@ fclose
+    -h- (h) ! -l- (l) ! 
+    t5 outer ;
+
 ( Formatting number output )
 : .nwb ( n width base-- )
     base @ >r  base !  >r <# r> 1- for # next #s #> ztype  r> base ! ;
@@ -290,7 +304,7 @@ cell var t5
 ( shell words )
 : lg z" lazygit" system ;
 : ll z" ls -l" system ;
-: vi z" vi xx.fth" system ;
+: vi z" vi boot2.fth" system ;
 
 ( simple fixed point )
 : f. 100 /mod (.) '.' emit abs 2 10 .nwb ;
