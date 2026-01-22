@@ -70,34 +70,55 @@ mem mem-sz + const dict-end
 64 1024 * cells mem + const vars
 vars (vh) !
 
-( Local variables x, y, z )
-60 cells var t0         ( the stack )
-vhere 3cells - const t2 ( the stack top limit )
-val sp@   (val) t1      ( the stack pointer )
-t0 t1 !                 ( initialize sp )
-: +L ( -- ) sp@ 3cells + dup t2 > if drop t2 then t1 ! ;
-: -L ( -- ) sp@ 3cells - dup t0 < if drop t0 then t1 ! ;
+: 2dup  over over ; inline
+: min ( a b-a|b ) 2dup > if swap then drop ;
+: max ( a b-a|b ) 2dup < if swap then drop ;
 
-: x@   ( --n ) sp@ @ ;            : x!   ( n-- ) sp@ ! ;
-: y@   ( --n ) sp@ cell + @ ;     : y!   ( n-- ) sp@ cell + ! ;
-: z@   ( --n ) sp@ 2cells + @ ;    : z!  ( n-- ) sp@ 2cells + ! ;
+( A temp stack for locals mostly )
+32 cells var t8        ( the stack bottom )
+vhere cell - const t9  ( the stack top limit )
+val t0     (val) t1    ( the stack pointer )
+t8 t1 !                ( initialize sp )
+: >t   ( n-- ) t0 cell + t9 min dup t1 ! ! ;
+: tdrop ( -- ) t0 cell - t8 max t1 ! ;
+: t@   ( n-- ) t0 @ ;
+: t!   ( n-- ) t0 ! ;
+: t>   ( --n ) t@ tdrop ;
 
-: c@x  ( --c ) x@ c@ ;            : c!x  ( c-- ) x@ c! ;
-: c@x+ ( --c ) x@ dup 1+ x! c@ ;  : c@x- ( --c ) x@ dup 1- x! c@ ;
-: c!x+ ( c-- ) x@ dup 1+ x! c! ;  : c!x- ( c-- ) x@ dup 1- x! c! ;
+( The A stack )
+16 cells var t8       ( the stack bottom )
+vhere cell - const t9 ( the stack top )
+val t0    (val) t1    ( the stack pointer )
+t8 t1 !               ( initialize the sp )
+: >a   ( n-- ) t0 cell + t9 min dup t1 ! ! ;
+: adrop ( -- ) t0 cell - t8 max t1 ! ;
+: a@   ( --n ) t0 @ ;             : a!   ( n-- ) t0 ! ;
+: a>   ( --n ) a@ adrop ;
+: c@a  ( --c ) a@ c@ ;            : c!a  ( c-- ) a@ c! ;
+: c@a+ ( --c ) a@ dup 1+ a! c@ ;  : c!a+ ( c-- ) a@ dup 1+ a! c! ;
+: c@a- ( --c ) a@ dup 1- a! c@ ;  : c!a- ( c-- ) a@ dup 1- a! c! ;
+: a++  ( -- ) 1 t0 +! ;
 
-: c@y  ( --c ) y@ c@ ;            : c!y  ( c-- ) y@ c! ;
-: c@y+ ( --c ) y@ dup 1+ y! c@ ;  : c@y- ( --c ) y@ dup 1- y! c@ ;
-: c!y+ ( c-- ) y@ dup 1+ y! c! ;  : c!y- ( c-- ) y@ dup 1- y! c! ;
+( The A stack )
+16 cells var t8       ( the stack bottom )
+vhere cell - const t9 ( the stack top )
+val t0    (val) t1    ( the stack pointer )
+t8 t1 !               ( initialize the sp )
+: >a   ( n-- ) t0 cell + t9 min dup t1 ! ! ;
+: adrop ( -- ) t0 cell - t8 max t1 ! ;
+: a@   ( --n ) t0 @ ;             : a!   ( n-- ) t0 ! ;
+: a>   ( --n ) a@ adrop ;
+: c@a  ( --c ) a@ c@ ;            : c!a  ( c-- ) a@ c! ;
+: c@a+ ( --c ) a@ dup 1+ a! c@ ;  : c!a+ ( c-- ) a@ dup 1+ a! c! ;
+: c@a- ( --c ) a@ dup 1- a! c@ ;  : c!a- ( c-- ) a@ dup 1- a! c! ;
+: a++  ( -- ) 1 t0 +! ;
 
 : rdrop ( -- ) r> drop ; inline
 : tuck  swap over ;
 : nip   swap drop ;
+: -rot  ( a b c -- c a b ) swap >r swap r> ;
 : ?dup  -if dup then ;
 : 2drop drop drop ;
-: 2dup  over over ; inline
-: min ( a b-a|b ) 2dup > if swap then drop ;
-: max ( a b-a|b ) 2dup < if swap then drop ;
 : 0= ( n--f ) 0 =    ; inline
 : 0< ( n--f ) 0 <    ; inline
 : 2+ ( n--m ) 2 +    ; inline
@@ -139,36 +160,6 @@ cell var (buf)
         stk swap for cell+ dup @ . next drop
     then ')' emit ;
 
-( T - a circular stack )
-7 cells var tstk
-vhere const t9 cell allot
-val tsp@   (val) t0
-: tsp! t0 ! ;
-: t@    ( --n ) tsp@ @ ;
-: t!    ( n-- ) tsp@ ! ;
-: tdrop ( -- )  tsp@ cell- dup tstk < if drop t9 then tsp! ;
-: >t    ( n-- ) tsp@ cell+ dup t9 > if drop tstk then tsp! t! ;
-: t>    ( --n ) t@ tdrop ;
-: t+    ( -- )  t@ 1+ t! ;
-: t@+   ( --n ) t@ t+ ;
-: @t    ( --n ) t@ @ ;
-: .tstk '(' emit space 8 for i cells tstk + @ . next ')' emit ;
-tstk tsp!
-
-( ColorForth variables )
-val a@   (val)  t0
-: a!    ( n-- ) t0 ! ;
-: >a    ( n-- ) a@ >t a! ;
-: adrop ( -- )  t> a! ;
-: a+    ( -- )  a@ 1+ a! ;
-: a@+   ( --n ) a@ a+ ;
-: @a    ( --n ) a@ @ ;
-: @a+   ( --n ) a@ @  a@ cell+ a! ;
-: @a-   ( --n ) a@ @  a@ cell- a! ;
-: c@a   ( --n ) a@  c@ ;
-: c@a+  ( --n ) a@+ c@ ;
-: c@a-  ( --n ) a@ c@  a@ 1- a! ;
-
 val b@   (val)  t0
 : b!    ( n-- ) t0 ! ;
 : >b    ( n-- ) b@ >t b! ;
@@ -199,7 +190,7 @@ val b@   (val)  t0
 : .word ( de-- ) cell+ 3 + ztype ;
 : words last >a 0 >b 1 >t begin
         a@ dict-end < if0 '(' emit t> . ." words)" bdrop adrop exit then
-        a@ .word tab t+
+        a@ .word tab t@ 1+ t!
         a@ cell+ 2+ c@ 7 > if b+ then 
         b@+ 9 > if cr 0 b! then
         a@ dup cell+ c@ + a!
@@ -213,8 +204,8 @@ cell var t5
 
 ( Strings / Memory )
 64 var pad
-: fill   ( a num ch-- ) +L z! y! x! y@ for z@ c!x+ next -L ;
-: cmove  ( f t n-- ) +L z! y! x! z@ if z@ for c@x+ c!y+ next then -L ;
+: fill   ( a num ch-- ) -rot for 2dup c! 1+ next 2drop ;
+: cmove  ( f t n-- ) >r >b >a  r> for c@a+ c!b+ next adrop bdrop ;
 : cmove> ( f t n-- ) >r r@ 1- + >b r@ 1- + >a r> for c@a- c!b- next adrop bdrop ;
 : s-len  ( str--len ) >a 0 begin c@a+ if0 adrop exit then 1+ again ;
 : s-end  ( str--end ) dup s-len + ;
@@ -226,7 +217,7 @@ cell var t5
     begin
         c@a c@b = if0 0 bdrop adrop exit then
         c@a if0 1 bdrop adrop exit then
-        a+ b+ 
+        a++   b+ 
     again ;
 
 ( Files )
@@ -261,45 +252,9 @@ cell var t5
 : aemit ( ch-- )    dup 32 126 btwi if0 drop '.' then emit ;
 : t0    ( addr-- )  >a $10 for c@a+ aemit next adrop ;
 : dump  ( addr n-- ) swap >a 0 >t for
-     t@+ if0 a@ cr .hex ." : " then c@a+ .hex space
+     t@ 1+ dup t! if0 a@ cr .hex ." : " then c@a+ .hex space
      t@ $10 = if 0 t! space space a@ $10 - t0 then
    next tdrop adrop ;
-
-( ANSI color codes )
-: csi  27 emit '[' emit ;
-: fg   csi ." 38;5;" (.) 'm' emit ;
-: black    0 fg ;      : red     203 fg ;
-: green   40 fg ;      : yellow  226 fg ;
-: blue    63 fg ;      : purple  201 fg ;
-: cyan   117 fg ;      : grey    246 fg ;
-: white  255 fg ;
-
-( see <x> )
-: .prim? ( xt--f ) dup 45 < if ." primitive " .hex/dec 1 exit then drop 0 ;
-: t0 ( n-- ) ." lit " $3fffffff and .hex/dec ;
-: .lit? ( b--f ) b@ $3fffffff > if b@ t0 1 exit then 0 ;
-: find-xt ( xt--de 1 | 0 ) a@ >r last a!
-    begin
-        a@ dict-end < if0 r> a! drop 0 exit then
-        @a over = if drop a@ 1 r> a! exit then
-        a@ dup cell+ c@ + a!
-    again
-: next-xt ( de--xt ) >r last t!
-    begin
-        t@ dict-end < if0 rdrop here exit then
-        t@ cell+ c@ t@ + b!
-        b@ r@ = if rdrop @t exit then
-        b@ t!
-    again ;
-: .lit-jmp? ( b-- ) b@ (lit) (njmpnz) btwi if space a@+ code@ .hex/dec then ;
-: t2 ( a-- ) cr a@ .hex4 ." : " a@+ code@ dup .hex4 b!
-    space .lit? if exit then
-    b@ find-xt if 4 spaces .word then .lit-jmp? ;
-: see-range ( f t-- ) t! a! begin a@ t@ >= if exit then t2 again ;
-: see find ?dup if0 ." -not found-" exit then
-    a!  @a  .prim? if exit then
-    a@ .hex ':' emit space a@ .word
-    a@ next-xt t!  @a  a! a@ t@ see-range ;
 
 ( shell words )
 : lg z" lazygit" system ;
@@ -312,6 +267,15 @@ cell var t5
 : f/ swap 100 * swap / ;
 : f+ + ;
 : f- - ;
+
+( ANSI color codes )
+: csi  27 emit '[' emit ;
+: fg   csi ." 38;5;" (.) 'm' emit ;
+: black    0 fg ;      : red     203 fg ;
+: green   40 fg ;      : yellow  226 fg ;
+: blue    63 fg ;      : purple  201 fg ;
+: cyan   117 fg ;      : grey    246 fg ;
+: white  255 fg ;
 
 ( Version and Banner )
 : .version version <# # # #. # # #. #s 'v' #c #> ztype ;
