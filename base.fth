@@ -10,12 +10,10 @@
 : 2cells  8 ; inline
 : 3cells 12 ; inline
 : cells cell * ; inline
-: cell+ cell + ; inline
-: cell- cell - ; inline
 : ->code ( off--addr ) cells mem + ;
-: code@ ( off--op )  ->code @ ;
-: code! ( op off-- ) ->code ! ;
-: immediate $80 last cell+ 1 + c! ;
+: code@  ( off--op )  ->code @ ;
+: code!  ( op off-- ) ->code ! ;
+: immediate $80 last cell + 1 + c! ;
 : [ ( -- ) 0 state ! ; immediate
 : ] ( -- ) 1 state ! ; immediate
 : 1+ 1 + ; inline
@@ -31,16 +29,16 @@
 : (njmpnz)  6 ;
 : (ztype)  32 ;
 
-: , here dup 1+ (h) ! code! ;
-: const add-word (lit) , , (exit) , ;
+: , ( dw-- ) here dup 1+ (h) ! code! ;
+: const ( n-- ) add-word (lit) , , (exit) , ;
 
 (  val and (val) define a very efficient variable mechanism  )
 (  Usage:  val a@   (val) (a)   : a! (xx) ! ;  )
-: val   0 const ;
-: (val) here 2 - ->code const ;
+: val   ( -- ) 0 const ;
+: (val) ( -- ) here 2 - ->code const ;
 
 ( the original here and last  )
-const -l-   const -h-
+const -last-   const -here-
 
 32 ->code const (vh)
 : vhere (vh) @ ;
@@ -69,8 +67,9 @@ vars (vh) !
 
 : min ( a b-a|b ) over over > if swap then drop ;
 : max ( a b-a|b ) over over < if swap then drop ;
+: ?dup ( a--a|0 ) -if dup then ;
 
-( locals - 3 at a time )
+( A stack for locals - 3 at a time )
 30 cells var t8           ( the locals stack start )
 vhere 3cells - const t9   ( the locals stack end )
 val  t0   (val) t1        ( the stack pointer )
@@ -82,9 +81,9 @@ t8 t1 !                   ( Initialize )
 : y@  ( --n ) t0 cell   + @ ;  : y!   ( n-- ) t0 cell   + ! ;
 : z@  ( --n ) t0 2cells + @ ;  : z!   ( n-- ) t0 2cells + ! ;
 
-: +L1    ( x -- )    +L x! ;
-: +L2    ( x y-- )   +L y! x! ;
-: +L3    ( x y z-- ) +L z! y! x! ;
+: +L1 ( x -- )    +L x! ;
+: +L2 ( x y-- )   +L y! x! ;
+: +L3 ( x y z-- ) +L z! y! x! ;
 
 : x++ ( -- )  x@ 1+ x! ;   : x@+  ( --n ) x@ x++ ;
 : x-- ( -- )  x@ 1- x! ;   : x@-  ( --n ) x@ x-- ;
@@ -98,61 +97,11 @@ t8 t1 !                   ( Initialize )
 
 : z++ ( -- )  z@ 1+ z! ;
 
-( More core words )
-
-: rdrop ( -- ) r> drop ; inline
-: tuck  ( a b--b a b )  swap over ;
-: nip   ( a b--b )  swap drop ;
-: 2dup  ( a b--a b a b )  over over ;
-: 2drop ( a b-- )  drop drop ;
-: ?dup  ( a--a? )  -if dup then ;
-: -rot ( a b c--c a b ) swap >r swap r> ;
-: 0= ( n--f ) 0 =    ; inline
-: 0< ( n--f ) 0 <    ; inline
-: 2+ ( n--m ) 2 +    ; inline
-: 2* ( n--m ) dup +  ; inline
-: <= ( a b--f ) > 0= ;
-: >= ( a b--f ) < 0= ;
-: btwi ( n l h--f ) >r over <= swap r> <= and ;
-: ++ ( a-- )   1 swap +! ;
-: -- ( a-- )  -1 swap +! ;
-: negate ( n--n' ) 0 swap - ;
-: abs    ( n--n' ) dup 0< if negate then ;
-: cr  ( -- ) 13 emit 10 emit ;
-: tab ( -- ) 9 emit ;
-: space ( -- ) 32 emit ;
-: spaces ( n-- ) for space next ;
-: /   ( a b--q ) /mod nip  ;
-: mod ( a b--r ) /mod drop ;
-: */ ( n m q--n' ) >r * r> / ;
-: execute ( xt-- ) ?dup if >r then ;
-: unloop ( -- ) (lsp) @ 3 - 0 max (lsp) ! ;
-: type ( a n-- ) for dup c@ emit 1+ next drop ;
-
-   1 var (neg)
-  65 var buf
-cell var (buf)
-: ?neg ( n--n' ) dup 0< dup (neg) c! if negate then ;
-: #c   ( c-- )   -1 (buf) +! (buf) @ c! ;
-: #.   ( -- )    '.' #c ;
-: #n   ( n-- )   '0' + dup '9' > if 7 + then #c ;
-: #    ( n--m )  base @ /mod swap #n ;
-: #s   ( n--0 )  # -if #s exit then ;
-: <#   ( n--m )  ?neg buf 65 + (buf) ! 0 #c ;
-: #>   ( n--a )  drop (neg) @ if '-' #c then (buf) @ ;
-: (.)   <# #s #> ztype ;
-: . (.) space ;
-
-: 0sp 0 (sp) ! ;
-: depth (sp) @ 1- ;
-: .s '(' emit space depth ?dup if
-        stk swap for cell+ dup @ . next drop
-    then ')' emit ;
-
-: t3 ( --a ) +L vhere dup z! x! >in ++
+( Strings )
+: t3 ( --a ) +L vhere dup z! x! 1 >in +!
     begin
-        >in @ c@ y! >in ++
-        y@ 0= y@ '"' = or
+        >in @ c@ y! 1 >in +!
+        y@ 0 = y@ '"' = or
         if 0 c!x+  z@
             comp? if (lit) , , x@ (vh) ! then
             -L exit
@@ -170,32 +119,81 @@ cell var (buf)
 : ->stdout  ( -- )     0 ->file ;
 : ->stdout! ( -- )     output-fp @ fclose ->stdout ;
 
-: t4 100000 ;
-: t5 mem t4 + ;
-: rb ( -- ) z" base.fth" fopen-r ?dup if0 ." -nf-" exit then
+( reboot and vi )
+: t4 100000 ;   : t5 mem t4 + ;
+: rb ( -- )
+    z" base.fth" fopen-r ?dup if0 ." -nf-" exit then
     t5 x! t4 for 0 c!x+ next
     x! t5 t4 x@ fread drop x@ fclose
-    -h- (h) ! -l- (l) ! 
+    -here- (h) !  -last- (l) ! 
     t5 outer ;
 : vi z" vi base.fth" system ;
 
-: .word ( de-- ) cell+ 3 + ztype ;
+( More core words )
+: rdrop ( -- ) r> drop ; inline
+: tuck  ( a b--b a b )  swap over ;
+: nip   ( a b--b )  swap drop ;
+: 2dup  ( a b--a b a b )  over over ;
+: 2drop ( a b-- )  drop drop ;
+: -rot ( a b c--c a b ) swap >r swap r> ;
+: 0= ( n--f ) 0 =    ; inline
+: 0< ( n--f ) 0 <    ; inline
+: <= ( a b--f ) > 0= ;
+: >= ( a b--f ) < 0= ;
+: 2+ ( n--m ) 2 +    ; inline
+: 2* ( n--m ) dup +  ; inline
+: ++ ( a-- )   1 swap +! ;
+: -- ( a-- )  -1 swap +! ;
+: btwi ( n l h--f ) >r over <= swap r> <= and ;
+: negate ( n--n' ) 0 swap - ;
+: abs ( n--n' ) dup 0< if negate then ;
+: cr  ( -- ) 13 emit 10 emit ;
+: tab ( -- ) 9 emit ;
+: space  ( -- ) 32 emit ;
+: spaces  ( n-- ) for space next ;
+: /   ( a b--q ) /mod nip  ;
+: mod ( a b--r ) /mod drop ;
+: */  ( n m q--n' ) >r * r> / ;
+: execute  ( xt-- ) ?dup if >r then ;
+: unloop  ( -- ) (lsp) @ 3 - 0 max (lsp) ! ;
+: type  ( a n-- ) for dup c@ emit 1+ next drop ;
+
+   1 var (neg)
+  65 var buf
+cell var (buf)
+: ?neg ( n--n' ) dup 0< dup (neg) c! if negate then ;
+: #c   ( c-- )   -1 (buf) +! (buf) @ c! ;
+: #.   ( -- )    '.' #c ;
+: #n   ( n-- )   '0' + dup '9' > if 7 + then #c ;
+: #    ( n--m )  base @ /mod swap #n ;
+: #s   ( n--0 )  # -if #s exit then ;
+: <#   ( n--m )  ?neg buf 65 + (buf) ! 0 #c ;
+: #>   ( n--a )  drop (neg) @ if '-' #c then (buf) @ ;
+: (.) ( n-- )  <# #s #> ztype ;
+: .   ( n-- )  (.) space ;
+
+: 0sp 0 (sp) ! ;
+: depth ( --n ) (sp) @ 1- ;
+: .s '(' emit space depth ?dup if
+        stk swap for cell + dup @ . next drop
+    then ')' emit ;
+
+: .word ( de-- ) cell + 3 + ztype ;
 : words ( -- ) +L last x! 0 y! 1 z! begin
         x@ dict-end < if0 '(' emit z@ . ." words)" -L exit then
         x@ .word tab z++
-        x@ cell+ 2+ c@ 7 > if y++ then 
+        x@ cell + 2+ c@ 7 > if y++ then 
         y@+ 9 > if cr 0 y! then
-        x@ dup cell+ c@ + x!
+        x@ dup cell + c@ + x!
     again ;
 
 : words-n ( n-- ) +L last x! 0 y! for
         x@ .word tab
         y@+ 9 > if cr 0 y! then
-		x@ dup cell+ c@ + x!
+		x@ dup cell + c@ + x!
     next -L ;
 
-cell var t4
-cell var t5
+cell var t4   cell var t5
 : [[ here t4 !  vhere t5 !  1 state ! ;
 : ]] (exit) , 0 state ! t4 @ dup >r (h) ! t5 @ (vh) ! ; immediate
 
@@ -238,13 +236,11 @@ cell var t5
    next -L ;
 
 ( simple fixed point )
-: f. 100 /mod (.) '.' emit abs 2 10 .nwb ;
-: f* * 100 / ;
-: f/ swap 100 * swap / ;
-: f+ + ;
-: f- - ;
-
-( *** Banner *** )
+: f. ( n-- )    100 /mod (.) '.' emit abs 2 10 .nwb ;
+: f* ( a b--c ) * 100 / ;
+: f/ ( a b--c ) swap 100 * swap / ;
+: f+ ( a b--c ) + ;
+: f- ( a b--c ) - ;
 
 ( ANSI color codes )
 : csi  27 emit '[' emit ;
@@ -257,6 +253,7 @@ cell var t5
 : cyan   117 fg ;      : grey    246 fg ;
 : white  255 fg ;
 
+( *** Banner *** )
 : .version version <# # # #. # # #. #s 'v' #c #> ztype ;
 : .banner
     yellow ." DWC " green .version white ."  - Chris Curl" cr
@@ -276,7 +273,7 @@ pad z" hi " s-cpy z" there-" s-cat 123 s-catn '!' s-catc ztype cr
 : .xyz ." (x,y,z) ( " x@ . y@ . z@ . ')' emit cr ;
 1 2 3 z! y! x! .xyz
 4 5 6 +L3 3 spaces .xyz +L 6 spaces .xyz -L 3 spaces .xyz -L .xyz -L .xyz
-." bye." cr
-bye
+( ." bye." cr bye )
+: bb timer 1000000000 for next timer swap - . ." ms/us" cr ;
 
 ( *** App code - end *** )
