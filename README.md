@@ -22,7 +22,8 @@ In a DWC program, each instruction is a DWORD (32-bits). <br/>
 |  :   | Add the next word to the dictionary, set STATE to COMPILE. |
 |  ;   | Compile EXIT and change state to INTERPRET. |
 
-**NOTE**: '(' skip words until the next ')' word.
+**NOTE**: '(' skip words until the next ')' word.<br/>
+**NOTE**: '\' skip words until the end of the line.<br/>
 
 ## INLINE words
 

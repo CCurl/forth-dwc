@@ -181,13 +181,13 @@ cell var (buf)
         x@ dict-end < if0 '(' emit z@ . ." words)" -L exit then
         x@ .word tab z++
         x@ cell + 2 + c@ 7 > if y++ then 
-        y@+ 9 > if cr 0 y! then
+        y@+ 12 > if cr 0 y! then
         x@ dup cell + c@ + x!
     again ;
 
 : words-n ( n-- ) +L last x! 0 y! for
         x@ .word tab
-        y@+ 9 > if cr 0 y! then
+        y@+ 12 > if cr 0 y! then
 		x@ dup cell + c@ + x!
     next -L ;
 
@@ -226,13 +226,6 @@ cell var t4   cell var t5
      z@ $10 = if 0 z! space space x@ $10 - t0 then
    next -L ;
 
-( simple fixed point )
-: f. ( n-- )    100 /mod (.) '.' emit abs 2 10 .nwb ;
-: f* ( a b--c ) * 100 / ;
-: f/ ( a b--c ) swap 100 * swap / ;
-: f+ ( a b--c ) + ;
-: f- ( a b--c ) - ;
-
 ( ANSI color codes )
 : csi  27 emit '[' emit ;
 : ->cr ( c r-- ) csi (.) ';' emit (.) 'H' emit ;
@@ -257,29 +250,43 @@ cell var t4   cell var t5
 
 ( *** App code - start *** )
 
-( default - tests )
+( simple fixed point )
+: f. ( n-- )    100 /mod (.) '.' emit abs 2 10 .nwb ;
+: f* ( a b--c ) * 100 / ;
+: f/ ( a b--c ) swap 100 * swap / ;
+: f+ ( a b--c ) + ;
+: f- ( a b--c ) - ;
+
+( some tests )
 
 cr ." default app: tests ..." cr
 pad z" hi " s-cpy z" there-" s-cat 123 s-catn '!' s-catc ztype cr
 : .xyz ." ( " x@ . y@ . z@ . ')' emit cr ;
 1 2 3 z! y! x! .xyz
 4 5 6 +L3 tab .xyz +L tab tab .xyz -L tab .xyz -L .xyz -L .xyz
-( ." bye." cr bye )
 : bb timer 1000000000 for next timer swap - . ." ms/us" cr ;
 
 ( A stack )
 16 cells var stk       ( the stack start )
 vhere cell - const t9  ( t9 is the stack end )
-val  sp@   (val) t1    ( the stack pointer )
+val sp@   (val) t1     ( the stack pointer )
 : sp! ( n-- ) t1 ! ;   ( set the stack pointer )
 stk sp!                ( Initialize )
-: tdrop ( -- ) sp@ cell - stk max t1 ! ;
-: t!  ( n-- )  sp@ ! ;
-: t@  ( --n )  sp@ @ ;
-: >t  ( n-- )  sp@ cell + t9 min t1 !  t! ;
-: t>  ( --n )  sp@ @  tdrop ;
-: .stk ( -- ) '(' emit space stk 16 for
-        dup sp@ = if ." sp:" then dup @ . cell + 
-    next drop ')' emit ;
+( for a normal stack, use these definitions )
+\ : sp++ ( -- ) sp@ cell + t9  min sp! ;
+\ : sp-- ( -- ) sp@ cell - stk max sp! ;
+( for a circular stack, use these definitions )
+: sp++ ( -- ) sp@ cell +  dup t9  > if drop stk then sp! ;
+: sp-- ( -- ) sp@ cell -  dup stk < if drop t9  then sp! ;
+: t!  ( n-- ) sp@ ! ;
+: t@  ( --n ) sp@ @ ;
+: >t  ( n-- ) sp++ t! ;
+: t>  ( --n ) sp@ @  sp-- ;
+: t6  ( n-- ) dup sp@ = if ." sp:" then dup @ . cell + ;
+: .stk ( -- ) '(' emit space stk 16 for t6 next drop ')' emit ;
+( some stack tests )
+16 [[ sp-- for i >t next .stk cr ]]
+32 [[ for sp++ t@ . next cr .stk cr ]] 
+32 [[ for t> . next cr .stk ]] 
 
 ( *** App code - end *** )
