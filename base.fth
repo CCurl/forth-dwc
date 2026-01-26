@@ -1,5 +1,5 @@
 ( these are created later as -last- and -here- )
-( they are used later for reboot )
+( they are used later for rebooting )
 (h) @   (l) @ 
 
 : last (l) @ ;
@@ -14,11 +14,7 @@
 : code@  ( off--op )  ->code @ ;
 : code!  ( op off-- ) ->code ! ;
 : immediate $80 last cell + 1 + c! ;
-: [ ( -- ) 0 state ! ; immediate
-: ] ( -- ) 1 state ! ; immediate
-: 1+ 1 + ; inline
-: 1- 1 - ; inline
-: , ( dw-- ) here dup 1+ (h) ! code! ;
+: , ( dw-- ) here dup 1 + (h) ! code! ;
 
 : bye 999 state ! ;
 : (exit)    0 ;
@@ -48,7 +44,7 @@
 :  val  ( -- ) 0 const ;
 : (val) ( -- ) here 2 - ->code const ;
 
-( the original here and last  )
+( the original here and last - used by 'rb' )
 const -last-   const -here-
 
 32 ->code const (vh)
@@ -81,17 +77,17 @@ t8 t1 !                   ( Initialize )
 : +L2 ( x y-- )   +L y! x! ;
 : +L3 ( x y z-- ) +L z! y! x! ;
 
-: x++ ( -- )  x@ 1+ x! ;   : x@+  ( --n ) x@ x++ ;
-: x-- ( -- )  x@ 1- x! ;   : x@-  ( --n ) x@ x-- ;
+: x++ ( -- )  x@ 1 + x! ;  : x@+  ( --n ) x@ x++ ;
+: x-- ( -- )  x@ 1 - x! ;  : x@-  ( --n ) x@ x-- ;
 : c@x ( --b ) x@ c@ ;      : c@x+ ( --b ) x@+ c@ ;  : c@x- ( --b ) x@- c@ ;
 : c!x ( b-- ) x@ c! ;      : c!x+ ( b-- ) x@+ c! ;  : c!x- ( b-- ) x@- c! ;
 
-: y++ ( -- )  y@ 1+ y! ;   : y@+  ( --n ) y@ y++ ;
-: y-- ( -- )  y@ 1- y! ;   : y@-  ( --n ) y@ y-- ;
+: y++ ( -- )  y@ 1 + y! ;  : y@+  ( --n ) y@ y++ ;
+: y-- ( -- )  y@ 1 - y! ;  : y@-  ( --n ) y@ y-- ;
 : c@y ( --b ) y@ c@ ;      : c@y+ ( --b ) y@+ c@ ;  : c@y- ( --b ) y@- c@ ;
 : c!y ( b-- ) y@ c! ;      : c!y+ ( b-- ) y@+ c! ;  : c!y- ( b-- ) y@- c! ;
 
-: z++ ( -- )  z@ 1+ z! ;
+: z++ ( -- )  z@ 1 + z! ;  : z@+  ( --n ) z@ z++ ;
 
 ( Strings )
 : t3 ( --a ) +L vhere dup z! x! 1 >in +!
@@ -124,10 +120,10 @@ t8 t1 !                   ( Initialize )
     x! t5 t4 x@ fread drop x@ fclose
     -here- (h) !  -last- (l) ! 
     t5 outer ;
-: vi z" vi base.fth" system ;
-: lg z" lazygit" system ;
 
 ( More core words )
+: 1+ 1 + ; inline
+: 1- 1 - ; inline
 : [ 0 state ! ; immediate  ( 0 = INTERPRET )
 : ] 1 state ! ;            ( 1 = COMPILE )
 : rdrop ( -- ) r> drop ; inline
@@ -167,8 +163,8 @@ cell var (buf)
 : #s   ( n--0 )  # -if #s exit then ;
 : <#   ( n--m )  ?neg buf 65 + (buf) ! 0 #c ;
 : #>   ( n--a )  drop (neg) @ if '-' #c then (buf) @ ;
-: (.) ( n-- )    <# #s #> ztype ;
-: .   ( n-- )    (.) space ;
+: (.)  ( n-- )   <# #s #> ztype ;
+: .    ( n-- )   (.) space ;
 
 : 0sp 0 (sp) ! ;
 : depth ( --n ) (sp) @ 1- ;
@@ -219,10 +215,10 @@ cell var t4   cell var t5
 : binary   ( -- )  %10 base ! ;
 : .hex     ( n-- )  #2 $10 .nwb ;
 
-: aemit ( ch-- )    dup #32 #126 btwi if0 drop '.' then emit ;
+: aemit ( ch-- )  dup #32 #126 btwi if0 drop '.' then emit ;
 : t0    ( addr-- )  +L1 $10 for c@x+ aemit next -L ;
 : dump  ( addr n-- ) +L2 0 z! y@ for
-     z@ z++ if0 x@ cr .hex ." : " then c@x+ .hex space
+     z@+ if0 x@ cr .hex ." : " then c@x+ .hex space
      z@ $10 = if 0 z! space space x@ $10 - t0 then
    next -L ;
 
@@ -250,6 +246,9 @@ cell var t4   cell var t5
 
 ( *** App code - start *** )
 
+: vi z" vi base.fth" system ;
+: lg z" lazygit" system ;
+
 ( simple fixed point )
 : f. ( n-- )    100 /mod (.) '.' emit abs 2 10 .nwb ;
 : f* ( a b--c ) * 100 / ;
@@ -276,14 +275,14 @@ stk sp!                ( Initialize )
 \ : sp++ ( -- ) sp@ cell + t9  min sp! ;
 \ : sp-- ( -- ) sp@ cell - stk max sp! ;
 ( for a circular stack, use these definitions )
-: sp++ ( -- ) sp@ cell +  dup t9  > if drop stk then sp! ;
-: sp-- ( -- ) sp@ cell -  dup stk < if drop t9  then sp! ;
-: t!  ( n-- ) sp@ ! ;
-: t@  ( --n ) sp@ @ ;
-: >t  ( n-- ) sp++ t! ;
-: t>  ( --n ) sp@ @  sp-- ;
-: t6  ( n-- ) dup sp@ = if ." sp:" then dup @ . cell + ;
-: .stk ( -- ) '(' emit space stk 16 for t6 next drop ')' emit ;
+: sp++ ( -- )  sp@ cell +  dup t9  > if drop stk then sp! ;
+: sp-- ( -- )  sp@ cell -  dup stk < if drop t9  then sp! ;
+: t!   ( n-- ) sp@ ! ;
+: t@   ( --n ) sp@ @ ;
+: >t   ( n-- ) sp++ t! ;
+: t>   ( --n ) sp@ @  sp-- ;
+: t6   ( -- )  dup sp@ = if ." sp:" then dup @ . cell + ;
+: .stk ( -- )  '(' emit space stk 16 for t6 next drop ')' emit ;
 ( some stack tests )
 16 [[ sp-- for i >t next .stk cr ]]
 32 [[ for sp++ t@ . next cr .stk cr ]] 

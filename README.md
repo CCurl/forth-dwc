@@ -12,7 +12,7 @@ On a Linux box, it is about 21k.
 **DWC** stands for "DWord-Code". This is inspired by Tachyon. <br/>
 In a DWC program, each instruction is a DWORD (32-bits). <br/>
 - If <= the last primitive (45), then it is a primitive.
-- Else, if the top 3 bits are set, then it is a literal anded with $3FFFFFFF.
+- Else, if the top 3 bits are set, then it is a literal ANDed with $3FFFFFFF.
 - Else, it is the XT (code address) of a word in the dictionary.
 
 ### DWC hard-codes the following IMMEDIATE state-change words:
@@ -77,13 +77,13 @@ They help with factoring code and and keep the dictionary uncluttered.<br/>
 |           |          |              | --- **System primitives** --- |
 |  32       | ztype    | (a--)        | Output null-terminated string TOS. Discard TOS. |
 |  33       | find     | (--a)        | Push the dictionary address of the next word. |
-|  34       | key      | (--n)        | Push the next keypress. Wait if ncessary. |
+|  34       | key      | (--n)        | Push the next keypress. Wait if necessary. |
 |  35       | key?     | (--f)        | Push 1 if a keypress is available, else 0. |
 |  36       | emit     | (c--)        | Output char TOS. Discard TOS. |
 |  37       | fopen    | (nm md--fh)  | Open file NOS using mode TOS (h=0 if error). |
 |  38       | fclose   | (fh--)       | Close file TOS. Discard TOS. |
 |  39       | fread    | (a sz fh--n) | Read NOS chars from file TOS to a. |
-|  30       | fwrite   | (a sz fh--n) | Write NOS chars from file TOS from a. |
+|  40       | fwrite   | (a sz fh--n) | Write NOS chars from file TOS from a. |
 |  41       | ms       | (n--)        | Wait/sleep for TOS milliseconds |
 |  42       | timer    | (--n)        | Push the current system time. |
 |  43       | add-word | (--)         | Add the next word to the dictionary. |

@@ -1,26 +1,18 @@
-app := dwc
-
 CXX := clang
-CFLAGS := -m32 -O3 -D IS_LINUX
+CFLAGS := -m32 -Oz
 
-srcfiles := $(shell find . -name "*.c")
-incfiles := $(shell find . -name "*.h")
-LDLIBS   := -lm
-
-all: $(app) $(app32)
-
-$(app): $(srcfiles) $(incfiles)
-	$(CXX) $(CFLAGS) $(LDFLAGS) -o $(app) $(srcfiles) $(LDLIBS)
-	ls -l $(app)
+dwc: *.c *.h
+	$(CXX) $(CFLAGS) -o dwc *.c
+	ls -l dwc
 
 clean:
-	rm -f $(app)
+	rm -f dwc
 
-test: $(app)
-	./$(app) test.fth
+test: dwc
+	./dwc base.fth
 
-run: $(app)
-	./$(app)
+run: dwc
+	./dwc
 
-bin: $(app)
-	cp -u -p $(app) ~/bin/
+bin: dwc
+	cp -u -p dwc ~/bin/
