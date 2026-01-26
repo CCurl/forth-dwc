@@ -67,6 +67,7 @@ void rpush(cell v) { if (rsp < STK_SZ) { rstk[++rsp] = v; } }
 cell rpop() { return (0 < rsp) ? rstk[rsp--] : 0; }
 void comma(ucell val) { code[here++] = val; }
 void doComment() { while (nextWord() && !strEqI(wd, ")")) {} }
+void doLineComment() { while ( *toIn && (*toIn != 10) ) { ++toIn; } }
 void doNum() { if (state == COMPILE) { compileNum(pop()); } }
 int  isTmpW(const char *w) { return (w[0]=='t') && btwi(w[1],'0','9') && (w[2]==0) ? 1 : 0; }
 void addPrim(const char *nm, ucell op) { DE_T *dp = addToDict(nm); if (dp) { dp->xt = op; } }
@@ -155,10 +156,11 @@ void outer(const char *src) {
 	char *svIn = toIn;
 	toIn = (char *)src;
 	while (nextWord()) {
-		if (strEqI(wd, "(")) { doComment(); continue; }
-		if (strEqI(wd, ";")) { state=INTERPRET; comma(EXIT); continue; }
-		if (strEqI(wd, ":")) { state=COMPILE; addToDict(0); continue; }
-		if (isNum(wd, base)) { doNum(); continue; }
+		if (strEqI(wd, "("))  { doComment(); continue; }
+		if (strEqI(wd, "\\")) { doLineComment(); continue; }
+		if (strEqI(wd, ";"))  { state=INTERPRET; comma(EXIT); continue; }
+		if (strEqI(wd, ":"))  { state=COMPILE; addToDict(0); continue; }
+		if (isNum(wd, base))  { doNum(); continue; }
 		DE_T *dp = findInDict(wd);
 		if (!dp) {
 			zType("\n-word:["); zType(wd); zType("]?-\n");
