@@ -1,4 +1,4 @@
-// MIT license, (c) 2025 Chris Curl
+// A Tachyon inspired system, MIT license, (c) 2025 Chris Curl
 #include "dwc-vm.h"
 
 #define X1(op, name, theCode) op,

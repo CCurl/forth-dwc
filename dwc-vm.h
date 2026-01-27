@@ -1,4 +1,4 @@
-// A ColorForth inspired system, MIT license, (c) 2025 Chris Curl
+// A Tachyon inspired system, MIT license, (c) 2025 Chris Curl
 
 #ifndef __DWC_H__
 
