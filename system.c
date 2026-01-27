@@ -71,8 +71,8 @@ void fClose(cell fh) { fclose((FILE*)fh); }
 cell fRead(cell buf, cell sz, cell fh) { return (cell)fread((char*)buf, 1, sz, (FILE*)fh); }
 cell fWrite(cell buf, cell sz, cell fh) { return (cell)fwrite((char*)buf, 1, sz, (FILE*)fh); }
 
+char tib[128];
 void repl() {
-	char tib[128];
 	ttyMode(0);
 	if (state != COMPILE) { state = INTERPRET; }
 	zType((state == COMPILE) ? " ... "  : " ok\n");
@@ -96,6 +96,14 @@ void boot(const char *fn) {
 
 int main(int argc, char *argv[]) {
 	dwcInit();
+	addLit("argc", (cell)argc);
+	strcpy(tib, "argX");
+	for (int i=0; (i<argc) && (i<10); i++) {
+		tib[3] = '0' + i;
+		addLit(tib, (cell)argv[i]);
+	}
+	boot((1<argc) ? argv[1] : 0);
+
 	boot((1<argc) ? argv[1] : 0);
 	while (state != 999) { repl(); }
 	ttyMode(0);

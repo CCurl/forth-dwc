@@ -266,23 +266,23 @@ pad z" hi " s-cpy z" there-" s-cat 123 s-catn '!' s-catc ztype cr
 : bb timer 1000000000 for next timer swap - . ." ms/us" cr ;
 
 ( A stack )
-16 cells var stk       ( the stack start )
+16 cells var tstk      ( the stack start )
 vhere cell - const t9  ( t9 is the stack end )
 val sp@   (val) t1     ( the stack pointer )
 : sp! ( n-- ) t1 ! ;   ( set the stack pointer )
-stk sp!                ( Initialize )
+tstk sp!               ( Initialize )
 ( for a normal stack, use these definitions )
 \ : sp++ ( -- ) sp@ cell + t9  min sp! ;
-\ : sp-- ( -- ) sp@ cell - stk max sp! ;
+\ : sp-- ( -- ) sp@ cell - tstk max sp! ;
 ( for a circular stack, use these definitions )
-: sp++ ( -- )  sp@ cell +  dup t9  > if drop stk then sp! ;
-: sp-- ( -- )  sp@ cell -  dup stk < if drop t9  then sp! ;
+: sp++ ( -- )  sp@ cell +  dup t9  > if drop tstk then sp! ;
+: sp-- ( -- )  sp@ cell -  dup tstk < if drop t9  then sp! ;
 : t!   ( n-- ) sp@ ! ;
 : t@   ( --n ) sp@ @ ;
 : >t   ( n-- ) sp++ t! ;
 : t>   ( --n ) sp@ @  sp-- ;
 : t6   ( -- )  dup sp@ = if ." sp:" then dup @ . cell + ;
-: .stk ( -- )  '(' emit space stk 16 for t6 next drop ')' emit ;
+: .stk ( -- )  '(' emit space tstk 16 for t6 next drop ')' emit ;
 ( some stack tests )
 16 [[ sp-- for i >t next .stk cr ]]
 32 [[ for sp++ t@ . next cr .stk cr ]] 

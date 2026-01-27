@@ -16,7 +16,7 @@
 #include <string.h>
 #include <time.h>
 
-#define VERSION         20260125
+#define VERSION         20260126
 #define MEM_SZ         0x1000000
 #define STK_SZ                63
 #define NAME_LEN              25
@@ -42,6 +42,7 @@ typedef struct { char *name; ucell value; } NVP_T;
 // These are defined by dwc-vm.c
 extern void inner(ucell start);
 extern void outer(const char *src);
+extern void addLit(const char *name, cell val);
 extern void dwcInit();
 extern int nextWord();
 extern DE_T *addToDict(const char *w);
