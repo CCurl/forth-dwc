@@ -37,6 +37,15 @@ Words 't0' through 't9' are transient and are not added to the dictionary.<br/>
 They are case sensitive: 't0' is a transient word, 'T0' is not.<br/>
 They help with factoring code and and keep the dictionary uncluttered.<br/>
 
+## DWC Startup Behavior
+
+On startup, DWC does the following:
+- Create 'argc' with the count of command-line arguments
+- For each argument, create 'argX' with the address of the argument string
+- E.G. "arg0 ztype" will print `dwc`
+- If arg1 exists and names a file that can be opened, load that file.
+- Else, try to load file 'boot.fth'
+
 ## The VM Primitives
 
 | Primitive | Op/Word  | Stack        | Description |

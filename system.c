@@ -83,6 +83,7 @@ void repl() {
 void boot(const char *fn) {
 	if (!fn) { fn = "boot.fth"; }
 	cell fp = fOpen((cell)fn, (cell)"rb");
+	if (!fp) { fp = fOpen((cell)"boot.fth", (cell)"rb"); }
 	if (fp) {
 		char *tib = (char*)&mem[100000];
 		fRead((cell)tib, 99999, fp);
@@ -102,8 +103,6 @@ int main(int argc, char *argv[]) {
 		tib[3] = '0' + i;
 		addLit(tib, (cell)argv[i]);
 	}
-	boot((1<argc) ? argv[1] : 0);
-
 	boot((1<argc) ? argv[1] : 0);
 	while (state != 999) { repl(); }
 	ttyMode(0);
