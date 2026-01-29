@@ -70,8 +70,8 @@ void repl() {
 	ttyMode(0);
 	if (state != COMPILE) { state = INTERPRET; }
 	zType((state == COMPILE) ? " ... "  : " ok\n");
-	if (fgets(tib, 128, stdin) != tib) { exit(0); }
-	outer(tib);
+	if (fgets(tib, 128, stdin) == tib) { outer(tib); }
+	else { state = BYE; }
 }
 
 void boot(const char *fn) {
@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
 		addLit(tib, (cell)argv[i]);
 	}
 	boot((1<argc) ? argv[1] : 0);
-	while (state != 999) { repl(); }
+	while (state != BYE) { repl(); }
 	ttyMode(0);
 	return 0;
 }

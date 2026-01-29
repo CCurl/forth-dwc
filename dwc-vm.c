@@ -155,7 +155,7 @@ next: ir = code[pc++];
 void outer(const char *src) {
 	char *svIn = toIn;
 	toIn = (char *)src;
-	while (nextWord()) {
+	while (nextWord() && (state != BYE)) {
 		if (strEqI(wd, "("))  { doComment(); continue; }
 		if (strEqI(wd, "\\")) { doLineComment(); continue; }
 		if (strEqI(wd, ";"))  { state=INTERPRET; comma(EXIT); continue; }

@@ -61,7 +61,7 @@ mem mem-sz + const dict-end
 : max  ( a b-a|b ) over over < if swap then drop ;
 : ?dup ( a--a|0 )  -if dup then ;
 
-( A stack for locals - 3 at a time )
+( A stack for 3 locals - x,y,z )
 30 cells var t8           ( t8: the locals stack start )
 vhere 3cells - const t9   ( t9: the locals stack end )
 val t0    (val) t1        ( t0: the stack pointer )
@@ -222,6 +222,8 @@ cell var t4   cell var t5
      z@ $10 = if 0 z! space space x@ $10 - t0 then
    next -L ;
 
+( *** App code - start *** )
+
 ( ANSI color codes )
 : csi  27 emit '[' emit ;
 : ->cr ( c r-- ) csi (.) ';' emit (.) 'H' emit ;
@@ -244,8 +246,6 @@ cell var t4   cell var t5
     ." hello." ;
 .banner
 
-( *** App code - start *** )
-
 : vi z" vi base.fth" system ;
 : lg z" lazygit" system ;
 
@@ -263,7 +263,12 @@ pad z" hi " s-cpy z" there-" s-cat 123 s-catn '!' s-catc ztype cr
 : .xyz ." ( " x@ . y@ . z@ . ')' emit cr ;
 1 2 3 z! y! x! .xyz
 4 5 6 +L3 tab .xyz +L tab tab .xyz -L tab .xyz -L .xyz -L .xyz
-: bb timer 1000000000 for next timer swap - . ." ms/us" cr ;
+
+: lap timer ;
+: .lap swap - . ." ticks" ;
+
+: mil 1000 dup * * ;
+: bb lap 1000 mil for next lap .lap cr ;
 
 ( A stack )
 16 cells var tstk      ( the stack start )
