@@ -88,6 +88,14 @@ val varname      \ Creates efficient variable (uses literal + data cell)
 (val) (varname)  \ Creates accessor constant to data cell
 : varname! (varname) ! ;  \ Setter word
 ```
+Notes:
+- `val` compiles `LIT 0` for the new word; `(val)` then returns the address of that literal cell so updating it changes what the word pushes.
+Example:
+```forth
+val t0     (val) t1
+t8 t1 !    \ now t0 pushes t8
+1234 t1 !  \ now t0 pushes 1234
+```
 
 ### For Loops
 DWC uses `for`/`next` with `i` for index (0-based):
@@ -114,6 +122,21 @@ DWC uses `for`/`next` with `i` for index (0-based):
 **Files:** `fopen` (37), `fclose` (38), `fread` (39), `fwrite` (40)  
 **Control:** `outer` (44) - runs outer interpreter on string address  
 **System:** `system` (45) - executes shell command
+
+## Locals (x, y, z)
+
+DWC provides three local variables via a stack-based mechanism using cached pointers:
+- `x0`, `y0`, `z0` are `val` words that push addresses (updated by `+L`/`-L`)
+- `x1`, `y1`, `z1` are accessor constants to the data cells holding those addresses
+- `+L` pushes a new 3-cell frame (increments x/y/z pointers by 12 bytes) if space available
+- `−L` pops the current frame (decrements by 12 bytes) if not at stack base
+- Usage pattern:
+  ```forth
+  : my-word ( a b -- result ) +L2 a y! b x!  x@ y@ +  -L ;
+  ```
+  The `+L2` (push 2 values) sets up frame, setters store to `x0`/`y0`, then accessors fetch via `x@`/`y@`.
+
+**Key insight:** Pointers are cached and updated on frame push/pop, so `x@`/`y@`/`z@` each require only one call + one fetch (no offset arithmetic at access time).
 
 ## Debugging Patterns
 

@@ -64,14 +64,16 @@ mem mem-sz + const dict-end
 ( A stack for 3 locals - x,y,z )
 30 cells var t8           ( t8: the locals stack start )
 vhere 3cells - const t9   ( t9: the locals stack end )
-val t0    (val) t1        ( t0: the stack pointer )
-t8 t1 !                   ( Initialize )
-: +L ( -- )  t0 3cells + t9 min t1 ! ;
-: -L ( -- )  t0 3cells - t8 max t1 ! ;
+val x0    (val) x1        ( x0: x address )
+val y0    (val) y1        ( y0: y address )
+val z0    (val) z1        ( z0: z address )
+t8 x1 !  t8 cell + y1 !  t8 2cells + z1 !  ( Initialize )
+: +L ( -- )  z0 t9 < if x0 3cells + dup x1 ! cell + dup y1 ! cell + z1 ! then ;
+: -L ( -- )  x0 t8 > if x0 3cells - dup x1 ! cell + dup y1 ! cell + z1 ! then ;
 
-: x@  ( --n ) t0 @ ;           : x!   ( n-- ) t0 ! ;
-: y@  ( --n ) t0 cell   + @ ;  : y!   ( n-- ) t0 cell   + ! ;
-: z@  ( --n ) t0 2cells + @ ;  : z!   ( n-- ) t0 2cells + ! ;
+: x@  ( --n ) x0 @ ;           : x!   ( n-- ) x0 ! ;
+: y@  ( --n ) y0 @ ;           : y!   ( n-- ) y0 ! ;
+: z@  ( --n ) z0 @ ;           : z!   ( n-- ) z0 ! ;
 
 : +L1 ( x -- )    +L x! ;
 : +L2 ( x y-- )   +L y! x! ;
