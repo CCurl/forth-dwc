@@ -13,18 +13,18 @@
 : ->code ( off--addr ) cells mem + ;
 : code@  ( off--op )  ->code @ ;
 : code!  ( op off-- ) ->code ! ;
-: immediate $80 last cell + 1 + c! ;
+: immediate ( -- ) $80 last cell + 1 + c! ;
 : , ( dw-- ) here dup 1 + (h) ! code! ;
 
-: bye 999 state ! ;
-: (exit)    0 ;
-: (lit)     1 ;
-: (jmp)     2 ;
-: (jmpz)    3 ;
-: (jmpnz)   4 ;
-: (njmpz)   5 ;
-: (njmpnz)  6 ;
-: (ztype)  32 ;
+: bye ( -- ) 999 state ! ;
+: (exit)   ( --n )  0 ;
+: (lit)    ( --n )  1 ;
+: (jmp)    ( --n )  2 ;
+: (jmpz)   ( --n )  3 ;
+: (jmpnz)  ( --n )  4 ;
+: (njmpz)  ( --n )  5 ;
+: (njmpnz) ( --n )  6 ;
+: (ztype)  ( --n ) 32 ;
 
 : if   (jmpz)   , here 0 , ; immediate
 : -if  (njmpz)  , here 0 , ; immediate
@@ -103,8 +103,8 @@ t8 x1 !  t8 cell + y1 !  t8 2cells + z1 !  ( Initialize )
         y@ c!x+
     again ;
 
-: z" t3 ; immediate
-: ." t3 compiling? if (ztype) , exit then ztype ;  immediate
+: z" ( "string"--addr ) t3 ; immediate
+: ." ( "string"-- ) t3 compiling? if (ztype) , exit then ztype ; immediate
 
 ( Files )
 : fopen-r   ( nm--fh ) z" rb" fopen ;
@@ -124,10 +124,10 @@ t8 x1 !  t8 cell + y1 !  t8 2cells + z1 !  ( Initialize )
     t5 outer ;
 
 ( More core words )
-: 1+ 1 + ; inline
-: 1- 1 - ; inline
-: [ 0 state ! ; immediate  ( 0 = INTERPRET )
-: ] 1 state ! ;            ( 1 = COMPILE )
+: 1+ ( n--n' ) 1 + ; inline
+: 1- ( n--n' ) 1 - ; inline
+: [ ( -- ) 0 state ! ; immediate  ( 0 = INTERPRET )
+: ] ( -- ) 1 state ! ;            ( 1 = COMPILE )
 : rdrop ( -- ) r> drop ; inline
 : tuck  ( a b--b a b )   swap over ; inline
 : nip   ( a b--b )       swap drop ; inline
