@@ -84,9 +84,9 @@ make run          # Runs ./dwc (loads boot.fth by default)
 
 ### Variable Patterns
 ```forth
-val varname      \ Creates efficient variable (uses literal + data cell)
-(val) (varname)  \ Creates accessor constant to data cell
-: varname! (varname) ! ;  \ Setter word
+val name@           \ Creates efficient variable (uses literal + data cell)
+(val) (name)        \ Creates accessor constant to data cell
+: name! (name) ! ;  \ Setter word
 ```
 Notes:
 - `val` compiles `LIT 0` for the new word; `(val)` then returns the address of that literal cell so updating it changes what the word pushes.
@@ -137,6 +137,16 @@ DWC provides three local variables via a stack-based mechanism using cached poin
   The `+L2` (push 2 values) sets up frame, setters store to `x0`/`y0`, then accessors fetch via `x@`/`y@`.
 
 **Key insight:** Pointers are cached and updated on frame push/pop, so `x@`/`y@`/`z@` each require only one call + one fetch (no offset arithmetic at access time).
+
+**Example: String Reversal with Locals**
+```forth
+: s-rev ( str -- str )
+  dup dup s-end 1- +L2 begin
+    x@ y@ >= if -L exit then
+    c@x c@y c!x+ c!y-
+  again ;
+```
+This uses `+L2` to set start/end pointers in locals `x@`/`y@`, with `c!x+`/`c!y-` for efficient swaps.
 
 ## Debugging Patterns
 

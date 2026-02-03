@@ -199,7 +199,7 @@ cell var t4   cell var t5
 : cmove  ( f t n-- )  +L3  z@ if  z@ for c@x+ c!y+ next then -L ;
 : cmove> ( f t n-- )  +L3  y@ z@ + 1- y!  x@ z@ + 1- x!  z@ for c@x- c!y- next -L ;
 : s-len  ( str--len ) +L1 0 begin c@x+ if0 -L exit then 1+ again ;
-: s-end  ( str--end ) dup s-len + ;
+: s-end  ( str--end ) dup s-len + ;   \ end: address of the null
 : s-cpy  ( dst src--dst ) 2dup s-len 1+ cmove ;
 : s-cat  ( dst src--dst ) over s-end  over s-len 1+  cmove ;
 : s-catc ( dst ch--dst )  over s-end  +L1  c!x+  0 c!x+  -L ;
@@ -208,8 +208,13 @@ cell var t4   cell var t5
 	   c@x+ c@y+ = if0 -L 0 unloop exit then
 	next -L 1 ;
 : s-eq   ( s1 s2--f ) dup s-len 1+ s-eqn ;
-
-( Formatting number output )
+: s-rev  ( str -- str )             \ Reverse string in place
+    dup dup s-end 1- +L2  begin     \ x: start, y: last char
+       x@ y@ >= if -L exit then     \ Exit when start >= end
+       c@x c@y  c!x+ c!y-           \ Swap chars and inc/dec pointers
+    again ;
+  
+  ( Formatting number output )
 : .nwb ( n width base-- )
     base @ >r  base !  >r <# r> 1- for # next #s #> ztype  r> base ! ;
 : decimal  ( -- )  #10 base ! ;
