@@ -12,6 +12,10 @@
 : .dec     ( n-- )  #1 #10 .nwb ;
 : .hex/dec ( n-- ) dup ." ($" .hex ." /#" .dec ')' emit ;
 
+( Temperature conversion )
+: c->f ( c -- f ) #9 * #5 / #32 + ;
+: f->c ( f -- c ) #32 - #5 * #9 / ;
+
 : aemit ( ch-- )    dup #32 #126 btwi if0 drop '.' then emit ;
 : t0    ( addr-- )  >a $10 for c@a+ aemit next adrop ;
 : dump  ( addr n-- ) swap >a 0 >t for
