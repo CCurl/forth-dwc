@@ -23,7 +23,7 @@
      t@ $10 = if 0 t! space space a@ $10 - t0 then
    next tdrop adrop ;
    
-   ( Screen / Colors )
+( Screen / Colors )
 : csi          27 emit '[' emit ;
 : ->cr ( c r-- ) csi (.) ';' emit (.) 'H' emit ;
 : ->rc ( r c-- ) swap ->cr ;
