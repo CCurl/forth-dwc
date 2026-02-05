@@ -138,8 +138,6 @@ t8 x1 !  t8 cell + y1 !  t8 2cells + z1 !  ( Initialize )
 : 0< ( n--f ) 0 <    ; inline
 : <= ( a b--f ) > 0= ;
 : >= ( a b--f ) < 0= ;
-: ++ ( a-- )   1 swap +! ;
-: -- ( a-- )  -1 swap +! ;
 : btwi ( n l h--f ) >r over <= swap r> <= and ;
 : negate ( n--n' ) 0 swap - ;
 : abs ( n--n' ) dup 0< if negate then ;
@@ -208,11 +206,6 @@ cell var t4   cell var t5
 	   c@x+ c@y+ = if0 -L 0 unloop exit then
 	next -L 1 ;
 : s-eq   ( s1 s2--f ) dup s-len 1+ s-eqn ;
-: s-rev  ( str -- str )             \ Reverse string in place
-    dup dup s-end 1- +L2  begin     \ x: start, y: last char
-       x@ y@ >= if -L exit then     \ Exit when start >= end
-       c@x c@y  c!x+ c!y-           \ Swap chars and inc/dec pointers
-    again ;
   
   ( Formatting number output )
 : .nwb ( n width base-- )

@@ -184,10 +184,8 @@ cell var t5
 
 ( Strings / Memory )
 : fill   ( a num ch-- ) >r swap >b for r@ c!b+ next bdrop rdrop ;
-: move   ( f t n-- ) >r >b >a r> ?dup if for  @a+  !b+ next then adrop bdrop ;
 : cmove  ( f t n-- ) >r >b >a r> ?dup if for c@a+ c!b+ next then adrop bdrop ;
-: move>  ( f t n-- ) >r r@ 1- cells + >b r@ 1- cells + >a r> for  @a-  !b- next adrop bdrop ;
-: cmove> ( f t n-- ) >r r@ 1-       + >b r@ 1-       + >a r> for c@a- c!b- next adrop bdrop ;
+: cmove> ( f t n-- ) >r r@ 1- + >b r@ 1- + >a r> for c@a- c!b- next adrop bdrop ;
 : s-len  ( str--len ) >a 0 begin c@a+ if0 adrop exit then 1+ again ;
 : s-end  ( str--end ) dup s-len + ;
 : s-cpy  ( dst src--dst ) 2dup s-len 1+ cmove ;
