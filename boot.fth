@@ -61,12 +61,12 @@ mem mem-sz + const dict-end
 ( A stack for 3 locals - x,y,z )
 30 cells var t8           ( t8: the locals stack start )
 vhere 3cells - const t9   ( t9: the locals stack end )
-val x0    (val) x1        ( x0: x address )
-val y0    (val) y1        ( y0: y address )
-val z0    (val) z1        ( z0: z address )
-t8 x1 !  t8 cell + y1 !  t8 2cells + z1 !  ( Initialize )
-: +L ( -- )  z0 t9 < if x0 3cells + dup x1 ! cell + dup y1 ! cell + z1 ! then ;
-: -L ( -- )  x0 t8 > if x0 3cells - dup x1 ! cell + dup y1 ! cell + z1 ! then ;
+val x0     (val) t1       ( x0: address of x, t1: address of x0 )
+val y0     (val) t2       ( y0: address of y, t2: address of y0 )
+val z0     (val) t3       ( z0: address of z, t3: address of z0 )
+t8 t1 !  t8 cell + t2 !  t8 2cells + t3 !  ( Initialize )
+: +L ( -- )  z0 t9 < if x0 3cells + dup t1 ! cell + dup t2 ! cell + t3 ! then ;
+: -L ( -- )  x0 t8 > if x0 3cells - dup t1 ! cell + dup t2 ! cell + t3 ! then ;
 
 : x@  ( --n ) x0 @ ;           : x!   ( n-- ) x0 ! ;
 : y@  ( --n ) y0 @ ;           : y!   ( n-- ) y0 ! ;
@@ -114,7 +114,7 @@ t8 x1 !  t8 cell + y1 !  t8 2cells + z1 !  ( Initialize )
 : t4 100000 ;
 : t5 vars t4 + ;
 : rb ( -- )
-    z" base.fth" fopen-r ?dup if0 ." -nf-" exit then
+    z" boot.fth" fopen-r ?dup if0 ." -nf-" exit then
     t5 x! t4 for 0 c!x+ next
     x! t5 t4 x@ fread drop x@ fclose
     -here- (h) !  -last- (l) ! 
@@ -216,7 +216,7 @@ cell var t4   cell var t5
 
 : aemit ( ch-- )  dup #32 #126 btwi if0 drop '.' then emit ;
 : t0    ( addr-- )  +L1 $10 for c@x+ aemit next -L ;
-: dump  ( addr n-- ) +L2 0 z! y@ for
+: dump  ( addr n-- )  0 +L3 y@ for
      z@+ if0 x@ cr .hex ." : " then c@x+ .hex space
      z@ $10 = if 0 z! space space x@ $10 - t0 then
    next -L ;
@@ -282,11 +282,19 @@ pad z" hi " s-cpy z" there-" s-cat 123 s-catn '!' s-catc ztype cr
 1 2 3 z! y! x! .xyz
 4 5 6 +L3 tab .xyz +L tab tab .xyz -L tab .xyz -L .xyz -L .xyz
 
-: lap timer ;
-: .lap swap - . ." ticks" ;
+( some benchmarks )
+: lap ( --n ) timer ;
+: .lap ( n-- ) lap swap - space . ." ticks" cr ;
 
 : mil 1000 dup * * ;
-: bb lap 1000 mil for next lap .lap cr ;
+: fib ( n--fib ) 1- dup 2 < if drop 1 exit then dup fib swap 1- fib + ;
+: t0 ( n a-- ) ztype '(' emit dup (.) ')' emit lap swap ;
+: bm-while ( n-- ) z" while " t0 begin 1- -while drop .lap ;
+: bm-loop  ( n-- ) z" loop "  t0 for next .lap ;
+: bm-fib   ( n-- ) z" fib "   t0 fib space (.) .lap ;
+: bm-fibs  ( n-- ) 1 +L1 for x@+ bm-fib next -L ;
+: bb ( -- ) 1000 mil bm-loop ;
+: bm-all ( -- ) 250 mil bm-while bb 30 bm-fib ;
 
 ( A stack )
 16 cells var tstk      ( the stack start )

@@ -18,10 +18,10 @@
 
 : aemit ( ch-- )    dup #32 #126 btwi if0 drop '.' then emit ;
 : t0    ( addr-- )  >a $10 for c@a+ aemit next adrop ;
-: dump  ( addr n-- ) swap >a 0 >t for
-     t@+ if0 a@ cr .hex ." : " then c@a+ .hex space
-     t@ $10 = if 0 t! space space a@ $10 - t0 then
-   next tdrop adrop ;
+: dump  ( addr n-- ) 0 +L3 y@ for
+     z@+ if0 x@ cr .hex ." : " then c@x+ .hex space
+     z@ $10 = if 0 z! space space x@ $10 - t0 then
+   next -L ;
    
 ( Screen / Colors )
 : csi          27 emit '[' emit ;
@@ -82,29 +82,6 @@
     a!  @a  .prim? if exit then
     a@ .hex ':' emit space a@ .word
     a@ next-xt t!  @a  a! a@ t@ see-range ;
-
-( a stack inspired by Peter Jakacki )
-( this provides efficient access to the top 3 entries, x,y,z )
-( it is easy enough to extend this if desired )
-( but pushing and popping entries is fairly expensive )
-
-$10 cells var t1
-t1 cell+ const t2
-t2 cell+ const t3
-
-: x    ( --n ) t1 @ ; : x!  ( n-- ) t1 ! ;
-: y    ( --n ) t2 @ ; : y!  ( n-- ) t2 ! ;
-: z    ( --n ) t3 @ ; : z!  ( n-- ) t3 ! ;
-: @x+  ( n-- ) x @ cell t1 +! ;
-: >p   ( n-- ) >r t1 t1 r@ cells + $10 r> - move> ;
-: <p   ( n-- ) >r t1 r@ cells + t1 $10 r> - move ;
-: >x   ( n-- )     1 >p x! ;
-: >xy  ( x y-- )   2 >p y! x! ;
-: >xyz ( x y z-- ) 3 >p z! y! x! ;
-: <x   ( n-- ) 1 <p ;
-: <xy  ( n-- ) 2 <p ;
-: <xyz ( n-- ) 3 <p ;
-: .pstk t1 >a $10 for @a+ . next adrop ;
 
 ( shell words )
 : lg z" lazygit" system ;
