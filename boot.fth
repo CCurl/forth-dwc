@@ -45,18 +45,18 @@
 const -last-   const -here-
 
 32 ->code const (vh)
-: vhere (vh) @ ;
-64 1024 * cells mem + const vars
+64 1024 * ->code const vars
 vars (vh) !
+: vhere ( --a ) (vh) @ ;
 
 : compiling? ( --n ) state @ 1 = ;
 : allot ( n-- ) (vh) +! ;
 : var   ( n-- ) vhere const allot ;
 mem mem-sz + const dict-end
 
-: 2cells  8 ; inline
-: 3cells 12 ; inline
-: ?dup ( a--a|0 )  -if dup then ;
+: 2cells ( --n )  8 ; inline
+: 3cells ( --n ) 12 ; inline
+: ?dup ( n--n n|0 )  -if dup then ;
 
 ( A stack for 3 locals - x,y,z )
 30 cells var t8           ( t8: the locals stack start )
@@ -68,25 +68,25 @@ t8 t1 !  t8 cell + t2 !  t8 2cells + t3 !  ( Initialize )
 : +L ( -- )  z0 t9 < if x0 3cells + dup t1 ! cell + dup t2 ! cell + t3 ! then ;
 : -L ( -- )  x0 t8 > if x0 3cells - dup t1 ! cell + dup t2 ! cell + t3 ! then ;
 
-: x@  ( --n ) x0 @ ;           : x!   ( n-- ) x0 ! ;
-: y@  ( --n ) y0 @ ;           : y!   ( n-- ) y0 ! ;
-: z@  ( --n ) z0 @ ;           : z!   ( n-- ) z0 ! ;
+: x@ ( --n ) x0 @ ;      : x! ( n-- ) x0 ! ;
+: y@ ( --n ) y0 @ ;      : y! ( n-- ) y0 ! ;
+: z@ ( --n ) z0 @ ;      : z! ( n-- ) z0 ! ;
 
 : +L1 ( x -- )    +L x! ;
 : +L2 ( x y-- )   +L y! x! ;
 : +L3 ( x y z-- ) +L z! y! x! ;
 
-: x++ ( -- )  x@ 1 + x! ;  : x@+  ( --n ) x@ x++ ;
-: x-- ( -- )  x@ 1 - x! ;  : x@-  ( --n ) x@ x-- ;
+: x++ ( -- )  1 x0 +! ;    : x@+  ( --n ) x@ x++ ;
+: x-- ( -- ) -1 x0 +! ;    : x@-  ( --n ) x@ x-- ;
 : c@x ( --b ) x@ c@ ;      : c@x+ ( --b ) x@+ c@ ;  : c@x- ( --b ) x@- c@ ;
 : c!x ( b-- ) x@ c! ;      : c!x+ ( b-- ) x@+ c! ;  : c!x- ( b-- ) x@- c! ;
 
-: y++ ( -- )  y@ 1 + y! ;  : y@+  ( --n ) y@ y++ ;
-: y-- ( -- )  y@ 1 - y! ;  : y@-  ( --n ) y@ y-- ;
+: y++ ( -- )  1 y0 +! ;    : y@+  ( --n ) y@ y++ ;
+: y-- ( -- ) -1 y0 +! ;    : y@-  ( --n ) y@ y-- ;
 : c@y ( --b ) y@ c@ ;      : c@y+ ( --b ) y@+ c@ ;  : c@y- ( --b ) y@- c@ ;
 : c!y ( b-- ) y@ c! ;      : c!y+ ( b-- ) y@+ c! ;  : c!y- ( b-- ) y@- c! ;
 
-: z++ ( -- )  z@ 1 + z! ;  : z@+  ( --n ) z@ z++ ;
+: z++ ( -- )  1 z0 +! ;    : z@+  ( --n ) z@ z++ ;
 
 ( Strings )
 : t3 ( --a ) +L vhere dup z! x! 1 >in +!
@@ -110,15 +110,15 @@ t8 t1 !  t8 cell + t2 !  t8 2cells + t3 !  ( Initialize )
 : ->stdout  ( -- )     0 ->file ;
 : ->stdout! ( -- )     output-fp @ fclose ->stdout ;
 
-( reboot and vi )
-: t4 100000 ;
+( reboot )
+: t4 50000 ;
 : t5 vars t4 + ;
 : rb ( -- )
     z" boot.fth" fopen-r ?dup if0 ." -nf-" exit then
     t5 x! t4 for 0 c!x+ next
     x! t5 t4 x@ fread drop x@ fclose
     -here- (h) !  -last- (l) ! 
-    t5 outer ;
+    t5 >in ! ;
 
 ( More core words )
 : 1+ ( n--n' ) 1 + ; inline
@@ -155,13 +155,13 @@ t8 t1 !  t8 cell + t2 !  t8 2cells + t3 !  ( Initialize )
   65 var buf
 cell var (buf)
 : ?neg ( n--n' ) dup 0< dup (neg) c! if negate then ;
-: #c   ( c-- )   -1 (buf) +! (buf) @ c! ;
-: #.   ( -- )    '.' #c ;
-: #n   ( n-- )   '0' + dup '9' > if 7 + then #c ;
+: hold ( c-- )   -1 (buf) +! (buf) @ c! ;
+: #.   ( -- )    '.' hold ;
+: #n   ( n-- )   '0' + dup '9' > if 7 + then hold ;
 : #    ( n--m )  base @ /mod swap #n ;
 : #s   ( n--0 )  # -if #s exit then ;
-: <#   ( n--m )  ?neg buf 65 + (buf) ! 0 #c ;
-: #>   ( n--a )  drop (neg) @ if '-' #c then (buf) @ ;
+: <#   ( n--m )  ?neg buf 65 + (buf) ! 0 hold ;
+: #>   ( n--a )  drop (neg) @ if '-' hold then (buf) @ ;
 : (.)  ( n-- )   <# #s #> ztype ;
 : .    ( n-- )   (.) space ;
 
@@ -235,7 +235,7 @@ cell var t4   cell var t5
 : white  255 fg ;
 
 ( *** Banner *** )
-: .version version <# # # #. # # #. #s 'v' #c #> ztype ;
+: .version version <# # # #. # # #. #s 'v' hold #> ztype ;
 : .banner
     yellow ." DWC " green .version white ."  - Chris Curl" cr
     yellow ."   Memory: " white mem-sz . ." bytes." cr
@@ -249,11 +249,11 @@ cell var t4   cell var t5
 : lg z" lazygit" system ;
 
 ( simple fixed point )
-: f. ( n-- )    100 /mod (.) '.' emit abs 2 10 .nwb ;
-: f* ( a b--c ) * 100 / ;
-: f/ ( a b--c ) swap 100 * swap / ;
-: f+ ( a b--c ) + ;
-: f- ( a b--c ) - ;
+: f. ( n-- )    1000 /mod (.) '.' emit abs 3 10 .nwb ;
+: f* ( a b--c ) * 1000 / ;
+: f/ ( a b--c ) swap 1000 * swap / ;
+: f+ ( a b--c ) + ; inline
+: f- ( a b--c ) - ; inline
 
 ( Disk: 64 blocks, 16K bytes each )
 mem 14 1024 1024 * * + const disk
