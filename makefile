@@ -9,7 +9,7 @@ clean:
 	rm -f dwc
 
 test: dwc
-	./dwc base.fth
+	./dwc boot.fth
 
 run: dwc
 	./dwc
