@@ -13,15 +13,17 @@
 : code!  ( dw off-- ) ->code ! ;
 : , ( dw-- ) here dup 1 + (h) ! code! ;
 
-: bye ( -- ) 999 state ! ;
-: (exit)   ( --n )  0 ;
-: (lit)    ( --n )  1 ;
-: (jmp)    ( --n )  2 ;
-: (jmpz)   ( --n )  3 ;
-: (jmpnz)  ( --n )  4 ;
-: (njmpz)  ( --n )  5 ;
-: (njmpnz) ( --n )  6 ;
-: (ztype)  ( --n ) 32 ;
+: bye      ( -- ) 999 state ! ;
+: (exit)   ( --n )  0 ; inline
+: (lit)    ( --n )  1 ; inline
+: (jmp)    ( --n )  2 ; inline
+: (jmpz)   ( --n )  3 ; inline
+: (jmpnz)  ( --n )  4 ; inline
+: (njmpz)  ( --n )  5 ; inline
+: (njmpnz) ( --n )  6 ; inline
+: (ztype)  ( --n ) 32 ; inline
+: 2cells   ( --n )  8 ; inline
+: 3cells   ( --n ) 12 ; inline
 
 : if   (jmpz)   , here 0 , ; immediate
 : -if  (njmpz)  , here 0 , ; immediate
@@ -44,19 +46,13 @@
 ( the original here and last - used by 'rb' )
 const -last-   const -here-
 
+mem mem-sz + const dict-end
 32 ->code const (vh)
 64 1024 * ->code const vars
 vars (vh) !
 : vhere ( --a ) (vh) @ ;
-
-: compiling? ( --n ) state @ 1 = ;
 : allot ( n-- ) (vh) +! ;
 : var   ( n-- ) vhere const allot ;
-mem mem-sz + const dict-end
-
-: 2cells ( --n )  8 ; inline
-: 3cells ( --n ) 12 ; inline
-: ?dup ( n--n n|0 )  -if dup then ;
 
 ( A stack for 3 locals - x,y,z )
 30 cells var t8           ( t8: the locals stack start )
@@ -89,6 +85,7 @@ t8 t1 !  t8 cell + t2 !  t8 2cells + t3 !  ( Initialize )
 : z++ ( -- )  1 z0 +! ;    : z@+  ( --n ) z@ z++ ;
 
 ( Strings )
+: compiling? ( --n ) state @ 1 = ;
 : t3 ( --a ) +L vhere dup z! x! 1 >in +!
     begin
         >in @ c@ y! 1 >in +!
@@ -114,11 +111,12 @@ t8 t1 !  t8 cell + t2 !  t8 2cells + t3 !  ( Initialize )
 : t4 50000 ;
 : t5 vars t4 + ;
 : rb ( -- )
-    z" boot.fth" fopen-r ?dup if0 ." -nf-" exit then
-    t5 x! t4 for 0 c!x+ next
-    x! t5 t4 x@ fread drop x@ fclose
+    z" boot.fth" fopen-r -if0 drop ." -nf-" exit then
+    z! t5 x! t4 for 0 c!x+ next
+    t5 t4 z@ fread drop z@ fclose
     -here- (h) !  -last- (l) ! 
     t5 >in ! ;
+: vi z" vi boot.fth" system ;
 
 ( More core words )
 : 1+ ( n--n' ) 1 + ; inline
@@ -128,6 +126,7 @@ t8 t1 !  t8 cell + t2 !  t8 2cells + t3 !  ( Initialize )
 : rdrop ( -- ) r> drop ; inline
 : tuck  ( a b--b a b )   swap over ; inline
 : nip   ( a b--b )       swap drop ; inline
+: ?dup ( n--n n|0 )  -if dup then ;
 : 2dup  ( a b--a b a b ) over over ; inline
 : 2drop ( a b-- )        drop drop ; inline
 : -rot ( a b c--c a b )  swap >r swap r> ;
@@ -207,21 +206,27 @@ cell var t4   cell var t5
 : s-eq   ( s1 s2--f ) dup s-len 1+ s-eqn ;
   
   ( Formatting number output )
-: .nwb ( n width base-- )
-    base @ >r  base !  >r <# r> 1- for # next #s #> ztype  r> base ! ;
 : decimal  ( -- )  #10 base ! ;
 : hex      ( -- )  $10 base ! ;
 : binary   ( -- )  %10 base ! ;
-: .hex     ( n-- )  #2 $10 .nwb ;
 
-: aemit ( ch-- )  dup #32 #126 btwi if0 drop '.' then emit ;
-: t0    ( addr-- )  +L1 $10 for c@x+ aemit next -L ;
-: dump  ( addr n-- )  0 +L3 y@ for
-     z@+ if0 x@ cr .hex ." : " then c@x+ .hex space
-     z@ $10 = if 0 z! space space x@ $10 - t0 then
-   next -L ;
-
-( *** App code - start *** )
+( Disk: 64 blocks, 16K bytes each )
+mem 14 1024 1024 * * + const disk
+32 var fn
+val blk@   (val) t0
+: #blks     ( --n )   64 ;
+: blk-sz    ( --n )   16384 ;
+: blk!      ( n-- )   0 max #blks 1- min t0 ! ;
+: blk-fn    ( --a )   fn z" block-" s-cpy blk@ <# # # #s #> s-cat z" .fth" s-cat ;
+: blk-addr  ( --a )   blk@ blk-sz * disk + ;
+: blk-clr   ( -- )    blk-addr blk-sz 0 fill ;
+: t2        ( fh-- )  >r  blk-clr  blk-addr blk-sz r@ fread drop  r> fclose ;
+: blk-read  ( -- )    blk-fn fopen-r ?dup if0 ." -nf-" drop exit then t2 ;
+: t1        ( fh-- )  >r  blk-addr blk-sz r@ fwrite drop  r> fclose ;
+: blk-write ( -- )    blk-fn fopen-w ?dup if0 ." -err-" drop exit then t1 ;
+: blk-nullt ( -- )    0 blk-addr blk-sz + 1- c! ;
+: load      ( n-- )   blk! blk-read blk-nullt blk-addr outer ;
+: load-next ( n-- )   blk! blk-read blk-nullt blk-addr >in ! ;
 
 ( ANSI color codes )
 : csi  27 emit '[' emit ;
@@ -242,81 +247,8 @@ cell var t4   cell var t5
     yellow ."     Code: " white vars mem - cell / . ." cells, used: " here . cr
     yellow ."     Vars: " white last vars - . ." bytes, used: " vhere vars - . cr
     yellow ."     Dict: " white dict-end last - .  ." bytes used" cr 
-    ." hello." ;
+    ." hello." cr ;
 .banner
 
-: vi z" vi base.fth" system ;
-: lg z" lazygit" system ;
-
-( simple fixed point )
-: f. ( n-- )    1000 /mod (.) '.' emit abs 3 10 .nwb ;
-: f* ( a b--c ) * 1000 / ;
-: f/ ( a b--c ) swap 1000 * swap / ;
-: f+ ( a b--c ) + ; inline
-: f- ( a b--c ) - ; inline
-
-( Disk: 64 blocks, 16K bytes each )
-mem 14 1024 1024 * * + const disk
-32 var fn
-val blk@   (val) t0
-: #blks     ( --n )   64 ;
-: blk-sz    ( --n )   16384 ;
-: blk!      ( n-- )   0 max #blks 1- min t0 ! ;
-: blk-fn    ( --a )   fn z" block-" s-cpy blk@ <# # # #s #> s-cat z" .fth" s-cat ;
-: blk-addr  ( --a )   blk@ blk-sz * disk + ;
-: blk-clr   ( -- )    blk-addr blk-sz 0 fill ;
-: t2        ( fh-- )  >r  blk-clr  blk-addr blk-sz r@ fread drop  r> fclose ;
-: blk-read  ( -- )    blk-fn fopen-r ?dup if0 ." -nf-" drop exit then t2 ;
-: t1        ( fh-- )  >r  blk-addr blk-sz r@ fwrite drop  r> fclose ;
-: blk-write ( -- )    blk-fn fopen-w ?dup if0 ." -err-" drop exit then t1 ;
-: blk-nullt ( -- )    0 blk-addr blk-sz + 1- c! ;
-: load      ( n-- )   blk! blk-read blk-nullt blk-addr outer ;
-: load-next ( n-- )   blk! blk-read blk-nullt blk-addr >in ! ;
-0 blk!
-
-( some tests )
-
-cr ." default app: tests ..." cr
-pad z" hi " s-cpy z" there-" s-cat 123 s-catn '!' s-catc ztype cr
-: .xyz ." ( " x@ . y@ . z@ . ')' emit cr ;
-1 2 3 z! y! x! .xyz
-4 5 6 +L3 tab .xyz +L tab tab .xyz -L tab .xyz -L .xyz -L .xyz
-
-( some benchmarks )
-: lap ( --n ) timer ;
-: .lap ( n-- ) lap swap - space . ." ticks" cr ;
-
-: mil 1000 dup * * ;
-: fib ( n--fib ) 1- dup 2 < if drop 1 exit then dup fib swap 1- fib + ;
-: t0 ( n a-- ) ztype '(' emit dup (.) ')' emit lap swap ;
-: bm-while ( n-- ) z" while " t0 begin 1- -while drop .lap ;
-: bm-loop  ( n-- ) z" loop "  t0 for next .lap ;
-: bm-fib   ( n-- ) z" fib "   t0 fib space (.) .lap ;
-: bm-fibs  ( n-- ) 1 +L1 for x@+ bm-fib next -L ;
-: bb ( -- ) 1000 mil bm-loop ;
-: bm-all ( -- ) 250 mil bm-while bb 30 bm-fib ;
-
-( A stack )
-16 cells var tstk      ( the stack start )
-vhere cell - const t9  ( t9 is the stack end )
-val sp@   (val) t1     ( the stack pointer )
-: sp! ( n-- ) t1 ! ;   ( set the stack pointer )
-tstk sp!               ( Initialize )
-( for a normal stack, use these definitions )
-\ : sp++ ( -- ) sp@ cell + t9  min sp! ;
-\ : sp-- ( -- ) sp@ cell - tstk max sp! ;
-( for a circular stack, use these definitions )
-: sp++ ( -- )  sp@ cell +  dup t9  > if drop tstk then sp! ;
-: sp-- ( -- )  sp@ cell -  dup tstk < if drop t9  then sp! ;
-: t!   ( n-- ) sp@ ! ;
-: t@   ( --n ) sp@ @ ;
-: >t   ( n-- ) sp++ t! ;
-: t>   ( --n ) sp@ @  sp-- ;
-: t6   ( -- )  dup sp@ = if ." sp:" then dup @ . cell + ;
-: .stk ( -- )  '(' emit space tstk 16 for t6 next drop ')' emit ;
-( some stack tests )
-16 [[ sp-- for i >t next .stk cr ]]
-32 [[ for sp++ t@ . next cr .stk cr ]] 
-32 [[ for t> . next cr .stk ]] 
-
-( *** App code - end *** )
+( *** App code - starts in block-001 *** )
+1 load
