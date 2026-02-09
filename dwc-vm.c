@@ -51,14 +51,33 @@
 	X(TIMER,  "timer",    push(timer()); ) \
 	X(ADDW,   "add-word", addToDict(0); ) \
 	X(OUTER,  "outer",    t = pop(); outer((char*)t); ) \
+	X(LINC,   "+L",       if (tsp < TSTK_SZ) { tsp += 1; } ) \
+	X(LDEC,   "-L",       if (0 < tsp) { tsp -= 1; } ) \
+	X(XSTO,   "x!",       tstk[tsp].x = pop(); ) \
+	X(XFET,   "x@",       push(tstk[tsp].x); ) \
+	X(XFETI,  "x@+",      push(tstk[tsp].x++); ) \
+	X(XFETD,  "x@-",      push(tstk[tsp].x--); ) \
+	X(YSTO,   "y!",       tstk[tsp].y = pop(); ) \
+	X(YFET,   "y@",       push(tstk[tsp].y); ) \
+	X(YFETI,  "y@+",      push(tstk[tsp].y++); ) \
+	X(YFETD,  "y@-",      push(tstk[tsp].y--); ) \
+	X(ZSTO,   "z!",       tstk[tsp].z = pop(); ) \
+	X(ZFET,   "z@",       push(tstk[tsp].z); ) \
+	X(ZFETI,  "z@+",      push(tstk[tsp].z++); ) \
+	X(ZFETD,  "z@-",      push(tstk[tsp].z--); ) \
+	X(INC,    "1+",       TOS++; ) \
+	X(DEC,    "1-",       TOS--; ) \
+	X(ZEQ,    "0=",       TOS = TOS ? 0 : 1; ) \
+	X(p62,    "p62",      ; ) \
 	X(LASTOP, "system",   system((char*)pop()); )
 
 enum { PRIMS(X1) };
 
 char mem[MEM_SZ], *toIn, wd[32];
-ucell *code=(ucell*)&mem[0], dsp, rsp, lsp;
+ucell *code=(ucell*)&mem[0], dsp, rsp, lsp, tsp;
 cell dstk[STK_SZ+1], rstk[STK_SZ+1], lstk[STK_SZ+1], outputFp=0;
 cell here=LASTOP+1, last=(cell)&mem[MEM_SZ], base=10, state=INTERPRET;
+FRM_T tstk[TSTK_SZ+1];
 DE_T tmpWords[10];
 
 void push(cell v) { if (dsp < STK_SZ) { dstk[++dsp] = v; } }

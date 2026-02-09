@@ -19,6 +19,7 @@
 #define VERSION         20260128
 #define MEM_SZ         0x1000000
 #define STK_SZ                63
+#define TSTK_SZ               15
 #define NAME_LEN              25
 #define IMMED               0x80
 #define INLINE              0x40
@@ -38,6 +39,7 @@
 enum { INTERPRET=0, COMPILE=1, BYE=999 };
 typedef struct { ucell xt; byte sz; byte fl; byte ln; char nm[NAME_LEN+1]; } DE_T;
 typedef struct { char *name; ucell value; } NVP_T;
+typedef struct { cell x, y, z; } FRM_T;
 
 // These are defined by dwc-vm.c
 extern void inner(ucell start);
