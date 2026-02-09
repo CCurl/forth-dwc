@@ -16,7 +16,7 @@
 #include <string.h>
 #include <time.h>
 
-#define VERSION         20260128
+#define VERSION         20260208
 #define MEM_SZ         0x1000000
 #define STK_SZ                63
 #define TSTK_SZ               15

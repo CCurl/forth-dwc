@@ -59,15 +59,15 @@ vars (vh) !
 : +L2 ( x y-- )   +L y! x! ;
 : +L3 ( x y z-- ) +L z! y! x! ;
 
-: x++ ( -- )  x@ 1+ x! ;   : x--  ( -- )  x@ 1- x! ;
+: x++ ( -- )  x@+ drop ;   : x--  ( -- )  x@- drop ;
+: y++ ( -- )  y@+ drop ;   : y--  ( -- )  y@- drop ;
+: z++ ( -- )  z@+ drop ;   : z--  ( -- )  z@- drop ;
+
 : c@x ( --b ) x@ c@ ;      : c@x+ ( --b ) x@+ c@ ;  : c@x- ( --b ) x@- c@ ;
 : c!x ( b-- ) x@ c! ;      : c!x+ ( b-- ) x@+ c! ;  : c!x- ( b-- ) x@- c! ;
 
-: y++ ( -- )  y@ 1+ y! ;   : y--  ( -- )  y@ 1- y! ;
 : c@y ( --b ) y@ c@ ;      : c@y+ ( --b ) y@+ c@ ;  : c@y- ( --b ) y@- c@ ;
 : c!y ( b-- ) y@ c! ;      : c!y+ ( b-- ) y@+ c! ;  : c!y- ( b-- ) y@- c! ;
-
-: z++ ( -- )  z@ 1+ z! ;
 
 ( Strings )
 : compiling? ( --n ) state @ 1 = ;

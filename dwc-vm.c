@@ -51,8 +51,8 @@
 	X(TIMER,  "timer",    push(timer()); ) \
 	X(ADDW,   "add-word", addToDict(0); ) \
 	X(OUTER,  "outer",    t = pop(); outer((char*)t); ) \
-	X(LINC,   "+L",       if (tsp < TSTK_SZ) { tsp += 1; } ) \
-	X(LDEC,   "-L",       if (0 < tsp) { tsp -= 1; } ) \
+	X(LINC,   "+L",       if (tsp < TSTK_SZ) { tsp++; } ) \
+	X(LDEC,   "-L",       if (0 < tsp) { tsp--; } ) \
 	X(XSTO,   "x!",       tstk[tsp].x = pop(); ) \
 	X(XFET,   "x@",       push(tstk[tsp].x); ) \
 	X(XFETI,  "x@+",      push(tstk[tsp].x++); ) \
