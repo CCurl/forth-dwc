@@ -1,7 +1,7 @@
 ( some tests )
 
 cr ." this is block-001.fth" cr
-pad z" hi " s-cpy z" there-" s-cat 123 s-catn '!' s-catc ztype cr
+pad z" hi " s-cpy z" there" s-cat '-' s-catc 123 s-catn '!' s-catc ztype cr
 : .xyz ." ( " x@ . y@ . z@ . ')' emit cr ;
 1 2 3 z! y! x! .xyz
 4 5 6 +L3 tab .xyz +L tab tab .xyz -L tab .xyz -L .xyz -L .xyz
@@ -13,7 +13,7 @@ pad z" hi " s-cpy z" there-" s-cat 123 s-catn '!' s-catc ztype cr
     base @ >r  base !  >r <# r> 1- for # next #s #> ztype  r> base ! ;
 : .hex     ( n-- )  #2 $10 .nwb ;
 
-: aemit ( ch-- )  dup #32 #126 btwi if0 drop '.' then emit ;
+: aemit ( ch-- )  dup #31 $7F btwi if0 drop '.' then emit ;
 : t0    ( addr-- )  +L1 $10 for c@x+ aemit next -L ;
 : dump  ( addr n-- )  0 +L3 y@ for
      z@+ if0 x@ cr .hex ." : " then c@x+ .hex space
@@ -21,7 +21,7 @@ pad z" hi " s-cpy z" there-" s-cat 123 s-catn '!' s-catc ztype cr
    next -L ;
 
 ( some benchmarks )
-: lap ( --n ) timer ;
+: lap ( --n ) timer ; inline
 : .lap ( n-- ) lap swap - space . ." ticks" cr ;
 
 : mil 1000 dup * * ;
@@ -63,3 +63,25 @@ tstk tsp!              \ Initialize
 16 [[ tsp-- for i >t next .tstk cr ]]
 32 [[ for tsp++ t@ . next cr .tstk cr ]] 
 32 [[ for t> . next cr .tstk cr ]]
+
+( ANSI color codes )
+: csi  27 emit '[' emit ;
+: ->cr ( c r-- ) csi (.) ';' emit (.) 'H' emit ;
+: cls  csi ." 2J" 1 dup ->cr ;
+: fg   csi ." 38;5;" (.) 'm' emit ;
+: black    0 fg ;      : red     203 fg ;
+: green   40 fg ;      : yellow  226 fg ;
+: blue    63 fg ;      : purple  201 fg ;
+: cyan   117 fg ;      : grey    246 fg ;
+: white  255 fg ;
+
+( *** Banner *** )
+: .version version <# # # #. # # #. #s 'v' hold #> ztype ;
+: .banner
+    yellow ." DWC " green .version white ."  - Chris Curl" cr
+    yellow ."   Memory: " white mem-sz . ." bytes." cr
+    yellow ."     Code: " white vars mem - cell / . ." cells, used: " here . cr
+    yellow ."     Vars: " white last vars - . ." bytes, used: " vhere vars - . cr
+    yellow ."     Dict: " white dict-end last - .  ." bytes used" cr 
+    ." hello." cr ;
+.banner

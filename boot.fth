@@ -6,7 +6,9 @@
 : here (h) @ ;
 : inline    ( -- ) $40 last 5 + c! ;
 : immediate ( -- ) $80 last 5 + c! ;
-: cell   ( --n ) 4 ; inline
+: cell   ( --n )  4 ; inline
+: 2cells ( --n )  8 ; inline
+: 3cells ( --n ) 12 ; inline
 : cells  ( n--n' ) cell * ; inline
 : ->code ( off--addr ) cells mem + ;
 : code@  ( off--dw )  ->code @ ;
@@ -22,8 +24,6 @@
 : (njmpz)  ( --n )  5 ; inline
 : (njmpnz) ( --n )  6 ; inline
 : (ztype)  ( --n ) 32 ; inline
-: 2cells   ( --n )  8 ; inline
-: 3cells   ( --n ) 12 ; inline
 
 : if   (jmpz)   , here 0 , ; immediate
 : -if  (njmpz)  , here 0 , ; immediate
@@ -60,14 +60,15 @@ vhere 3cells - const t9   ( t9: the locals stack end )
 val x0     (val) t1       ( x0: address of x, t1: address of x0 )
 val y0     (val) t2       ( y0: address of y, t2: address of y0 )
 val z0     (val) t3       ( z0: address of z, t3: address of z0 )
-t8 t1 !  t8 cell + t2 !  t8 2cells + t3 !  ( Initialize )
-: +L ( -- )  z0 t9 < if x0 3cells + dup t1 ! cell + dup t2 ! cell + t3 ! then ;
-: -L ( -- )  x0 t8 > if x0 3cells - dup t1 ! cell + dup t2 ! cell + t3 ! then ;
+: t7 ( a-- ) dup t1 ! cell + dup t2 ! cell + t3 ! ;
+t8 t7  ( Initialize )
 
 : x@ ( --n ) x0 @ ;      : x! ( n-- ) x0 ! ;
 : y@ ( --n ) y0 @ ;      : y! ( n-- ) y0 ! ;
 : z@ ( --n ) z0 @ ;      : z! ( n-- ) z0 ! ;
 
+: +L  ( -- )  z0 t9 < if x0 3cells + t7 then ;
+: -L  ( -- )  x0 t8 > if x0 3cells - t7 then ;
 : +L1 ( x -- )    +L x! ;
 : +L2 ( x y-- )   +L y! x! ;
 : +L3 ( x y z-- ) +L z! y! x! ;
@@ -149,6 +150,9 @@ t8 t1 !  t8 cell + t2 !  t8 2cells + t3 !  ( Initialize )
 : max ( a b-a|b ) over over < if swap then drop ;
 : unloop  ( -- ) (lsp) @ 3 - 0 max (lsp) ! ;
 : execute ( xt-- ) ?dup if >r then ;
+: decimal  ( -- )  #10 base ! ;
+: hex      ( -- )  $10 base ! ;
+: binary   ( -- )  %10 base ! ;
 
    1 var (neg)
   65 var buf
@@ -159,7 +163,7 @@ cell var (buf)
 : #n   ( n-- )   '0' + dup '9' > if 7 + then hold ;
 : #    ( n--m )  base @ /mod swap #n ;
 : #s   ( n--0 )  # -if #s exit then ;
-: <#   ( n--m )  ?neg buf 65 + (buf) ! 0 hold ;
+: <#   ( n--n' ) ?neg buf 65 + (buf) ! 0 hold ;
 : #>   ( n--a )  drop (neg) @ if '-' hold then (buf) @ ;
 : (.)  ( n-- )   <# #s #> ztype ;
 : .    ( n-- )   (.) space ;
@@ -205,19 +209,14 @@ cell var t4   cell var t5
 	next -L 1 ;
 : s-eq   ( s1 s2--f ) dup s-len 1+ s-eqn ;
   
-  ( Formatting number output )
-: decimal  ( -- )  #10 base ! ;
-: hex      ( -- )  $10 base ! ;
-: binary   ( -- )  %10 base ! ;
-
-( Disk: 64 blocks, 16K bytes each )
+( Disk: 32 blocks, 32K bytes each )
 mem 14 1024 1024 * * + const disk
 32 var fn
 val blk@   (val) t0
-: #blks     ( --n )   64 ;
-: blk-sz    ( --n )   16384 ;
+: #blks     ( --n )   32 ;
+: blk-sz    ( --n )   32768 ;
 : blk!      ( n-- )   0 max #blks 1- min t0 ! ;
-: blk-fn    ( --a )   fn z" block-" s-cpy blk@ <# # # #s #> s-cat z" .fth" s-cat ;
+: blk-fn    ( --a )   fn z" block-" s-cpy blk@ <# # #s #> s-cat z" .fth" s-cat ;
 : blk-addr  ( --a )   blk@ blk-sz * disk + ;
 : blk-clr   ( -- )    blk-addr blk-sz 0 fill ;
 : t2        ( fh-- )  >r  blk-clr  blk-addr blk-sz r@ fread drop  r> fclose ;
@@ -227,28 +226,6 @@ val blk@   (val) t0
 : blk-nullt ( -- )    0 blk-addr blk-sz + 1- c! ;
 : load      ( n-- )   blk! blk-read blk-nullt blk-addr outer ;
 : load-next ( n-- )   blk! blk-read blk-nullt blk-addr >in ! ;
-
-( ANSI color codes )
-: csi  27 emit '[' emit ;
-: ->cr ( c r-- ) csi (.) ';' emit (.) 'H' emit ;
-: cls  csi ." 2J" 1 dup ->cr ;
-: fg   csi ." 38;5;" (.) 'm' emit ;
-: black    0 fg ;      : red     203 fg ;
-: green   40 fg ;      : yellow  226 fg ;
-: blue    63 fg ;      : purple  201 fg ;
-: cyan   117 fg ;      : grey    246 fg ;
-: white  255 fg ;
-
-( *** Banner *** )
-: .version version <# # # #. # # #. #s 'v' hold #> ztype ;
-: .banner
-    yellow ." DWC " green .version white ."  - Chris Curl" cr
-    yellow ."   Memory: " white mem-sz . ." bytes." cr
-    yellow ."     Code: " white vars mem - cell / . ." cells, used: " here . cr
-    yellow ."     Vars: " white last vars - . ." bytes, used: " vhere vars - . cr
-    yellow ."     Dict: " white dict-end last - .  ." bytes used" cr 
-    ." hello." cr ;
-.banner
 
 ( *** App code - starts in block-001 *** )
 1 load
