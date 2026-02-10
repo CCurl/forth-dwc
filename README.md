@@ -23,7 +23,7 @@ In a DWC program, each instruction is a DWORD (32-bits). <br/>
 |  ;   | Compile EXIT and change state to INTERPRET. |
 
 **NOTE**: '(' skip words until the next ')' word.<br/>
-**NOTE**: '\' skip words until the end of the line.<br/>
+**NOTE**: '\\' skip words until the end of the line.<br/>
 **NOTE**: State '999' signals DWC to exit.<br/>
 
 ## INLINE words
