@@ -1,6 +1,6 @@
 ( some tests )
 
-cr ." this is block-001.fth" cr
+cr ." this is block-01.fth" cr
 pad z" hi " s-cpy z" there" s-cat '-' s-catc 123 s-catn '!' s-catc ztype cr
 : .xyz ." ( " x@ . y@ . z@ . ')' emit cr ;
 1 2 3 z! y! x! .xyz

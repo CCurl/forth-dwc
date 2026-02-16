@@ -72,6 +72,9 @@ void doNum() { if (state == COMPILE) { compileNum(pop()); } }
 int  isTmpW(const char *w) { return (w[0]=='t') && btwi(w[1],'0','9') && (w[2]==0) ? 1 : 0; }
 void addPrim(const char *nm, ucell op) { DE_T *dp = addToDict(nm); if (dp) { dp->xt = op; } }
 void addLit(const char *name, cell val) { addToDict(name); compileNum(val); comma(EXIT); }
+void doInline(ucell xt) { while (code[xt] != EXIT) { comma(code[xt++]); } }
+void doInterp(ucell xt) { code[10]=xt; code[11]=EXIT; inner(10); }
+char *checkWord(char *w) { return w ? w : (nextWord() ? &wd[0] : NULL); }
 
 void compileNum(cell n) {
 	if (btwi(n,0,LIT_BITS)) { comma((ucell)(n | LIT_MASK)); }
@@ -96,7 +99,7 @@ int isNum(const char *w, cell b) {
 	if (w[0] == 0) { return 0; }
 	while (*w) {
 		char x = *(w++), c = btwi(x,'A','Z') ? x+32 : x;
-		if (btwi(c,'0','9') && btwi(c,'0','0'+b-1)) { n = (n*b)+(c-'0'); }
+		if ((btwi(c,'0','9')) && btwi(c,'0','0'+b-1)) { n = (n*b)+(c-'0'); }
 		else if (btwi(c,'a','a'+b-11)) { n = (n*b)+(c-'a'+10); }
 		else return 0;
 	}
@@ -105,10 +108,7 @@ int isNum(const char *w, cell b) {
 }
 
 DE_T *addToDict(const char *w) {
-	if (!w) {
-		if (!nextWord()) return (DE_T*)0;
-		w = &wd[0];
-	}
+	w = checkWord((char*)w);
 	if (isTmpW(w)) { DE_T *x = &tmpWords[w[1]-'0']; x->xt = here; return x; }
 	int ln = strlen(w);
 	if (ln == 0) { return (DE_T*)0; }
@@ -125,10 +125,7 @@ DE_T *addToDict(const char *w) {
 }
 
 DE_T *findInDict(char *w) {
-	if (!w) {
-		if (!nextWord()) { return (DE_T*)0; }
-		w = &wd[0];
-	}
+	w = checkWord((char*)w);
 	if (isTmpW(w)) { return &tmpWords[w[1]-'0']; }
 	cell cw = last, ln = strlen(w);
 	while (cw < (cell)&mem[MEM_SZ]) {
@@ -167,16 +164,8 @@ void outer(const char *src) {
 			state = INTERPRET;
 			break;
 		}
-		if ((state == INTERPRET) || (dp->fl & IMMED)) {
-			code[10] = dp->xt;
-			code[11] = EXIT;
-			inner(10);
-		} else { // Must be COMPILE state
-			if (dp->fl & INLINE) {
-				ucell x = dp->xt;
-				while (code[x] != EXIT) { comma(code[x++]); }
-			} else { comma(dp->xt); }
-		}
+		if ((state == INTERPRET) || (dp->fl & IMMED)) { doInterp(dp->xt); }
+		else { (dp->fl & INLINE) ? doInline(dp->xt) : comma(dp->xt); } // COMPILE
 	}
 	toIn = svIn;
 }
