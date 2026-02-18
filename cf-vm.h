@@ -1,6 +1,6 @@
 // A Tachyon inspired system, MIT license, (c) 2025 Chris Curl
 
-#ifndef __DWC_H__
+#ifndef __CF_H__
 
 #ifdef _MSC_VER
     #define _CRT_SECURE_NO_WARNINGS
@@ -41,11 +41,11 @@ enum { INTERPRET=0, COMPILE=1, BYE=999 };
 typedef struct { ucell xt; byte sz; byte fl; byte ln; char nm[NAME_LEN+1]; } DE_T;
 typedef struct { char *name; ucell value; } NVP_T;
 
-// These are defined by dwc-vm.c
+// These are defined by cf-vm.c
 extern void inner(ucell start);
 extern void outer(const char *src);
 extern void addLit(const char *name, cell val);
-extern void dwcInit();
+extern void cfInit();
 extern int nextWord();
 extern DE_T *addToDict(const char *w);
 extern void compileNum(cell n);
@@ -53,7 +53,7 @@ extern cell state;
 extern ucell outputFp;
 extern char mem[];
 
-// dwc-vm.c needs these to be defined
+// cf-vm.c needs these to be defined
 extern void zType(const char *str);
 extern void emit(const char ch);
 extern int  key();
@@ -65,4 +65,4 @@ extern void fClose(cell fh);
 extern cell fRead(cell buf, cell sz, cell fh);
 extern cell fWrite(cell buf, cell sz, cell fh);
 
-#endif //  __DWC_H__
+#endif //  __CF_H__

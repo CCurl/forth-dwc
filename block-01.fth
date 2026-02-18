@@ -78,7 +78,7 @@ pad z" hi " s-cpy z" there" s-cat '-' s-catc 123 s-catn '!' s-catc ztype cr
 ( *** Banner *** )
 : .version version <# # # #. # # #. #s 'v' hold #> ztype ;
 : .banner
-    yellow ." DWC " green .version white ."  - Chris Curl" cr
+    yellow ." CF " green .version white ."  - Chris Curl" cr
     yellow ."   Memory: " white mem-sz . ." bytes." cr
     yellow ."     Code: " white vars mem - cell / . ." cells, used: " here . cr
     yellow ."     Vars: " white last vars - . ." bytes, used: " vhere vars - . cr

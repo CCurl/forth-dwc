@@ -1,9 +1,9 @@
-# DWC Forth - AI Coding Assistant Instructions
+# CF Forth - AI Coding Assistant Instructions
 
 ## Project Overview
-DWC (DWord-Code) is a minimal Forth interpreter/VM inspired by Tachyon, implemented in ~200 lines of C code. Each instruction is a 32-bit DWORD that is either a primitive (0-45), a literal (top 3 bits set, ANDed with 0x3FFFFFFF), or an execution token (code address).
+CF (DWord-Code) is a minimal Forth interpreter/VM inspired by Tachyon, implemented in ~200 lines of C code. Each instruction is a 32-bit DWORD that is either a primitive (0-45), a literal (top 3 bits set, ANDed with 0x3FFFFFFF), or an execution token (code address).
 
-**Core Implementation:** [dwc-vm.c](dwc-vm.c), [dwc-vm.h](dwc-vm.h), [system.c](system.c)  
+**Core Implementation:** [cf-vm.c](cf-vm.c), [cf-vm.h](cf-vm.h), [system.c](system.c)  
 **Bootstrap Code:** [boot.fth](boot.fth), [base.fth](base.fth)  
 **Build:** 17KB on Windows (32-bit), ~21KB on Linux
 
@@ -13,7 +13,7 @@ Refer to README.md for detailed documentation on VM primitives, system primitive
 
 ### The Three-Way Instruction Encoding
 Every instruction in `code[]` array is decoded as:
-- `<= 45`: Execute primitive (see `PRIMS()` macro in [dwc-vm.c](dwc-vm.c#L5-L46))
+- `<= 45`: Execute primitive (see `PRIMS()` macro in [cf-vm.c](cf-vm.c#L5-L46))
 - `& 0x40000000`: Literal value (mask with `0x3FFFFFFF` to get actual value)
 - Otherwise: Code address (XT) to execute
 
@@ -57,15 +57,15 @@ When a word is marked INLINE (via `inline` word), its definition is copied direc
 ### Windows (Visual Studio)
 ```powershell
 # Build from VS solution
-msbuild dwc.sln /p:Configuration=Release
-.\Release\dwc.exe boot.fth
+msbuild cf.sln /p:Configuration=Release
+.\Release\cf.exe boot.fth
 ```
 
 ### Linux/Unix (makefile)
 ```bash
 make              # Builds with clang -m32 -Oz
-make test         # Runs ./dwc base.fth
-make run          # Runs ./dwc (loads boot.fth by default)
+make test         # Runs ./cf base.fth
+make run          # Runs ./cf (loads boot.fth by default)
 ```
 
 **Default behavior:** If no file argument, loads `boot.fth`. Command-line args create `argc`, `arg0`, `arg1`, etc. constants.
@@ -100,7 +100,7 @@ t8 t1 !    \ now t0 pushes t8
 ```
 
 ### For Loops
-DWC uses `for`/`next` with `i` for index (0-based):
+CF uses `for`/`next` with `i` for index (0-based):
 ```forth
 10 for i . next  \ Prints 0 1 2 3 4 5 6 7 8 9
 ```
@@ -127,7 +127,7 @@ DWC uses `for`/`next` with `i` for index (0-based):
 
 ## Locals (x, y, z)
 
-DWC provides three local variables via a stack-based mechanism using cached pointers:
+CF provides three local variables via a stack-based mechanism using cached pointers:
 - `x0`, `y0`, `z0` are `val` words that push addresses (updated by `+L`/`-L`)
 - `x1`, `y1`, `z1` are accessor constants to the data cells holding those addresses
 - `+L` pushes a new 3-cell frame (increments x/y/z pointers by 12 bytes) if space available
@@ -163,7 +163,7 @@ here .hex        \ Show HERE pointer (next free code location)
 ```
 
 ### Stack Inspection
-Access internal stacks via constants defined in `dwcInit()`:
+Access internal stacks via constants defined in `cfInit()`:
 - `stk` / `(sp)` - data stack
 - `rstk` / `(rsp)` - return stack  
 - `lstk` / `(lsp)` - loop stack
@@ -173,7 +173,7 @@ See [block-001.fth](block-001.fth#L17-L20) for `dump` word implementation.
 
 ## Critical Files
 
-- **[dwc-vm.c](dwc-vm.c):** Core VM (~200 lines) with `inner()` interpreter loop and `outer()` parser
+- **[cf-vm.c](cf-vm.c):** Core VM (~200 lines) with `inner()` interpreter loop and `outer()` parser
   - `PRIMS(X)` macro: defines all 46 primitives (0-45)
   - `inner(pc)`: main execution loop (switch on instruction type)
   - `outer(src)`: parser/compiler (reads words, compiles or executes)
@@ -183,7 +183,7 @@ See [block-001.fth](block-001.fth#L17-L20) for `dump` word implementation.
   - `addToDict()`: dictionary entry creation (grows downward)
   - `compileNum()`: efficient literal compilation (inline if small)
 
-- **[dwc-vm.h](dwc-vm.h):** Platform abstractions, type definitions, VM/system interface
+- **[cf-vm.h](cf-vm.h):** Platform abstractions, type definitions, VM/system interface
   - `DE_T`: dictionary entry struct
   - `NVP_T`: name-value pair for constants
   - Memory size, stack sizes, flag definitions
@@ -225,16 +225,16 @@ See [block-001.fth](block-001.fth#L17-L20) for `dump` word implementation.
 
 ## When Modifying C Code
 
-1. **Primitives**: Add to `PRIMS()` macro in [dwc-vm.c](dwc-vm.c#L5). The macro expands to enum, switch case, and name array.
-2. **Memory size**: Change `MEM_SZ` in [dwc-vm.h](dwc-vm.h#L18) (default 16MB).
+1. **Primitives**: Add to `PRIMS()` macro in [cf-vm.c](cf-vm.c#L5). The macro expands to enum, switch case, and name array.
+2. **Memory size**: Change `MEM_SZ` in [cf-vm.h](cf-vm.h#L18) (default 16MB).
 3. **Platform I/O**: Edit [system.c](system.c) for `key()`, `qKey()`, `ms()`, file ops.
-4. **Constants**: Add to `nv[]` array in `dwcInit()` to expose to Forth ([dwc-vm.c](dwc-vm.c#L171-L178)).
+4. **Constants**: Add to `nv[]` array in `cfInit()` to expose to Forth ([cf-vm.c](cf-vm.c#L171-L178)).
 
 ## When Writing Forth Code
 
 - **Every word must include a stack effect comment** in the format `( input -- output )`. This documents the contract clearly.
 - **Prefer chaining multiple small 1-line definitions** over large multi-line definitions. Each word passes its result to the next via the stack.
-- **Almost all words in DWC are 1-liners.** Example: `#c`, `#.`, `#n`, `#`, `#s`, `<#`, `#>`, `(.)` are all single-line compositions. This style makes code modular, testable, and easier to factor.
+- **Almost all words in CF are 1-liners.** Example: `#c`, `#.`, `#n`, `#`, `#s`, `<#`, `#>`, `(.)` are all single-line compositions. This style makes code modular, testable, and easier to factor.
 - Use `inline` for performance-critical small words (< 5 instructions)
 - Use `t0-t9` for helper words that don't need to be in dictionary
 - Prefer `for`/`next` over `begin`/`until` for counted loops
@@ -369,7 +369,7 @@ Note: `-if` (non-destructive) leaves TOS on stack, `if` consumes it.
 ### STATE Values
 - `0` (INTERPRET): words execute immediately
 - `1` (COMPILE): words generate code (or execute if IMMEDIATE flag set)
-- `999` (BYE): exit DWC
+- `999` (BYE): exit CF
 
 ### Parsing Flow
 When `outer()` processes a word:

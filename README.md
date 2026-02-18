@@ -1,21 +1,21 @@
-# forth-dwc: a minimal DWORD-Code Forth
+# CF: a minimal DWORD-Code Forth
 
-DWC is an extremely minimal Forth system that can run stand-alone or be embedded into another program.
+CF is an extremely minimal Forth system that can run stand-alone or be embedded into another program.
 
-DWC has 32 base primitives, 14 system primitives.<br/>
-DWC is implemented in 3 files: (dwc-vm.c, dwc-vm.h, system.c). <br/>
+CF has 32 base primitives, 14 system primitives.<br/>
+CF is implemented in 3 files: (cf-vm.c, cf-vm.h, system.c). <br/>
 The VM itself is under 200 lines of code.
 
 On Windows, a 32-bit Release build compiles to a 17k executable. <br/>
 On a Linux box, it is about 21k.
 
-**DWC** stands for "DWord-Code". This is inspired by Tachyon. <br/>
-In a DWC program, each instruction is a DWORD (32-bits). <br/>
+**CF** stands for "DWord-Code". This is inspired by Tachyon. <br/>
+In a CF program, each instruction is a DWORD (32-bits). <br/>
 - If <= the last primitive (45), then it is a primitive.
 - Else, if the top 3 bits are set, then it is a literal ANDed with $3FFFFFFF.
 - Else, it is the XT (code address) of a word in the dictionary.
 
-### DWC hard-codes the following IMMEDIATE state-change words:
+### CF hard-codes the following IMMEDIATE state-change words:
 
 | Word | Action |
 |:--   |:-- |
@@ -24,7 +24,7 @@ In a DWC program, each instruction is a DWORD (32-bits). <br/>
 
 **NOTE**: '(' skip words until the next ')' word.<br/>
 **NOTE**: '\\' skip words until the end of the line.<br/>
-**NOTE**: State '999' signals DWC to exit.<br/>
+**NOTE**: State '999' signals CF to exit.<br/>
 
 ## INLINE words
 
@@ -38,12 +38,12 @@ Words 't0' through 't9' are transient and are not added to the dictionary.<br/>
 They are case sensitive: 't0' is a transient word, 'T0' is not.<br/>
 They help with factoring code and and keep the dictionary uncluttered.<br/>
 
-## DWC Startup Behavior
+## CF Startup Behavior
 
-On startup, DWC does the following:
+On startup, CF does the following:
 - Create 'argc' with the count of command-line arguments
 - For each argument, create 'argX' with the address of the argument string
-- E.G. "arg0 ztype" will print `dwc`
+- E.G. "arg0 ztype" will print `cf`
 - If arg1 exists and names a file that can be opened, load that file.
 - Else, try to load file 'boot.fth'
 
@@ -51,7 +51,7 @@ On startup, DWC does the following:
 
 | Primitive | Op/Word  | Stack        | Description |
 |:--        |:--       |:--           |:-- |
-|           |          |              | --- **DWC primitives** --- |
+|           |          |              | --- **CF primitives** --- |
 |   0       | exit     | (--)         | PC = R-TOS. Discard R-TOS. If (PC=0) then stop. |
 |   1       | lit      | (--)         | Push code[PC]. Increment PC. |
 |   2       | jmp      | (--)         | PC = code[PC]. |
@@ -120,6 +120,6 @@ On startup, DWC does the following:
 | mem-sz    | (--n) | The number of BYTEs in the memory area. |
 | >in       | (--a) | Address of the text input buffer pointer. |
 
-##   Embedding DWC in your C or C++ project
+##   Embedding CF in your C or C++ project
 
-See system.c. It embeds the DWC VM into a C program.
+See system.c. It embeds the CF VM into a C program.

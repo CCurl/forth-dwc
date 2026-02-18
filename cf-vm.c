@@ -1,5 +1,5 @@
 // A Tachyon inspired system, MIT license, (c) 2025 Chris Curl
-#include "dwc-vm.h"
+#include "cf-vm.h"
 
 #define X1(op, name, theCode) op,
 #define X2(op, name, theCode) case op: theCode goto next;
@@ -181,7 +181,7 @@ void outer(const char *src) {
 	toIn = svIn;
 }
 
-void dwcInit() {
+void cfInit() {
 	NVP_T prims[] = { PRIMS(X3) { 0, 0 } };
 	NVP_T nv[] = {
 		{ "version", VERSION },        { "output-fp", (cell)&outputFp },

@@ -1,6 +1,6 @@
 // A Tachyon inspired system, MIT license, (c) 2025 Chris Curl
 
-#include "dwc-vm.h"
+#include "cf-vm.h"
 
 #ifdef IS_WINDOWS
 	#include <windows.h>
@@ -60,7 +60,7 @@ char tib[128], fn[32];
 cell timer() { return (cell)clock(); }
 void zType(const char *str) { fputs(str, outputFp ? (FILE*)outputFp : stdout); }
 void emit(const char ch) { fputc(ch, outputFp ? (FILE*)outputFp : stdout); }
-char *bootFn(char *f) { sprintf(fn, "%sboot.fth", f); return fn; }
+char *bootFn(char *f) { sprintf(fn, "%scf-boot.fth", f); return fn; }
 
 cell fOpen(cell name, cell mode) { return (cell)fopen((char*)name, (char*)mode); }
 void fClose(cell fh) { fclose((FILE*)fh); }
@@ -93,7 +93,7 @@ void boot(const char *fn) {
 }
 
 int main(int argc, char *argv[]) {
-	dwcInit();
+	cfInit();
 	addLit("argc", (cell)argc);
 	strcpy(tib, "argX");
 	for (int i=0; (i<argc) && (i<10); i++) {
