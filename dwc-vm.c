@@ -24,13 +24,24 @@
 	X(RTO,    ">r",       rpush(pop()); ) \
 	X(RAT,    "r@",       push(rstk[rsp]); ) \
 	X(RFROM,  "r>",       push(rpop()); ) \
+	X(ITSP,   "+L",       if (tsp < (STK_SZ-3)) { tsp += 3; } ) \
+	X(DTSP,   "-L",       if (2 < tsp) { tsp -= 3; } ) \
+	X(XSTO,   "x!",       tstk[tsp] = pop(); ) \
+	X(YSTO,   "y!",       tstk[tsp+1] = pop(); ) \
+	X(ZSTO,   "z!",       tstk[tsp+2] = pop(); ) \
+	X(XFET,   "x@",       push(tstk[tsp]); ) \
+	X(YFET,   "y@",       push(tstk[tsp+1]); ) \
+	X(ZFET,   "z@",       push(tstk[tsp+2]); ) \
 	X(MULT,   "*",        t = pop(); TOS *= t; ) \
 	X(ADD,    "+",        t = pop(); TOS += t; ) \
 	X(SUB,    "-",        t = pop(); TOS -= t; ) \
 	X(SLMOD,  "/mod",     t = TOS; n = NOS; TOS = n/t; NOS = n%t; ) \
+	X(INC,    "1+",       TOS += 1; ) \
+	X(DEC,    "1-",       TOS -= 1; ) \
 	X(LT,     "<",        t = pop(); TOS = (TOS  < t) ? 1 : 0; ) \
 	X(EQ,     "=",        t = pop(); TOS = (TOS == t) ? 1 : 0; ) \
 	X(GT,     ">",        t = pop(); TOS = (TOS  > t) ? 1 : 0; ) \
+	X(EQ0,    "0=",       TOS = (TOS == 0) ? 1 : 0; ) \
 	X(PLSTO,  "+!",       t = pop(); n = pop(); *(cell *)t += n; ) \
 	X(FOR,    "for",      lsp += 3; L0 = 0; L1 = pop(); L2 = pc; ) \
 	X(I,      "i",        push(L0); ) \
@@ -56,8 +67,8 @@
 enum { PRIMS(X1) };
 
 char mem[MEM_SZ], *toIn, wd[32];
-ucell *code=(ucell*)&mem[0], dsp, rsp, lsp;
-cell dstk[STK_SZ+1], rstk[STK_SZ+1], lstk[STK_SZ+1], outputFp=0;
+ucell *code=(ucell*)&mem[0], dsp, rsp, lsp, tsp, outputFp;
+cell dstk[STK_SZ+1], rstk[STK_SZ+1], lstk[STK_SZ+1], tstk[STK_SZ+1];
 cell here=LASTOP+1, last=(cell)&mem[MEM_SZ], base=10, state=INTERPRET;
 DE_T tmpWords[10];
 
@@ -177,6 +188,7 @@ void dwcInit() {
 		{ "(h)",     (cell)&here },    { "(l)",       (cell)&last },
 		{ "(lsp)",   (cell)&lsp },     { "lstk",      (cell)&lstk[0] },
 		{ "(rsp)",   (cell)&rsp },     { "rstk",      (cell)&rstk[0] },
+		{ "(tsp)",   (cell)&tsp },     { "tstk",      (cell)&tstk[0] },
 		{ "(sp)",    (cell)&dsp },     { "stk",       (cell)&dstk[0] },
 		{ "state",   (cell)&state },   { "base",      (cell)&base },
 		{ "mem",     (cell)&mem[0] },  { "mem-sz",    (cell)MEM_SZ },

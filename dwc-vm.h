@@ -6,8 +6,10 @@
     #define _CRT_SECURE_NO_WARNINGS
     #define IS_WINDOWS 1
     #define strEqI(s, d)  (_strcmpi(s, d) == 0)
+    #define BIN_DIR "D:\\bin\\"
 #else
     #define strEqI(s, d)  (strcasecmp(s, d) == 0)
+    #define BIN_DIR "/home/chris/bin/"
 #endif
 
 #include <stdio.h>
@@ -16,7 +18,7 @@
 #include <string.h>
 #include <time.h>
 
-#define VERSION         20260214
+#define VERSION         20260218
 #define MEM_SZ         0x1000000
 #define STK_SZ                63
 #define NAME_LEN              25
@@ -47,7 +49,8 @@ extern void dwcInit();
 extern int nextWord();
 extern DE_T *addToDict(const char *w);
 extern void compileNum(cell n);
-extern cell state, outputFp;
+extern cell state;
+extern ucell outputFp;
 extern char mem[];
 
 // dwc-vm.c needs these to be defined

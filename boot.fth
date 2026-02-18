@@ -23,7 +23,7 @@
 : (jmpnz)  ( --n )  4 ; inline
 : (njmpz)  ( --n )  5 ; inline
 : (njmpnz) ( --n )  6 ; inline
-: (ztype)  ( --n ) 32 ; inline
+: (ztype)  ( --n ) 43 ; inline
 
 : if   (jmpz)   , here 0 , ; immediate
 : -if  (njmpz)  , here 0 , ; immediate
@@ -54,36 +54,22 @@ vars (vh) !
 : allot ( n-- ) (vh) +! ;
 : var   ( n-- ) vhere const allot ;
 
-( A stack for 3 locals - x,y,z )
-30 cells var t8           ( t8: the locals stack start )
-vhere 3cells - const t9   ( t9: the locals stack end )
-val x0     (val) t1       ( x0: address of x, t1: address of x0 )
-val y0     (val) t2       ( y0: address of y, t2: address of y0 )
-val z0     (val) t3       ( z0: address of z, t3: address of z0 )
-: t7 ( a-- ) dup t1 ! cell + dup t2 ! cell + t3 ! ;
-t8 t7  ( Initialize )
-
-: x@ ( --n ) x0 @ ;      : x! ( n-- ) x0 ! ;
-: y@ ( --n ) y0 @ ;      : y! ( n-- ) y0 ! ;
-: z@ ( --n ) z0 @ ;      : z! ( n-- ) z0 ! ;
-
-: +L  ( -- )  z0 t9 < if x0 3cells + t7 then ;
-: -L  ( -- )  x0 t8 > if x0 3cells - t7 then ;
+( TSTK is a stack for 3 locals - x,y,z )
 : +L1 ( x -- )    +L x! ;
 : +L2 ( x y-- )   +L y! x! ;
 : +L3 ( x y z-- ) +L z! y! x! ;
 
-: x++ ( -- )  1 x0 +! ;    : x@+  ( --n ) x@ x++ ;
-: x-- ( -- ) -1 x0 +! ;    : x@-  ( --n ) x@ x-- ;
+: x++ ( -- )  x@ 1+ x! ;   : x@+  ( --n ) x@ x++ ;
+: x-- ( -- )  x@ 1- x! ;   : x@-  ( --n ) x@ x-- ;
 : c@x ( --b ) x@ c@ ;      : c@x+ ( --b ) x@+ c@ ;  : c@x- ( --b ) x@- c@ ;
 : c!x ( b-- ) x@ c! ;      : c!x+ ( b-- ) x@+ c! ;  : c!x- ( b-- ) x@- c! ;
 
-: y++ ( -- )  1 y0 +! ;    : y@+  ( --n ) y@ y++ ;
-: y-- ( -- ) -1 y0 +! ;    : y@-  ( --n ) y@ y-- ;
+: y++ ( -- )  y@ 1+ y! ;   : y@+  ( --n ) y@ y++ ;
+: y-- ( -- )  y@ 1- y! ;   : y@-  ( --n ) y@ y-- ;
 : c@y ( --b ) y@ c@ ;      : c@y+ ( --b ) y@+ c@ ;  : c@y- ( --b ) y@- c@ ;
 : c!y ( b-- ) y@ c! ;      : c!y+ ( b-- ) y@+ c! ;  : c!y- ( b-- ) y@- c! ;
 
-: z++ ( -- )  1 z0 +! ;    : z@+  ( --n ) z@ z++ ;
+: z++ ( -- )  z@ 1+ z! ;   : z@+  ( --n ) z@ z++ ;
 
 ( Strings )
 : compiling? ( --n ) state @ 1 = ;
@@ -120,8 +106,6 @@ t8 t7  ( Initialize )
 : vi z" vi boot.fth" system ;
 
 ( More core words )
-: 1+ ( n--n' ) 1 + ; inline
-: 1- ( n--n' ) 1 - ; inline
 : [ ( -- ) 0 state ! ; immediate  ( 0 = INTERPRET )
 : ] ( -- ) 1 state ! ;            ( 1 = COMPILE )
 : rdrop ( -- ) r> drop ; inline
@@ -131,7 +115,6 @@ t8 t7  ( Initialize )
 : 2dup  ( a b--a b a b ) over over ; inline
 : 2drop ( a b-- )        drop drop ; inline
 : -rot ( a b c--c a b )  swap >r swap r> ;
-: 0= ( n--f ) 0 =    ; inline
 : 0< ( n--f ) 0 <    ; inline
 : <= ( a b--f ) > 0= ;
 : >= ( a b--f ) < 0= ;

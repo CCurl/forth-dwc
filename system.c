@@ -56,16 +56,17 @@
 	}
 #endif // Linux, OpenBSD, FreeBSD
 
+char tib[128], fn[32];
 cell timer() { return (cell)clock(); }
 void zType(const char *str) { fputs(str, outputFp ? (FILE*)outputFp : stdout); }
 void emit(const char ch) { fputc(ch, outputFp ? (FILE*)outputFp : stdout); }
+char *bootFn(char *f) { sprintf(fn, "%sboot.fth", f); return fn; }
 
 cell fOpen(cell name, cell mode) { return (cell)fopen((char*)name, (char*)mode); }
 void fClose(cell fh) { fclose((FILE*)fh); }
 cell fRead(cell buf, cell sz, cell fh) { return (cell)fread((char*)buf, 1, sz, (FILE*)fh); }
 cell fWrite(cell buf, cell sz, cell fh) { return (cell)fwrite((char*)buf, 1, sz, (FILE*)fh); }
 
-char tib[128];
 void repl() {
 	ttyMode(0);
 	if (state != COMPILE) { state = INTERPRET; }
@@ -74,10 +75,12 @@ void repl() {
 	else { state = BYE; }
 }
 
+
 void boot(const char *fn) {
 	if (!fn) { fn = "boot.fth"; }
 	cell fp = fOpen((cell)fn, (cell)"rb");
-	if (!fp) { fp = fOpen((cell)"boot.fth", (cell)"rb"); }
+	if (!fp) { fp = fOpen((cell)bootFn(""), (cell)"rb"); }
+	if (!fp) { fp = fOpen((cell)bootFn(BIN_DIR), (cell)"rb"); }
 	if (fp) {
 		char *tib = (char*)&mem[100000];
 		fRead((cell)tib, 99999, fp);
