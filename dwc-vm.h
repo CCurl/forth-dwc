@@ -6,8 +6,10 @@
     #define _CRT_SECURE_NO_WARNINGS
     #define IS_WINDOWS 1
     #define strEqI(s, d)  (_strcmpi(s, d) == 0)
+    #define BIN_DIR "D:\\bin\\"
 #else
     #define strEqI(s, d)  (strcasecmp(s, d) == 0)
+    #define BIN_DIR "/home/chris/bin/"
 #endif
 
 #include <stdio.h>

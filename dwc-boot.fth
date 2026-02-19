@@ -111,12 +111,12 @@ t8 t7  ( Initialize )
 : t4 50000 ;
 : t5 vars t4 + ;
 : rb ( -- )
-    z" boot.fth" fopen-r -if0 drop ." -nf-" exit then
+    z" dwc-boot.fth" fopen-r -if0 drop ." -nf-" exit then
     z! t5 x! t4 for 0 c!x+ next
     t5 t4 z@ fread drop z@ fclose
     -here- (h) !  -last- (l) ! 
     t5 >in ! ;
-: vi z" vi boot.fth" system ;
+: vi z" vi dwc-boot.fth" system ;
 
 ( More core words )
 : 1+ ( n--n' ) 1 + ; inline
@@ -208,18 +208,20 @@ cell var t4   cell var t5
 	next -L 1 ;
 : s-eq   ( s1 s2--f ) dup s-len 1+ s-eqn ;
   
-( Disk: 32 blocks, 32K bytes each )
-mem 14 1024 1024 * * + const disk
+( Disk: 64 blocks, 16K bytes each )
+: kb ( n--m ) 1024 * ;
+: mb ( n--m ) kb kb ;
+mem 14 mb + const disk
 32 var fn
 val blk@   (val) t0
-: #blks     ( --n )   32 ;
-: blk-sz    ( --n )   32768 ;
+: #blks     ( --n )   64 ;
+: blk-sz    ( --n )   16 kb ;
 : blk!      ( n-- )   0 max #blks 1- min t0 ! ;
 : blk-fn    ( --a )   fn z" block-" s-cpy blk@ <# # #s #> s-cat z" .fth" s-cat ;
 : blk-addr  ( --a )   blk@ blk-sz * disk + ;
 : blk-clr   ( -- )    blk-addr blk-sz 0 fill ;
 : t2        ( fh-- )  >r  blk-clr  blk-addr blk-sz r@ fread drop  r> fclose ;
-: blk-read  ( -- )    blk-fn fopen-r ?dup if0 ." -nf-" drop exit then t2 ;
+: blk-read  ( -- )    blk-fn fopen-r ?dup if0 ." file " blk-fn ztype ."  not found." drop exit then t2 ;
 : t1        ( fh-- )  >r  blk-addr blk-sz r@ fwrite drop  r> fclose ;
 : blk-write ( -- )    blk-fn fopen-w ?dup if0 ." -err-" drop exit then t1 ;
 : blk-nullt ( -- )    0 blk-addr blk-sz + 1- c! ;

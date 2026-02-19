@@ -44,8 +44,11 @@ On startup, DWC does the following:
 - Create 'argc' with the count of command-line arguments
 - For each argument, create 'argX' with the address of the argument string
 - E.G. "arg0 ztype" will print `dwc`
-- If arg1 exists and names a file that can be opened, load that file.
-- Else, try to load file 'boot.fth'
+- Try to find a boot file to load:
+  - If arg1 names a file that can be opened, load that file.
+  - Else If "dwc-boot.fth" exists and can be opened, load that.
+  - Else If "`BIN_DIR`dwc-boot.fth" exists and can be opened, load that.
+  - NOTE: `BIN_DIR` is defined in the `dwc-vm.h` file. Change that as necessary.
 
 ## The VM Primitives
 
