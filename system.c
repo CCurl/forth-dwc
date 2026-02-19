@@ -76,7 +76,6 @@ void repl() {
 }
 
 void boot(const char *fn) {
-	if (!fn) { fn = "dwc-boot.fth"; }
 	cell fp = fOpen(fn ? (cell)fn : bootFn(""), (cell)"rb");
 	if (!fp) { fp = fOpen(bootFn(""), (cell)"rb"); }
 	if (!fp) { fp = fOpen(bootFn(BIN_DIR), (cell)"rb"); }
