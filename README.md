@@ -119,6 +119,7 @@ On startup, DWC does the following:
 | mem       | (--a) | Address of the beginning of the memory area. |
 | mem-sz    | (--n) | The number of BYTEs in the memory area. |
 | >in       | (--a) | Address of the text input buffer pointer. |
+| cell      | (--n) | The number of BYTEs in a CELL. |
 
 ##   Embedding DWC in your C or C++ project
 

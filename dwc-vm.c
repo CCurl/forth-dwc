@@ -180,7 +180,7 @@ void dwcInit() {
 		{ "(sp)",    (cell)&dsp },     { "stk",       (cell)&dstk[0] },
 		{ "state",   (cell)&state },   { "base",      (cell)&base },
 		{ "mem",     (cell)&mem[0] },  { "mem-sz",    (cell)MEM_SZ },
-		{ ">in",     (cell)&toIn},     { 0, 0 }
+		{ ">in",     (cell)&toIn},     { "cell",      (cell)CELL_SZ },  { 0, 0 }
 	};
 	for (int i = 0; nv[i].name; i++) { addLit(nv[i].name, nv[i].value); }
 	for (int i = 0; prims[i].name; i++) { addPrim(prims[i].name, prims[i].value); }
