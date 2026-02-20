@@ -1,10 +1,4 @@
-( some tests )
-
-cr ." this is block-01.fth" cr
-pad z" hi " s-cpy z" there" s-cat '-' s-catc 123 s-catn '!' s-catc ztype cr
-: .xyz ." ( " x@ . y@ . z@ . ')' emit cr ;
-1 2 3 z! y! x! .xyz
-4 5 6 +L3 tab .xyz +L tab tab .xyz -L tab .xyz -L .xyz -L .xyz
+\ The default app
 
 : ll z" ls -l" system ;
 : lg z" lazygit" system ;
@@ -41,7 +35,7 @@ pad z" hi " s-cpy z" there" s-cat '-' s-catc 123 s-catn '!' s-catc ztype cr
 : f+ ( a b--c ) + ; inline
 : f- ( a b--c ) - ; inline
 
-\ A stack
+\ A normal or circular stack
 16 cells var tstk      \ the stack start
 vhere cell - const t9  \ t9 is the stack end
 val tsp@   (val) t1    \ the stack pointer
@@ -59,10 +53,6 @@ tstk tsp!              \ Initialize
 : t>    ( --n ) tsp@ @  tsp-- ;
 : t6    ( -- )  dup tsp@ = if ." sp:" then dup @ . cell + ;
 : .tstk ( -- )  '(' emit space tstk 16 for t6 next drop ')' emit ;
-( some stack tests )
-16 [[ tsp-- for i >t next .tstk cr ]]
-32 [[ for tsp++ t@ . next cr .tstk cr ]] 
-32 [[ for t> . next cr .tstk cr ]]
 
 ( ANSI color codes )
 : csi  27 emit '[' emit ;

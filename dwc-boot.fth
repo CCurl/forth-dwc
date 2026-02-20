@@ -111,7 +111,7 @@ t8 t7  ( Initialize )
 : t4 50000 ;
 : t5 vars t4 + ;
 : rb ( -- )
-    z" dwc-boot.fth" fopen-r -if0 drop ." -nf-" exit then
+    z" dwc-boot.fth" fopen-r -if0 drop ." dwc-boot.fth not found" exit then
     z! t5 x! t4 for 0 c!x+ next
     t5 t4 z@ fread drop z@ fclose
     -here- (h) !  -last- (l) ! 
@@ -142,8 +142,8 @@ t8 t7  ( Initialize )
 : tab ( -- )      9 emit ;
 : space  ( -- )  32 emit ;
 : spaces ( n-- ) for space next ;
-: /   ( a b--q ) /mod nip  ;
-: mod ( a b--r ) /mod drop ;
+: /   ( a b--q ) /mod nip  ; inline
+: mod ( a b--r ) /mod drop ; inline
 : */  ( n m q--n' ) >r * r> / ;
 : min ( a b-a|b ) over over > if swap then drop ;
 : max ( a b-a|b ) over over < if swap then drop ;
@@ -201,11 +201,10 @@ cell var t4   cell var t5
 : s-end  ( str--end ) dup s-len + ;   \ end: address of the null
 : s-cpy  ( dst src--dst ) 2dup s-len 1+ cmove ;
 : s-cat  ( dst src--dst ) over s-end  over s-len 1+  cmove ;
+: s-scat ( src dst--dst ) swap s-cat ;
 : s-catc ( dst ch--dst )  over s-end  +L1  c!x+  0 c!x+  -L ;
 : s-catn ( dst num--dst ) <# #s #> s-cat ;
-: s-eqn  ( s1 s2 n--f ) +L3 z@ for
-	   c@x+ c@y+ = if0 -L 0 unloop exit then
-	next -L 1 ;
+: s-eqn  ( s1 s2 n--f ) +L3 z@ for c@x+ c@y+ = if0 -L 0 unloop exit then next -L 1 ;
 : s-eq   ( s1 s2--f ) dup s-len 1+ s-eqn ;
   
 ( Disk: 64 blocks, 16K bytes each )
@@ -228,5 +227,7 @@ val blk@   (val) t0
 : load      ( n-- )   blk! blk-read blk-nullt blk-addr outer ;
 : load-next ( n-- )   blk! blk-read blk-nullt blk-addr >in ! ;
 
+: fn-blk ( n--a ) blk@ >r blk! blk-fn r> blk! ;
+: ed     ( n-- )  pad z" vi " s-cpy swap fn-blk s-cat system ;
 ( *** App code - starts in block-001 *** )
 1 load

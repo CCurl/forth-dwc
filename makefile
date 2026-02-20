@@ -9,10 +9,11 @@ clean:
 	rm -f dwc
 
 test: dwc
-	./dwc boot.fth
+	./dwc tests.fth
 
 run: dwc
 	./dwc
 
 bin: dwc
 	cp -u -p dwc ~/bin/
+	cp -u -p dwc-boot.fth ~/bin/

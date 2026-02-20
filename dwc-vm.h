@@ -18,7 +18,7 @@
 #include <string.h>
 #include <time.h>
 
-#define VERSION         20260219
+#define VERSION         20260220
 #define MEM_SZ         0x1000000
 #define STK_SZ                63
 #define NAME_LEN              25
