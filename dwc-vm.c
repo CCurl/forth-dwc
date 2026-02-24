@@ -78,6 +78,7 @@ char *checkWord(char *w) { return w ? w : (nextWord() ? &wd[0] : NULL); }
 void lit1(cell n) { comma((ucell)(n | LIT_MASK)); }
 void lit2(cell n) { comma(LIT); comma(n); }
 void compileNum(cell n) { if (btwi(n,0,LIT_BITS)) { lit1(n); } else { lit2(n); } }
+void compileErr(char *w) { zType("\n-word:["); zType(w); zType("]?-\n"); }
 
 int nextWord() {
 	int ln = 0;
@@ -96,10 +97,9 @@ int isNum(const char *w, cell b) {
 	if ((b == 10) && (w[0] == '-')) { isNeg = 1; ++w; }
 	if (w[0] == 0) { return 0; }
 	while (*w) {
-		char x = *(w++), c = btwi(x,'A','Z') ? x+32 : x;
-		if ((btwi(c,'0','9')) && btwi(c,'0','0'+b-1)) { n = (n*b)+(c-'0'); }
-		else if (btwi(c,'a','a'+b-11)) { n = (n*b)+(c-'a'+10); }
-		else return 0;
+		char c = *w++; if (c >= 'A' && c <= 'Z') c += 32;
+		int val = btwi(c,'0','9') ? c-'0' : btwi(c,'a','f') ? c-'a'+10 : -1;
+		if (btwi(val, 0, b-1)) { n=(n*b)+val; } else { return 0; }
 	}
 	push(isNeg ? -n : n);
 	return 1;
@@ -114,10 +114,7 @@ DE_T *addToDict(const char *w) {
 	while (sz & 0x03) { ++sz; }
 	last -= sz;
 	DE_T *dp = (DE_T*)last;
-	dp->xt = (ucell)here;
-	dp->sz = sz;
-	dp->fl = 0;
-	dp->ln = ln;
+	*dp = (DE_T){ (ucell)here, sz, 0, ln };
 	strcpy(dp->nm, w);
 	return dp;
 }
@@ -157,11 +154,7 @@ void outer(const char *src) {
 		if (strEqI(wd, ":"))  { state=COMPILE; addToDict(0); continue; }
 		if (isNum(wd, base))  { doNum(); continue; }
 		DE_T *dp = findInDict(wd);
-		if (!dp) {
-			zType("\n-word:["); zType(wd); zType("]?-\n");
-			state = INTERPRET;
-			break;
-		}
+		if (!dp) { compileErr(wd); state=INTERPRET; break; }
 		if ((state == INTERPRET) || (dp->fl & IMMED)) { doInterp(dp->xt); }
 		else { (dp->fl & INLINE) ? doInline(dp->xt) : comma(dp->xt); } // COMPILE
 	}

@@ -18,10 +18,9 @@
 #include <string.h>
 #include <time.h>
 
-#define VERSION         20260220
-#define MEM_SZ         0x1000000
+#define VERSION         20260223
+#define MEM_SZ         0x1000000 // 16MB
 #define STK_SZ                63
-#define NAME_LEN              25
 #define IMMED               0x80
 #define INLINE              0x40
 #define LIT_MASK      0x40000000
@@ -38,7 +37,7 @@
 #define L2            lstk[lsp-2]
 
 enum { INTERPRET=0, COMPILE=1, BYE=999 };
-typedef struct { ucell xt; byte sz; byte fl; byte ln; char nm[NAME_LEN+1]; } DE_T;
+typedef struct { ucell xt; byte sz; byte fl; byte ln; char nm[1]; } DE_T;
 typedef struct { char *name; ucell value; } NVP_T;
 
 // These are defined by dwc-vm.c
