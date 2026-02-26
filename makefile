@@ -16,4 +16,6 @@ run: dwc
 
 bin: dwc
 	cp -u -p dwc ~/bin/
+
+boot:
 	cp -u -p dwc-boot.fth ~/bin/

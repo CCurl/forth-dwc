@@ -2,6 +2,8 @@
 
 #ifndef __DWC_H__
 
+#define VERSION         2026024
+
 #ifdef _MSC_VER
     #define _CRT_SECURE_NO_WARNINGS
     #define IS_WINDOWS 1
@@ -18,7 +20,6 @@
 #include <string.h>
 #include <time.h>
 
-#define VERSION         20260223
 #define MEM_SZ         0x1000000 // 16MB
 #define STK_SZ                63
 #define IMMED               0x80

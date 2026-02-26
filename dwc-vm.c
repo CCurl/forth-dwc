@@ -122,11 +122,9 @@ DE_T *addToDict(const char *w) {
 DE_T *findInDict(char *w) {
 	w = checkWord((char*)w);
 	if (isTmpW(w)) { return &tmpWords[w[1]-'0']; }
-	cell cw = last, ln = strlen(w);
-	while (cw < (cell)&mem[MEM_SZ]) {
-		DE_T *dp = (DE_T *)cw;
+	int ln = strlen(w);
+	for (DE_T *dp=(DE_T*)last; dp<(DE_T*)&mem[MEM_SZ]; dp=(DE_T*)((cell)dp+dp->sz)) {
 		if ((dp->ln == ln) && (strEqI(dp->nm, w))) { return dp; }
-		cw += dp->sz;
 	}
 	return (DE_T *)0;
 }
