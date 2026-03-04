@@ -35,6 +35,20 @@
 : f+ ( a b--c ) + ; inline
 : f- ( a b--c ) - ; inline
 
+\ Random numbers
+val seed@   (val) t2
+: seed! ( n-- ) t2 ! ;
+
+: random ( --n )
+    seed@
+    dup 8192 * xor
+    dup 131072 / xor
+    dup 32 * xor
+    dup seed! ;
+
+: rand-max ( max--n ) random abs swap mod ;
+timer seed!
+
 \ A normal or circular stack
 16 cells var tstk      \ the stack start
 vhere cell - const t9  \ t9 is the stack end
