@@ -1,6 +1,6 @@
-// A Tachyon inspired system, MIT license, (c) 2025 Chris Curl
+// A Tachyon inspired system, MIT license, (c) 2026 Chris Curl
 
-#include "dwc-vm.h"
+#include "m4-vm.h"
 
 #ifdef IS_WINDOWS
 	#include <windows.h>
@@ -65,7 +65,7 @@ cell fOpen(cell name, cell mode) { return (cell)fopen((char*)name, (char*)mode);
 void fClose(cell fh) { fclose((FILE*)fh); }
 cell fRead(cell buf, cell sz, cell fh) { return (cell)fread((char*)buf, 1, sz, (FILE*)fh); }
 cell fWrite(cell buf, cell sz, cell fh) { return (cell)fwrite((char*)buf, 1, sz, (FILE*)fh); }
-cell bootFn(char *f) { sprintf(fn, "%sdwc-boot.fth", f); return (cell)fn; }
+cell bootFn(char *f) { sprintf(fn, "%sm4-boot.fth", f); return (cell)fn; }
 
 void repl() {
 	ttyMode(0);
@@ -91,7 +91,7 @@ void boot(const char *fn) {
 }
 
 int main(int argc, char *argv[]) {
-	dwcInit();
+	m4Init();
 	addLit("argc", (cell)argc);
 	strcpy(tib, "argX");
 	for (int i=0; (i<argc) && (i<10); i++) {

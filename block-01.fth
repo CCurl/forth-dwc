@@ -82,7 +82,7 @@ tstk tsp!              \ Initialize
 ( *** Banner *** )
 : .version version <# # # #. # # #. #s 'v' hold #> ztype ;
 : .banner
-    yellow ." DWC " green .version white ."  - Chris Curl" cr
+    yellow ." MIN4TH " green .version white ."  - Chris Curl" cr
     yellow ."   Memory: " white mem-sz . ." bytes." cr
     yellow ."     Code: " white vars mem - cell / . ." cells, used: " here . cr
     yellow ."     Vars: " white last vars - . ." bytes, used: " vhere vars - . cr

@@ -1,21 +1,21 @@
 CXX := clang
 CFLAGS := -m32 -Oz
 
-dwc: *.c *.h
-	$(CXX) $(CFLAGS) -o dwc *.c
-	ls -l dwc
+m4: *.c *.h
+	$(CXX) $(CFLAGS) -o m4 *.c
+	ls -l m4
 
 clean:
-	rm -f dwc
+	rm -f m4
 
-test: dwc
-	./dwc tests.fth
+test: m4
+	./m4 tests.fth
 
-run: dwc
-	./dwc
+run: m4
+	./m4
 
-bin: dwc
-	cp -u -p dwc ~/bin/
+bin: m4
+	cp -u -p m4 ~/bin/
 
 boot:
-	cp -u -p dwc-boot.fth ~/bin/
+	cp -u -p m4-boot.fth ~/bin/

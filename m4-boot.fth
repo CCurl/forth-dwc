@@ -111,12 +111,12 @@ t8 t7  ( Initialize )
 : t4 50000 ;
 : t5 vars t4 + ;
 : rb ( -- )
-    z" dwc-boot.fth" fopen-r -if0 drop ." dwc-boot.fth not found" exit then
+    z" m4-boot.fth" fopen-r -if0 drop ." m4-boot.fth not found" exit then
     z! t5 x! t4 for 0 c!x+ next
     t5 t4 z@ fread drop z@ fclose
     -here- (h) !  -last- (l) ! 
     t5 >in ! ;
-: vi z" vi dwc-boot.fth" system ;
+: vi z" vi m4-boot.fth" system ;
 
 ( More core words )
 : 1+ ( n--n' ) 1 + ; inline

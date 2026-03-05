@@ -24,7 +24,7 @@
     <ProjectGuid>{bdd1c19e-3eec-4ddf-ad67-406628bacccf}</ProjectGuid>
     <RootNamespace>stable</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>dwc</ProjectName>
+    <ProjectName>min4th</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -144,16 +144,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="dwc-boot.fth" />
+    <None Include="min4th-boot.fth" />
     <None Include="makefile" />
     <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dwc-vm.c" />
+    <ClCompile Include="min4th-vm.c" />
     <ClCompile Include="system.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="dwc-vm.h" />
+    <ClInclude Include="min4th-vm.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
