@@ -41,7 +41,7 @@ enum { INTERPRET=0, COMPILE=1, BYE=999 };
 typedef struct { ucell xt; byte sz; byte fl; byte ln; char nm[1]; } DE_T;
 typedef struct { char *name; ucell value; } NVP_T;
 
-// These are defined by min4th-vm.c
+// These are defined by m4-vm.c
 extern void inner(ucell start);
 extern void outer(const char *src);
 extern void addLit(const char *name, cell val);
@@ -52,7 +52,7 @@ extern void compileNum(cell n);
 extern cell state, outputFp;
 extern char mem[];
 
-// min4th-vm.c needs these to be defined
+// m4-vm.c needs these to be defined
 extern void zType(const char *str);
 extern void emit(const char ch);
 extern int  key();

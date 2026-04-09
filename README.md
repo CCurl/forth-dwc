@@ -1,21 +1,21 @@
-# Min4th: a minimal DWORD-Code Forth
+# m4: a minimal DWORD-Code Forth
 
-Min4th is an extremely minimal Forth system that can run stand-alone or be embedded into another program.
+m4 is an extremely minimal Forth system that can run stand-alone or be embedded into another program.
 
-Min4th has 32 base primitives, 14 system primitives.<br/>
-Min4th is implemented in 3 files: (m4-vm.c, m4-vm.h, system.c). <br/>
+m4 has 32 base primitives, 14 system primitives.<br/>
+m4 is implemented in 3 files: (m4-vm.c, m4-vm.h, system.c). <br/>
 The VM itself is under 200 lines of code.
 
 On Windows, a 32-bit Release build compiles to a 17k executable. <br/>
 On a Linux box, it is about 21k.
 
-**Min4th** is a DWord-Code system, inspired by Tachyon. <br/>
-In a Min4th program, each instruction is a DWORD (32-bits). <br/>
+**m4** is a DWord-Code system, inspired by Tachyon. <br/>
+In a m4 program, each instruction is a DWORD (32-bits). <br/>
 - If <= the last primitive (45), then it is a primitive.
 - Else, if the top 3 bits are set, then it is a literal ANDed with $3FFFFFFF.
 - Else, it is the XT (code address) of a word in the dictionary.
 
-### Min4th hard-codes the following IMMEDIATE state-change words:
+### m4 hard-codes the following IMMEDIATE state-change words:
 
 | Word | Action |
 |:--   |:-- |
@@ -24,7 +24,7 @@ In a Min4th program, each instruction is a DWORD (32-bits). <br/>
 
 **NOTE**: '(' skip words until the next ')' word.<br/>
 **NOTE**: '\\' skip words until the end of the line.<br/>
-**NOTE**: State '999' signals Min4th to exit.<br/>
+**NOTE**: State '999' signals m4 to exit.<br/>
 
 ## INLINE words
 
@@ -38,23 +38,23 @@ Words 't0' through 't9' are transient and are not added to the dictionary.<br/>
 They are case sensitive: 't0' is a transient word, 'T0' is not.<br/>
 They help with factoring code and and keep the dictionary uncluttered.<br/>
 
-## Min4th Startup Behavior
+## m4 Startup Behavior
 
-On startup, Min4th does the following:
+On startup, m4 does the following:
 - Create 'argc' with the count of command-line arguments
 - For each argument, create 'argX' with the address of the argument string
-- E.G. "arg0 ztype" will print `Min4th`
+- E.G. "arg0 ztype" will print `m4`
 - Try to find a boot file to load:
   - If arg1 names a file that can be opened, load that file.
-  - Else If "Min4th-boot.fth" exists and can be opened, load that.
-  - Else If "`BIN_DIR`Min4th-boot.fth" exists and can be opened, load that.
+  - Else If "m4-boot.fth" exists and can be opened, load that.
+  - Else If "`BIN_DIR`m4-boot.fth" exists and can be opened, load that.
   - NOTE: `BIN_DIR` is defined in the `m4-vm.h` file. Change that as necessary.
 
 ## The VM Primitives
 
 | Primitive | Op/Word  | Stack        | Description |
 |:--        |:--       |:--           |:-- |
-|           |          |              | --- **Min4th primitives** --- |
+|           |          |              | --- **m4 primitives** --- |
 |   0       | exit     | (--)         | PC = R-TOS. Discard R-TOS. If (PC=0) then stop. |
 |   1       | lit      | (--)         | Push code[PC]. Increment PC. |
 |   2       | jmp      | (--)         | PC = code[PC]. |
@@ -124,6 +124,6 @@ On startup, Min4th does the following:
 | >in       | (--a) | Address of the text input buffer pointer. |
 | cell      | (--n) | The number of BYTEs in a CELL. |
 
-##   Embedding Min4th in your C or C++ project
+##   Embedding m4 in your C or C++ project
 
-See system.c. It embeds the Min4th VM into a C program.
+See system.c. It embeds the m4 VM into a C program.
